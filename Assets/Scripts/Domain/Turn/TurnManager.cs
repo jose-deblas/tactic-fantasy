@@ -25,10 +25,12 @@ namespace TacticFantasy.Domain.Turn
         void Initialize(List<IUnit> units, IVictoryCondition victoryCondition, IGameMap map = null);
 
         void MarkCurrentUnitAsActed();
+        void MarkUnitAsActed(int unitId);
         void AdvancePhase();
         GameState GetGameState();
         void HealFortTiles(IGameMap map);
         bool HasUnitActed(int unitId);
+        bool HaveAllPlayerUnitsActed();
         bool CanRefreshTarget(IUnit refresher, IUnit target);
         void RefreshUnit(int targetUnitId);
     }
@@ -78,6 +80,11 @@ namespace TacticFantasy.Domain.Turn
             {
                 _unitsWhoActed.Add(CurrentUnit.Id);
             }
+        }
+
+        public void MarkUnitAsActed(int unitId)
+        {
+            _unitsWhoActed.Add(unitId);
         }
 
         public void AdvancePhase()
@@ -138,6 +145,12 @@ namespace TacticFantasy.Domain.Turn
         public bool HasUnitActed(int unitId)
         {
             return _unitsWhoActed.Contains(unitId);
+        }
+
+        public bool HaveAllPlayerUnitsActed()
+        {
+            var alivePlayerUnits = _allUnits.Where(u => u.Team == Team.PlayerTeam && u.IsAlive && u.CanAct);
+            return alivePlayerUnits.All(u => _unitsWhoActed.Contains(u.Id));
         }
 
         public bool CanRefreshTarget(IUnit refresher, IUnit target)

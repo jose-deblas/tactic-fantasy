@@ -11,22 +11,25 @@ namespace TacticFantasy.Adapters
     public class UIManager : MonoBehaviour
     {
         private Canvas _uiCanvas;
-        private Text _turnCounterText;
-        private Text _phaseIndicatorText;
+        private Text _turnPhaseText;
         private Text _unitInfoText;
         private Text _combatResultText;
         private Text _infoMessageText;
         private GameObject _gameOverPanel;
         private Text _gameOverText;
-        private Button _endTurnButton;
         private GameController _gameController;
-    private GameObject _forecastPanel;
-    private Text _forecastText;
-    private GameObject _modalMenuPanel;
-    private Button _menuEndTurnButton;
-    private Button _menuSaveGameButton;
-    private Button _menuExitButton;
-    private Text _terrainInfoText;
+        private GameObject _forecastPanel;
+        private Text _forecastText;
+        private GameObject _modalMenuPanel;
+        private Button _menuEndTurnButton;
+        private Button _menuSaveGameButton;
+        private Button _menuExitButton;
+        private Text _terrainInfoText;
+        private GameObject _endTurnPrompt;
+        private Button _endTurnPromptButton;
+        private GameObject _turnInterstitialPanel;
+        private Text _turnInterstitialText;
+        private Button _turnInterstitialButton;
 
         public void Awake()
         {
@@ -49,55 +52,36 @@ namespace TacticFantasy.Adapters
             canvasRT.anchorMin = Vector2.zero;
             canvasRT.anchorMax = Vector2.one;
 
-            CreateTurnCounter();
-            CreatePhaseIndicator();
+            CreateTurnPhaseHeader();
             CreateUnitInfoPanel();
             CreateCombatResultText();
             CreateInfoMessageText();
             CreateTerrainInfoText();
-            // CreateEndTurnButton();  // REMOVED - replaced by modal menu
+            CreateEndTurnPrompt();
             CreateGameOverPanel();
             CreateForecastPanel();
             CreateModalMenuPanel();
+            CreateTurnInterstitialPanel();
         }
 
-        private void CreateTurnCounter()
+        private void CreateTurnPhaseHeader()
         {
-            GameObject textGO = new GameObject("TurnCounter");
+            GameObject textGO = new GameObject("TurnPhaseHeader");
             textGO.transform.SetParent(_uiCanvas.transform);
 
-            _turnCounterText = textGO.AddComponent<Text>();
-            _turnCounterText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            _turnCounterText.text = "Turn: 1";
-            _turnCounterText.fontSize = 30;
-            _turnCounterText.fontStyle = FontStyle.Bold;
-            _turnCounterText.alignment = TextAnchor.UpperCenter;
-            _turnCounterText.color = Color.white;
+            _turnPhaseText = textGO.AddComponent<Text>();
+            _turnPhaseText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            _turnPhaseText.text = "Turn: 1, Player Phase";
+            _turnPhaseText.fontSize = 26;
+            _turnPhaseText.fontStyle = FontStyle.Bold;
+            _turnPhaseText.alignment = TextAnchor.UpperCenter;
+            _turnPhaseText.color = Color.white;
 
             RectTransform rt = textGO.GetComponent<RectTransform>();
             rt.anchorMin = new Vector2(0.5f, 1);
             rt.anchorMax = new Vector2(0.5f, 1);
-            rt.offsetMin = new Vector2(-100, -50);
-            rt.offsetMax = new Vector2(100, 0);
-        }
-
-        private void CreatePhaseIndicator()
-        {
-            GameObject textGO = new GameObject("PhaseIndicator");
-            textGO.transform.SetParent(_uiCanvas.transform);
-
-            _phaseIndicatorText = textGO.AddComponent<Text>();
-            _phaseIndicatorText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            _phaseIndicatorText.text = "PLAYER PHASE";
-            _phaseIndicatorText.fontSize = 24;
-            _phaseIndicatorText.alignment = TextAnchor.UpperCenter;
-            _phaseIndicatorText.color = Color.cyan;
-
-            RectTransform rt = textGO.GetComponent<RectTransform>();
-            rt.anchorMin = new Vector2(0.5f, 1);
-            rt.anchorMax = new Vector2(0.5f, 1);
-            rt.offsetMin = new Vector2(-100, -100);
-            rt.offsetMax = new Vector2(100, -50);
+            rt.offsetMin = new Vector2(-200, -45);
+            rt.offsetMax = new Vector2(200, -5);
         }
 
         private void CreateUnitInfoPanel()
@@ -149,58 +133,6 @@ namespace TacticFantasy.Adapters
             rt.anchorMax = new Vector2(0.5f, 0.5f);
             rt.offsetMin = new Vector2(-200, -50);
             rt.offsetMax = new Vector2(200, 50);
-        }
-
-        private void CreateEndTurnButton()
-        {
-            GameObject buttonGO = new GameObject("EndTurnButton");
-            buttonGO.transform.SetParent(_uiCanvas.transform);
-
-            Image buttonImage = buttonGO.AddComponent<Image>();
-            Button button = buttonGO.AddComponent<Button>();
-            button.targetGraphic = buttonImage;
-
-            // NEW: Better color scheme with hover effects
-            var colors = button.colors;
-            colors.normalColor = new Color(0.15f, 0.35f, 0.65f, 0.9f);      // Nice blue
-            colors.highlightedColor = new Color(0.25f, 0.5f, 0.85f, 1f);    // Bright on hover
-            colors.pressedColor = new Color(0.1f, 0.25f, 0.5f, 1f);         // Dark on press
-            colors.selectedColor = new Color(0.2f, 0.4f, 0.7f, 0.95f);
-            colors.disabledColor = new Color(0.3f, 0.3f, 0.3f, 0.5f);
-            button.colors = colors;
-
-            // NEW: Larger size (200x50 vs 150x40)
-            RectTransform buttonRT = buttonGO.GetComponent<RectTransform>();
-            buttonRT.anchorMin = new Vector2(0.5f, 0);
-            buttonRT.anchorMax = new Vector2(0.5f, 0);
-            buttonRT.offsetMin = new Vector2(-100, 20);  // 200px wide
-            buttonRT.offsetMax = new Vector2(100, 70);   // 50px tall
-
-            // NEW: Add white border using Outline component
-            var outline = buttonGO.AddComponent<Outline>();
-            outline.effectColor = new Color(1f, 1f, 1f, 0.8f);
-            outline.effectDistance = new Vector2(2, -2);
-
-            // Text (larger font)
-            GameObject textGO = new GameObject("Text");
-            textGO.transform.SetParent(buttonGO.transform);
-
-            Text buttonText = textGO.AddComponent<Text>();
-            buttonText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            buttonText.text = "End Turn";
-            buttonText.fontSize = 20;  // Larger (was 16)
-            buttonText.fontStyle = FontStyle.Bold;
-            buttonText.alignment = TextAnchor.MiddleCenter;
-            buttonText.color = Color.white;
-
-            RectTransform textRT = textGO.GetComponent<RectTransform>();
-            textRT.anchorMin = Vector2.zero;
-            textRT.anchorMax = Vector2.one;
-            textRT.offsetMin = Vector2.zero;
-            textRT.offsetMax = Vector2.zero;
-
-            _endTurnButton = button;
-            _endTurnButton.onClick.AddListener(() => _gameController?.EndPlayerPhase());
         }
 
         private void CreateGameOverPanel()
@@ -398,41 +330,171 @@ namespace TacticFantasy.Adapters
 
         public void UpdatePhaseDisplay(Phase phase, int turnCount)
         {
-            _turnCounterText.text = $"Turn: {turnCount}";
-            _phaseIndicatorText.text = phase == Phase.PlayerPhase ? "PLAYER PHASE" : "ENEMY PHASE";
-            _phaseIndicatorText.color = phase == Phase.PlayerPhase ? Color.cyan : Color.red;
-
-            // NEW: Flash the phase indicator to make transition more visible
-            StartCoroutine(FlashPhaseIndicator());
+            string phaseName = phase == Phase.PlayerPhase ? "Player Phase" : "Enemy Phase";
+            _turnPhaseText.text = $"Turn: {turnCount}, {phaseName}";
+            _turnPhaseText.color = phase == Phase.PlayerPhase ? Color.white : new Color(1f, 0.6f, 0.6f);
         }
 
-        private System.Collections.IEnumerator FlashPhaseIndicator()
+        private void CreateEndTurnPrompt()
         {
-            var originalScale = _phaseIndicatorText.transform.localScale;
-            Vector3 pulseScale = originalScale * 1.2f;
+            _endTurnPrompt = new GameObject("EndTurnPrompt");
+            _endTurnPrompt.transform.SetParent(_uiCanvas.transform);
 
-            // Scale up
-            float elapsed = 0f;
-            float duration = 0.15f;
-            while (elapsed < duration)
+            GameObject buttonGO = new GameObject("EndTurnButton");
+            buttonGO.transform.SetParent(_endTurnPrompt.transform);
+
+            Image buttonImage = buttonGO.AddComponent<Image>();
+            _endTurnPromptButton = buttonGO.AddComponent<Button>();
+            _endTurnPromptButton.targetGraphic = buttonImage;
+
+            var colors = _endTurnPromptButton.colors;
+            colors.normalColor = new Color(0.15f, 0.35f, 0.65f, 0.9f);
+            colors.highlightedColor = new Color(0.25f, 0.5f, 0.85f, 1f);
+            colors.pressedColor = new Color(0.1f, 0.25f, 0.5f, 1f);
+            _endTurnPromptButton.colors = colors;
+
+            RectTransform buttonRT = buttonGO.GetComponent<RectTransform>();
+            buttonRT.anchorMin = new Vector2(0.5f, 0);
+            buttonRT.anchorMax = new Vector2(0.5f, 0);
+            buttonRT.offsetMin = new Vector2(-110, 20);
+            buttonRT.offsetMax = new Vector2(110, 70);
+
+            var outline = buttonGO.AddComponent<Outline>();
+            outline.effectColor = new Color(1f, 1f, 1f, 0.8f);
+            outline.effectDistance = new Vector2(2, -2);
+
+            GameObject textGO = new GameObject("Text");
+            textGO.transform.SetParent(buttonGO.transform);
+
+            Text buttonText = textGO.AddComponent<Text>();
+            buttonText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            buttonText.text = "End Turn";
+            buttonText.fontSize = 22;
+            buttonText.fontStyle = FontStyle.Bold;
+            buttonText.alignment = TextAnchor.MiddleCenter;
+            buttonText.color = Color.white;
+
+            RectTransform textRT = textGO.GetComponent<RectTransform>();
+            textRT.anchorMin = Vector2.zero;
+            textRT.anchorMax = Vector2.one;
+            textRT.offsetMin = Vector2.zero;
+            textRT.offsetMax = Vector2.zero;
+
+            _endTurnPromptButton.onClick.AddListener(() => _gameController?.EndPlayerPhase());
+            _endTurnPrompt.SetActive(false);
+        }
+
+        public void ShowEndTurnPrompt()
+        {
+            if (_endTurnPrompt != null)
+                _endTurnPrompt.SetActive(true);
+        }
+
+        public void HideEndTurnPrompt()
+        {
+            if (_endTurnPrompt != null)
+                _endTurnPrompt.SetActive(false);
+        }
+
+        private void CreateTurnInterstitialPanel()
+        {
+            _turnInterstitialPanel = new GameObject("TurnInterstitialPanel");
+            _turnInterstitialPanel.transform.SetParent(_uiCanvas.transform);
+
+            Image panelImage = _turnInterstitialPanel.AddComponent<Image>();
+            panelImage.color = new Color(0, 0, 0, 0.85f);
+
+            RectTransform panelRT = _turnInterstitialPanel.GetComponent<RectTransform>();
+            panelRT.anchorMin = Vector2.zero;
+            panelRT.anchorMax = Vector2.one;
+            panelRT.offsetMin = Vector2.zero;
+            panelRT.offsetMax = Vector2.zero;
+
+            // Turn number text
+            GameObject textGO = new GameObject("TurnInterstitialText");
+            textGO.transform.SetParent(_turnInterstitialPanel.transform);
+
+            _turnInterstitialText = textGO.AddComponent<Text>();
+            _turnInterstitialText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            _turnInterstitialText.text = "Turn 1";
+            _turnInterstitialText.fontSize = 60;
+            _turnInterstitialText.fontStyle = FontStyle.Bold;
+            _turnInterstitialText.alignment = TextAnchor.MiddleCenter;
+            _turnInterstitialText.color = Color.white;
+
+            RectTransform textRT = textGO.GetComponent<RectTransform>();
+            textRT.anchorMin = new Vector2(0.5f, 0.5f);
+            textRT.anchorMax = new Vector2(0.5f, 0.5f);
+            textRT.offsetMin = new Vector2(-200, 10);
+            textRT.offsetMax = new Vector2(200, 80);
+
+            // Start button
+            GameObject buttonGO = new GameObject("StartButton");
+            buttonGO.transform.SetParent(_turnInterstitialPanel.transform);
+
+            Image buttonImage = buttonGO.AddComponent<Image>();
+            _turnInterstitialButton = buttonGO.AddComponent<Button>();
+            _turnInterstitialButton.targetGraphic = buttonImage;
+
+            var colors = _turnInterstitialButton.colors;
+            colors.normalColor = new Color(0.1f, 0.5f, 0.2f, 0.9f);
+            colors.highlightedColor = new Color(0.15f, 0.65f, 0.3f, 1f);
+            colors.pressedColor = new Color(0.08f, 0.35f, 0.15f, 1f);
+            _turnInterstitialButton.colors = colors;
+
+            RectTransform buttonRT = buttonGO.GetComponent<RectTransform>();
+            buttonRT.anchorMin = new Vector2(0.5f, 0.5f);
+            buttonRT.anchorMax = new Vector2(0.5f, 0.5f);
+            buttonRT.offsetMin = new Vector2(-80, -60);
+            buttonRT.offsetMax = new Vector2(80, -10);
+
+            var outline = buttonGO.AddComponent<Outline>();
+            outline.effectColor = new Color(1f, 1f, 1f, 0.8f);
+            outline.effectDistance = new Vector2(2, -2);
+
+            GameObject btnTextGO = new GameObject("Text");
+            btnTextGO.transform.SetParent(buttonGO.transform);
+
+            Text btnText = btnTextGO.AddComponent<Text>();
+            btnText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            btnText.text = "Start";
+            btnText.fontSize = 24;
+            btnText.fontStyle = FontStyle.Bold;
+            btnText.alignment = TextAnchor.MiddleCenter;
+            btnText.color = Color.white;
+
+            RectTransform btnTextRT = btnTextGO.GetComponent<RectTransform>();
+            btnTextRT.anchorMin = Vector2.zero;
+            btnTextRT.anchorMax = Vector2.one;
+            btnTextRT.offsetMin = Vector2.zero;
+            btnTextRT.offsetMax = Vector2.zero;
+
+            _turnInterstitialPanel.SetActive(false);
+        }
+
+        public void ShowTurnInterstitial(int turnNumber, System.Action onStart)
+        {
+            if (_turnInterstitialPanel == null) return;
+
+            _turnInterstitialText.text = $"Turn {turnNumber}";
+            _turnInterstitialButton.onClick.RemoveAllListeners();
+            _turnInterstitialButton.onClick.AddListener(() =>
             {
-                elapsed += Time.deltaTime;
-                float t = elapsed / duration;
-                _phaseIndicatorText.transform.localScale = Vector3.Lerp(originalScale, pulseScale, t);
-                yield return null;
-            }
+                _turnInterstitialPanel.SetActive(false);
+                onStart?.Invoke();
+            });
+            _turnInterstitialPanel.SetActive(true);
+        }
 
-            // Scale back down
-            elapsed = 0f;
-            while (elapsed < duration)
-            {
-                elapsed += Time.deltaTime;
-                float t = elapsed / duration;
-                _phaseIndicatorText.transform.localScale = Vector3.Lerp(pulseScale, originalScale, t);
-                yield return null;
-            }
+        public void HideTurnInterstitial()
+        {
+            if (_turnInterstitialPanel != null)
+                _turnInterstitialPanel.SetActive(false);
+        }
 
-            _phaseIndicatorText.transform.localScale = originalScale;
+        public bool IsTurnInterstitialOpen()
+        {
+            return _turnInterstitialPanel != null && _turnInterstitialPanel.activeSelf;
         }
 
         private void CreateForecastPanel()

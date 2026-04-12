@@ -7,8 +7,8 @@ namespace TacticFantasy.Domain.Map
 {
     public interface IPathFinder
     {
-        List<(int, int)> FindPath(int startX, int startY, int targetX, int targetY, int maxMovement, IUnit unit, IGameMap map);
-        HashSet<(int, int)> GetMovementRange(int startX, int startY, int maxMovement, IUnit unit, IGameMap map);
+        List<(int, int)> FindPath(int startX, int startY, int targetX, int targetY, int maxMovement, IUnit unit, IGameMap map, IReadOnlyList<IUnit> allUnits = null);
+        HashSet<(int, int)> GetMovementRange(int startX, int startY, int maxMovement, IUnit unit, IGameMap map, IReadOnlyList<IUnit> allUnits = null);
     }
 
     public class PathFinder : IPathFinder
@@ -32,9 +32,12 @@ namespace TacticFantasy.Domain.Map
             }
         }
 
-        public List<(int, int)> FindPath(int startX, int startY, int targetX, int targetY, int maxMovement, IUnit unit, IGameMap map)
+        public List<(int, int)> FindPath(int startX, int startY, int targetX, int targetY, int maxMovement, IUnit unit, IGameMap map, IReadOnlyList<IUnit> allUnits = null)
         {
             if (!map.IsValidPosition(targetX, targetY))
+                return new List<(int, int)>();
+
+            if (allUnits != null && IsOccupiedByOther(targetX, targetY, unit, allUnits))
                 return new List<(int, int)>();
 
             var openSet = new List<Node>();
@@ -62,7 +65,7 @@ namespace TacticFantasy.Domain.Map
                 openSet.RemoveAt(current);
                 closedSet.Add((currentNode.X, currentNode.Y));
 
-                foreach (var neighbor in GetNeighbors(currentNode.X, currentNode.Y, map, unit))
+                foreach (var neighbor in GetNeighbors(currentNode.X, currentNode.Y, map, unit, allUnits))
                 {
                     if (closedSet.Contains(neighbor))
                         continue;
@@ -94,7 +97,7 @@ namespace TacticFantasy.Domain.Map
             return new List<(int, int)>();
         }
 
-        public HashSet<(int, int)> GetMovementRange(int startX, int startY, int maxMovement, IUnit unit, IGameMap map)
+        public HashSet<(int, int)> GetMovementRange(int startX, int startY, int maxMovement, IUnit unit, IGameMap map, IReadOnlyList<IUnit> allUnits = null)
         {
             var reachable = new HashSet<(int, int)>();
             var visited = new HashSet<(int, int)>();
@@ -115,7 +118,7 @@ namespace TacticFantasy.Domain.Map
                 {
                     reachable.Add((x, y));
 
-                    foreach (var neighbor in GetNeighbors(x, y, map, unit))
+                    foreach (var neighbor in GetNeighbors(x, y, map, unit, allUnits))
                     {
                         if (!visited.Contains(neighbor))
                         {
@@ -129,10 +132,19 @@ namespace TacticFantasy.Domain.Map
                 }
             }
 
+            if (allUnits != null)
+            {
+                foreach (var other in allUnits)
+                {
+                    if (other.Id != unit.Id && other.IsAlive)
+                        reachable.Remove((other.Position.x, other.Position.y));
+                }
+            }
+
             return reachable;
         }
 
-        private List<(int x, int y)> GetNeighbors(int x, int y, IGameMap map, IUnit unit)
+        private List<(int x, int y)> GetNeighbors(int x, int y, IGameMap map, IUnit unit, IReadOnlyList<IUnit> allUnits = null)
         {
             var neighbors = new List<(int, int)>();
             int[][] directions = new int[][]
@@ -154,12 +166,35 @@ namespace TacticFantasy.Domain.Map
                     bool isInfantry = unit.Class.MoveType == Units.MoveType.Infantry;
                     if (TerrainProperties.IsPassable(tile.Terrain, isInfantry))
                     {
+                        if (allUnits != null && IsOccupiedByEnemy(nx, ny, unit, allUnits))
+                            continue;
+
                         neighbors.Add((nx, ny));
                     }
                 }
             }
 
             return neighbors;
+        }
+
+        private static bool IsOccupiedByEnemy(int x, int y, IUnit mover, IReadOnlyList<IUnit> allUnits)
+        {
+            foreach (var other in allUnits)
+            {
+                if (other.Id != mover.Id && other.IsAlive && other.Position.x == x && other.Position.y == y && other.Team != mover.Team)
+                    return true;
+            }
+            return false;
+        }
+
+        private static bool IsOccupiedByOther(int x, int y, IUnit mover, IReadOnlyList<IUnit> allUnits)
+        {
+            foreach (var other in allUnits)
+            {
+                if (other.Id != mover.Id && other.IsAlive && other.Position.x == x && other.Position.y == y)
+                    return true;
+            }
+            return false;
         }
 
         private int GetMovementCost(int fromX, int fromY, int toX, int toY, IGameMap map, IUnit unit)

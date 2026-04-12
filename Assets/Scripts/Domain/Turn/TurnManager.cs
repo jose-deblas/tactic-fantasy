@@ -14,7 +14,16 @@ namespace TacticFantasy.Domain.Turn
         IUnit CurrentUnit { get; }
         bool HasCurrentUnitActed { get; }
 
+        /// <summary>Active victory condition for the current chapter (defaults to Rout).</summary>
+        IVictoryCondition VictoryCondition { get; }
+
         void Initialize(List<IUnit> units);
+
+        /// <summary>
+        /// Initialise with a specific victory condition. If null, defaults to Rout.
+        /// </summary>
+        void Initialize(List<IUnit> units, IVictoryCondition victoryCondition, IGameMap map = null);
+
         void MarkCurrentUnitAsActed();
         void AdvancePhase();
         GameState GetGameState();
@@ -36,6 +45,7 @@ namespace TacticFantasy.Domain.Turn
         private List<IUnit> _allUnits = new List<IUnit>();
         private int _currentUnitIndex = 0;
         private HashSet<int> _unitsWhoActed = new HashSet<int>();
+        private IGameMap _map;
 
         public Phase CurrentPhase { get; private set; } = Phase.PlayerPhase;
         public int TurnCount { get; private set; } = 0;
@@ -43,13 +53,23 @@ namespace TacticFantasy.Domain.Turn
         public IUnit CurrentUnit => _currentUnitIndex < GetPhaseUnits().Count ? GetPhaseUnits()[_currentUnitIndex] : null;
         public bool HasCurrentUnitActed => CurrentUnit != null && _unitsWhoActed.Contains(CurrentUnit.Id);
 
+        /// <inheritdoc/>
+        public IVictoryCondition VictoryCondition { get; private set; } = VictoryConditionFactory.Rout();
+
         public void Initialize(List<IUnit> units)
+        {
+            Initialize(units, null, null);
+        }
+
+        public void Initialize(List<IUnit> units, IVictoryCondition victoryCondition, IGameMap map = null)
         {
             _allUnits = new List<IUnit>(units);
             _currentUnitIndex = 0;
             _unitsWhoActed.Clear();
             CurrentPhase = Phase.PlayerPhase;
             TurnCount = 1;
+            VictoryCondition = victoryCondition ?? VictoryConditionFactory.Rout();
+            _map = map;
         }
 
         public void MarkCurrentUnitAsActed()
@@ -89,18 +109,16 @@ namespace TacticFantasy.Domain.Turn
         public GameState GetGameState()
         {
             var playerUnits = _allUnits.Where(u => u.Team == Team.PlayerTeam).ToList();
-            var enemyUnits = _allUnits.Where(u => u.Team == Team.EnemyTeam).ToList();
+            var enemyUnits  = _allUnits.Where(u => u.Team == Team.EnemyTeam).ToList();
 
-            bool allPlayersAlive = playerUnits.All(u => u.IsAlive);
-            bool allEnemiesAlive = enemyUnits.All(u => u.IsAlive);
+            var state = VictoryCondition.Evaluate(playerUnits, enemyUnits, TurnCount, _map);
 
-            if (!playerUnits.Any(u => u.IsAlive))
-                return GameState.PlayerLost;
-
-            if (!enemyUnits.Any(u => u.IsAlive))
-                return GameState.PlayerWon;
-
-            return GameState.InProgress;
+            return state switch
+            {
+                VictoryState.PlayerWon  => GameState.PlayerWon,
+                VictoryState.PlayerLost => GameState.PlayerLost,
+                _                       => GameState.InProgress
+            };
         }
 
         public void HealFortTiles(IGameMap map)

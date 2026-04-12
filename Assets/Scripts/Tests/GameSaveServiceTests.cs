@@ -19,7 +19,7 @@ namespace TacticFantasy.Tests
         {
             var stats = new CharacterStats(hp, 10, 0, 8, 7, 5, 5, 0, 5);
             var weapon = new Weapon("Iron Sword", WeaponType.SWORD, DamageType.Physical, 5, 5, 90, 0, 1, 1);
-            var classData = ClassData.Myrmidon();
+            var classData = ClassDataFactory.CreateMyrmidon();
             return new Unit(id, name, team, classData, stats, (0, 0), weapon);
         }
 

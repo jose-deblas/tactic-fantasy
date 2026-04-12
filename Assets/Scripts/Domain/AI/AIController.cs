@@ -57,9 +57,9 @@ namespace TacticFantasy.Domain.AI
 
             if (bestAttackOption.HasValue)
             {
-                var (targetPosition, target) = bestAttackOption.Value;
-                moveTarget = targetPosition;
-                attackTarget = target;
+                var option = bestAttackOption.Value;
+                moveTarget = option.position;
+                attackTarget = option.target;
             }
             else
             {
@@ -139,7 +139,7 @@ namespace TacticFantasy.Domain.AI
         private const int TriangleAdvantageBias      = 15;
         private const int TriangleDisadvantagePenalty = 30;
 
-        private (int, int, IUnit)? FindBestAttackPosition(IUnit unit, List<IUnit> enemies, HashSet<(int, int)> reachable, IGameMap map)
+        private ((int x, int y) position, IUnit target)? FindBestAttackPosition(IUnit unit, List<IUnit> enemies, HashSet<(int, int)> reachable, IGameMap map)
         {
             var validTargets = new List<(int x, int y, IUnit target, int score)>();
 

@@ -57,7 +57,7 @@ namespace TacticFantasy.Tests
                 int totalMovement = 0;
                 for (int i = 1; i < path.Count; i++)
                 {
-                    var tile = _map.GetTile(path[i].x, path[i].y);
+                    var tile = _map.GetTile(path[i].Item1, path[i].Item2);
                     totalMovement += TerrainProperties.GetMovementCost(tile.Terrain, true);
                 }
                 Assert.LessOrEqual(totalMovement, 1);

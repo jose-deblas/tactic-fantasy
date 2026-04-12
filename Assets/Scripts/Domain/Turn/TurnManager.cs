@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using TacticFantasy.Domain.Units;
+using TacticFantasy.Domain.Map;
 
 namespace TacticFantasy.Domain.Turn
 {

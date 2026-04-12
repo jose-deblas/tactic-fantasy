@@ -195,11 +195,11 @@ namespace TacticFantasy.Adapters
                     {
                         for (int dy = -unit.EquippedWeapon.MaxRange; dy <= unit.EquippedWeapon.MaxRange; dy++)
                         {
-                            int tx = pos.x + dx;
-                            int ty = pos.y + dy;
+                            int tx = pos.Item1 + dx;
+                            int ty = pos.Item2 + dy;
                             if (_gameMap.IsValidPosition(tx, ty) &&
-                                _gameMap.GetDistance(pos.x, pos.y, tx, ty) >= unit.EquippedWeapon.MinRange &&
-                                _gameMap.GetDistance(pos.x, pos.y, tx, ty) <= unit.EquippedWeapon.MaxRange)
+                                _gameMap.GetDistance(pos.Item1, pos.Item2, tx, ty) >= unit.EquippedWeapon.MinRange &&
+                                _gameMap.GetDistance(pos.Item1, pos.Item2, tx, ty) <= unit.EquippedWeapon.MaxRange)
                             {
                                 _currentAttackRange.Add((tx, ty));
                             }

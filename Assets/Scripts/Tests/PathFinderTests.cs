@@ -77,7 +77,7 @@ namespace TacticFantasy.Tests
         {
             var reachable = _pathFinder.GetMovementRange(0, 0, 5, _infantryUnit, _map);
 
-            Assert.Contains((0, 0), reachable);
+            Assert.IsTrue(reachable.Contains((0, 0)));
         }
 
         [Test]
@@ -104,7 +104,7 @@ namespace TacticFantasy.Tests
             var reachable = _pathFinder.GetMovementRange(7, 7, 0, _infantryUnit, _map);
 
             Assert.AreEqual(1, reachable.Count);
-            Assert.Contains((7, 7), reachable);
+            Assert.IsTrue(reachable.Contains((7, 7)));
         }
     }
 }

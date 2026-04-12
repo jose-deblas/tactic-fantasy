@@ -11,7 +11,7 @@ namespace TacticFantasy.Adapters
     {
         public void Start()
         {
-            if (FindObjectOfType<GameController>() == null)
+            if (FindFirstObjectByType<GameController>() == null)
             {
                 SetupGameScene();
             }

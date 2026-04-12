@@ -221,7 +221,7 @@ namespace TacticFantasy.Adapters
 
             if (path.Count > 0)
             {
-                unit.SetPosition(path[path.Count - 1].x, path[path.Count - 1].y);
+                unit.SetPosition(path[path.Count - 1].Item1, path[path.Count - 1].Item2);
                 _mapRenderer.SetSelectedUnit(null);
                 _mapRenderer.SetMovementRange(new HashSet<(int, int)>());
                 _mapRenderer.SetAttackRange(new HashSet<(int, int)>());
@@ -363,11 +363,11 @@ namespace TacticFantasy.Adapters
                 if (moveTarget.HasValue)
                 {
                     var path = _pathFinder.FindPath(enemyUnit.Position.x, enemyUnit.Position.y,
-                        moveTarget.Value.x, moveTarget.Value.y, enemyUnit.CurrentStats.MOV, enemyUnit, _gameMap);
+                        moveTarget.Value.Item1, moveTarget.Value.Item2, enemyUnit.CurrentStats.MOV, enemyUnit, _gameMap);
 
                     if (path.Count > 0)
                     {
-                        enemyUnit.SetPosition(path[path.Count - 1].x, path[path.Count - 1].y);
+                        enemyUnit.SetPosition(path[path.Count - 1].Item1, path[path.Count - 1].Item2);
                     }
                 }
 

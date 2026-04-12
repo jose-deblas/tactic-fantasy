@@ -41,10 +41,14 @@ namespace TacticFantasy.Adapters
             _turnManager.Initialize(_allUnits);
             // CRITICAL: Render all units immediately after initialization so they're visible on load
             _unitRenderer.UpdateAllUnits(_allUnits, _turnManager);
+            _uiManager.UpdatePhaseDisplay(_turnManager.CurrentPhase, _turnManager.TurnCount);
         }
 
         public void Update()
         {
+            if (_uiManager.IsTurnInterstitialOpen())
+                return;
+
             if (_turnManager.CurrentPhase == Phase.EnemyPhase && !_isExecutingEnemyTurn)
             {
                 _isExecutingEnemyTurn = true;
@@ -142,8 +146,7 @@ namespace TacticFantasy.Adapters
 
         private void HandleUnitClick(int x, int y)
         {
-            // NEW: Ignore input if menu is open
-            if (_uiManager.IsModalMenuOpen())
+            if (_uiManager.IsModalMenuOpen() || _uiManager.IsTurnInterstitialOpen())
                 return;
 
             if (_turnManager.CurrentPhase != Phase.PlayerPhase)
@@ -170,8 +173,7 @@ namespace TacticFantasy.Adapters
 
         private void HandleTileClick(int x, int y)
         {
-            // NEW: Ignore input if menu is open
-            if (_uiManager.IsModalMenuOpen())
+            if (_uiManager.IsModalMenuOpen() || _uiManager.IsTurnInterstitialOpen())
                 return;
 
             // NEW: Always show terrain info on tile click (even without unit selected)
@@ -220,6 +222,7 @@ namespace TacticFantasy.Adapters
             {
                 _turnManager.MarkUnitAsActed(_selectedUnit.Id);
                 _unitHasMoved = false;
+                CheckAllPlayerUnitsActed();
             }
 
             _selectedUnit = unit;
@@ -337,6 +340,7 @@ namespace TacticFantasy.Adapters
             }
 
             SelectUnit(null);
+            CheckAllPlayerUnitsActed();
         }
 
         private void RefreshUnit(IUnit refresher, IUnit target)
@@ -349,6 +353,7 @@ namespace TacticFantasy.Adapters
             _unitRenderer.UpdateAllUnits(_allUnits, _turnManager);
 
             SelectUnit(null);
+            CheckAllPlayerUnitsActed();
         }
 
         public void EndPlayerPhase()
@@ -356,16 +361,26 @@ namespace TacticFantasy.Adapters
             if (_turnManager.CurrentPhase == Phase.PlayerPhase)
             {
                 _unitHasMoved = false;
+                _uiManager.HideEndTurnPrompt();
                 _turnManager.AdvancePhase();
+                _uiManager.UpdatePhaseDisplay(_turnManager.CurrentPhase, _turnManager.TurnCount);
                 SelectUnit(null);
             }
         }
 
-        /// <summary>
-        /// Maneja el fin de turno por teclado (Space o Enter).
-        /// </summary>
+        private void CheckAllPlayerUnitsActed()
+        {
+            if (_turnManager.CurrentPhase == Phase.PlayerPhase && _turnManager.HaveAllPlayerUnitsActed())
+            {
+                _uiManager.ShowEndTurnPrompt();
+            }
+        }
+
         private void HandleEndTurnPressed()
         {
+            if (_uiManager.IsTurnInterstitialOpen())
+                return;
+
             if (_turnManager.CurrentPhase == Phase.PlayerPhase)
             {
                 EndPlayerPhase();
@@ -387,8 +402,7 @@ namespace TacticFantasy.Adapters
         /// </summary>
         private void HandleGamepadConfirm()
         {
-            // NEW: Ignore input if menu is open
-            if (_uiManager.IsModalMenuOpen())
+            if (_uiManager.IsModalMenuOpen() || _uiManager.IsTurnInterstitialOpen())
                 return;
 
             _inputHandler.SimulateGamepadClick(_gamepadCursorController.CursorPosition.x, _gamepadCursorController.CursorPosition.y);
@@ -412,6 +426,9 @@ namespace TacticFantasy.Adapters
         /// </summary>
         private void HandleGamepadEndTurn()
         {
+            if (_uiManager.IsTurnInterstitialOpen())
+                return;
+
             EndPlayerPhase();
         }
 
@@ -526,6 +543,12 @@ namespace TacticFantasy.Adapters
 
             _isExecutingEnemyTurn = false;
             _turnManager.AdvancePhase();
+            _uiManager.UpdatePhaseDisplay(_turnManager.CurrentPhase, _turnManager.TurnCount);
+
+            _uiManager.ShowTurnInterstitial(_turnManager.TurnCount, () =>
+            {
+                _unitRenderer.UpdateAllUnits(_allUnits, _turnManager);
+            });
         }
 
         private void HandleGameOver()

@@ -51,6 +51,7 @@
   <ItemGroup>
     <Compile Include="Assets/Scripts/Domain/Save/GameSnapshot.cs" />
     <Compile Include="Assets/Scripts/Domain/Turn/VictoryCondition.cs" />
+    <Compile Include="Assets/Scripts/Domain/Units/ClassPromotionService.cs" />
     <Compile Include="Assets/Scripts/Domain/Units/ClassData.cs" />
     <Compile Include="Assets/Scripts/Adapters/Persistence/JsonFileGameRepository.cs" />
     <Compile Include="Assets/Scripts/Domain/Map/TerrainType.cs" />
@@ -95,6 +96,7 @@
     <Compile Include="Assets/Scripts/Domain/Units/Unit.cs" />
     <Compile Include="Assets/Scripts/Tests/UnitDisplayFormatterTests.cs" />
     <Compile Include="Assets/Scripts/Tests/VictoryConditionTests.cs" />
+    <Compile Include="Assets/Scripts/Tests/ClassPromotionTests.cs" />
     <Compile Include="Assets/Scripts/Tests/WeaponTriangleTests.cs" />
     <Compile Include="Assets/Scripts/Tests/JsonFileGameRepositoryTests.cs" />
     <Compile Include="Assets/Scripts/Tests/TurnManagerTests.cs" />

@@ -136,6 +136,80 @@ namespace TacticFantasy.Domain.Units
             );
         }
 
+        // ── Promoted classes ──────────────────────────────────────────────────
+
+        public static IClassData CreateSwordmaster()
+        {
+            return new ClassData(
+                "Swordmaster",
+                new CharacterStats(24, 10, 0, 17, 18, 7, 8, 2, 6),
+                new CharacterStats(40, 26, 8, 30, 30, 25, 25, 14, 9),
+                new CharacterStats(65, 45, 5, 60, 65, 35, 25, 12, 0),
+                WeaponType.SWORD,
+                MoveType.Infantry
+            );
+        }
+
+        public static IClassData CreateGeneral()
+        {
+            return new ClassData(
+                "General",
+                new CharacterStats(26, 12, 0, 10, 8, 4, 15, 8, 4),
+                new CharacterStats(42, 28, 5, 24, 22, 20, 30, 20, 7),
+                new CharacterStats(70, 50, 5, 40, 35, 25, 35, 20, 0),
+                WeaponType.LANCE,
+                MoveType.Armored
+            );
+        }
+
+        public static IClassData CreateWarrior()
+        {
+            return new ClassData(
+                "Warrior",
+                new CharacterStats(30, 14, 0, 8, 9, 5, 10, 2, 6),
+                new CharacterStats(46, 34, 5, 24, 26, 22, 28, 10, 9),
+                new CharacterStats(75, 65, 0, 35, 40, 28, 25, 8, 0),
+                WeaponType.AXE,
+                MoveType.Infantry
+            );
+        }
+
+        public static IClassData CreateSage()
+        {
+            return new ClassData(
+                "Sage",
+                new CharacterStats(22, 0, 13, 10, 10, 7, 6, 12, 6),
+                new CharacterStats(36, 8, 30, 26, 26, 24, 18, 30, 9),
+                new CharacterStats(55, 5, 65, 40, 45, 35, 15, 40, 0),
+                WeaponType.FIRE,
+                MoveType.Infantry
+            );
+        }
+
+        public static IClassData CreateSniper()
+        {
+            return new ClassData(
+                "Sniper",
+                new CharacterStats(24, 10, 0, 16, 10, 7, 8, 4, 6),
+                new CharacterStats(38, 26, 5, 30, 27, 24, 24, 16, 9),
+                new CharacterStats(60, 45, 0, 60, 45, 35, 25, 14, 0),
+                WeaponType.BOW,
+                MoveType.Infantry
+            );
+        }
+
+        public static IClassData CreateBishop()
+        {
+            return new ClassData(
+                "Bishop",
+                new CharacterStats(20, 0, 12, 8, 8, 9, 5, 13, 6),
+                new CharacterStats(34, 0, 28, 22, 22, 28, 16, 28, 9),
+                new CharacterStats(50, 0, 60, 35, 35, 45, 14, 45, 0),
+                WeaponType.STAFF,
+                MoveType.Infantry
+            );
+        }
+
         public static IClassData[] GetAllClasses()
         {
             return new IClassData[]
@@ -147,7 +221,13 @@ namespace TacticFantasy.Domain.Units
                 CreateArcher(),
                 CreateCleric(),
                 CreateHeron(),
-                CreateDancer()
+                CreateDancer(),
+                CreateSwordmaster(),
+                CreateGeneral(),
+                CreateWarrior(),
+                CreateSage(),
+                CreateSniper(),
+                CreateBishop()
             };
         }
     }

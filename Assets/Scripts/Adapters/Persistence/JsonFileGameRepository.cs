@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Text.Json;
+using Newtonsoft.Json;
 using TacticFantasy.Domain.Save;
 using TacticFantasy.Domain.Turn;
 using TacticFantasy.Domain.Units;
@@ -29,8 +29,7 @@ namespace TacticFantasy.Adapters.Persistence
         {
             var dto = GameSnapshotDto.FromDomain(snapshot);
 
-            var options = new JsonSerializerOptions { WriteIndented = true };
-            var json    = JsonSerializer.Serialize(dto, options);
+            var json = JsonConvert.SerializeObject(dto, Formatting.Indented);
 
             var dir = Path.GetDirectoryName(_filePath);
             if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
@@ -44,7 +43,7 @@ namespace TacticFantasy.Adapters.Persistence
             if (!HasSave) return null;
 
             var json = File.ReadAllText(_filePath);
-            var dto  = JsonSerializer.Deserialize<GameSnapshotDto>(json);
+            var dto  = JsonConvert.DeserializeObject<GameSnapshotDto>(json);
             return dto.ToDomain();
         }
 

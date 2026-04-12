@@ -144,24 +144,39 @@ namespace TacticFantasy.Adapters
             buttonGO.transform.SetParent(_uiCanvas.transform);
 
             Image buttonImage = buttonGO.AddComponent<Image>();
-            buttonImage.color = new Color(0.2f, 0.2f, 0.2f);
-
             Button button = buttonGO.AddComponent<Button>();
             button.targetGraphic = buttonImage;
 
+            // NEW: Better color scheme with hover effects
+            var colors = button.colors;
+            colors.normalColor = new Color(0.15f, 0.35f, 0.65f, 0.9f);      // Nice blue
+            colors.highlightedColor = new Color(0.25f, 0.5f, 0.85f, 1f);    // Bright on hover
+            colors.pressedColor = new Color(0.1f, 0.25f, 0.5f, 1f);         // Dark on press
+            colors.selectedColor = new Color(0.2f, 0.4f, 0.7f, 0.95f);
+            colors.disabledColor = new Color(0.3f, 0.3f, 0.3f, 0.5f);
+            button.colors = colors;
+
+            // NEW: Larger size (200x50 vs 150x40)
             RectTransform buttonRT = buttonGO.GetComponent<RectTransform>();
             buttonRT.anchorMin = new Vector2(0.5f, 0);
             buttonRT.anchorMax = new Vector2(0.5f, 0);
-            buttonRT.offsetMin = new Vector2(-75, 10);
-            buttonRT.offsetMax = new Vector2(75, 50);
+            buttonRT.offsetMin = new Vector2(-100, 20);  // 200px wide
+            buttonRT.offsetMax = new Vector2(100, 70);   // 50px tall
 
+            // NEW: Add white border using Outline component
+            var outline = buttonGO.AddComponent<Outline>();
+            outline.effectColor = new Color(1f, 1f, 1f, 0.8f);
+            outline.effectDistance = new Vector2(2, -2);
+
+            // Text (larger font)
             GameObject textGO = new GameObject("Text");
             textGO.transform.SetParent(buttonGO.transform);
 
             Text buttonText = textGO.AddComponent<Text>();
             buttonText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
             buttonText.text = "End Turn";
-            buttonText.fontSize = 16;
+            buttonText.fontSize = 20;  // Larger (was 16)
+            buttonText.fontStyle = FontStyle.Bold;
             buttonText.alignment = TextAnchor.MiddleCenter;
             buttonText.color = Color.white;
 

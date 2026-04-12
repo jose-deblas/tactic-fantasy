@@ -12,6 +12,7 @@ namespace TacticFantasy.Adapters
     {
         public event Action<int, int> OnTileClicked;
         public event Action<int, int> OnUnitClicked;
+        public event Action OnEndTurnPressed;  // NEW: Keyboard shortcut for end turn
 
         private Camera _mainCamera;
         private const float TILE_SIZE = 1f;
@@ -25,6 +26,16 @@ namespace TacticFantasy.Adapters
         {
             if (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame)
                 HandleMouseClick();
+
+            // NEW: Space or Enter to end turn
+            if (Keyboard.current != null)
+            {
+                if (Keyboard.current.spaceKey.wasPressedThisFrame ||
+                    Keyboard.current.enterKey.wasPressedThisFrame)
+                {
+                    OnEndTurnPressed?.Invoke();
+                }
+            }
         }
 
         private void HandleMouseClick()

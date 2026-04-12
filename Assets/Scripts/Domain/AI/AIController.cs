@@ -118,6 +118,8 @@ namespace TacticFantasy.Domain.AI
         ///  - Base: target's current HP (lower HP → easier kill → preferred)
         ///  - Triangle advantage  : -15 bonus  (strongly prefer advantaged targets)
         ///  - Triangle disadvantage: +30 penalty (avoid unfavorable matchups)
+        ///  - Target is sleeping/stunned (no counter risk): -20 bonus
+        ///  - Target already has the same status our weapon inflicts: +20 penalty (redundant)
         /// A near-dead unit (HP ≤ weapon power) scores so low that it beats any
         /// triangle consideration — the finisher heuristic.
         /// </summary>
@@ -132,12 +134,30 @@ namespace TacticFantasy.Domain.AI
             else if (dmgBonus < 0)
                 score += TriangleDisadvantagePenalty; // disadvantage: less attractive
 
+            // Prefer targets that cannot counter-attack (sleep/stun)
+            if (target.ActiveStatus != null &&
+                (target.ActiveStatus.Type == StatusEffectType.Sleep ||
+                 target.ActiveStatus.Type == StatusEffectType.Stun))
+            {
+                score -= NoCounterBias;
+            }
+
+            // Avoid redundant status application (already has the same status our weapon inflicts)
+            if (attacker.EquippedWeapon.OnHitStatus != null &&
+                target.ActiveStatus != null &&
+                target.ActiveStatus.Type == attacker.EquippedWeapon.OnHitStatus.Value)
+            {
+                score += RedundantStatusPenalty;
+            }
+
             return score;
         }
 
         // Tuning constants for the target-selection heuristic
         private const int TriangleAdvantageBias      = 15;
         private const int TriangleDisadvantagePenalty = 30;
+        private const int NoCounterBias               = 20; // bonus for targets that can't counter (sleep/stun)
+        private const int RedundantStatusPenalty      = 20; // penalty for applying a status the target already has
 
         private ((int x, int y) position, IUnit target)? FindBestAttackPosition(IUnit unit, List<IUnit> enemies, HashSet<(int, int)> reachable, IGameMap map)
         {

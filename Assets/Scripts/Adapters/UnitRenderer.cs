@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using TacticFantasy.Domain.Units;
+using TacticFantasy.Domain.Turn;
 
 namespace TacticFantasy.Adapters
 {
@@ -17,7 +18,7 @@ namespace TacticFantasy.Adapters
         private const float HP_BAR_WIDTH = 0.8f;
         private const float HP_BAR_HEIGHT= 0.1f;
 
-        public void UpdateAllUnits(List<IUnit> units)
+        public void UpdateAllUnits(List<IUnit> units, ITurnManager turnManager = null)
         {
             var seen = new HashSet<int>();
 
@@ -25,7 +26,7 @@ namespace TacticFantasy.Adapters
             {
                 seen.Add(unit.Id);
                 if (unit.IsAlive)
-                    UpdateUnit(unit);
+                    UpdateUnit(unit, turnManager);
                 else
                     RemoveUnit(unit.Id);
             }
@@ -37,10 +38,10 @@ namespace TacticFantasy.Adapters
             foreach (var id in toRemove) RemoveUnit(id);
         }
 
-        private void UpdateUnit(IUnit unit)
+        private void UpdateUnit(IUnit unit, ITurnManager turnManager)
         {
             if (!_unitVisuals.TryGetValue(unit.Id, out var go))
-                go = CreateUnitVisual(unit);
+                go = CreateUnitVisual(unit, turnManager);
 
             // Posición: mismo XY que el tile, Z=-1 (por delante)
             go.transform.position = new Vector3(
@@ -48,15 +49,15 @@ namespace TacticFantasy.Adapters
                 unit.Position.y * TILE_SIZE,
                 -1f);
 
-            // Color según equipo + tinte de status
+            // Color según equipo + tinte de status + greyout si actuó
             var sr = go.GetComponent<SpriteRenderer>();
-            sr.color = GetUnitColor(unit);
+            sr.color = GetUnitColor(unit, turnManager);
 
             // Actualizar HP bar
             UpdateHPBar(go, unit);
         }
 
-        private GameObject CreateUnitVisual(IUnit unit)
+        private GameObject CreateUnitVisual(IUnit unit, ITurnManager turnManager)
         {
             var go = new GameObject($"Unit_{unit.Id}_{unit.Name}");
             go.transform.SetParent(transform);
@@ -64,7 +65,7 @@ namespace TacticFantasy.Adapters
             // Círculo usando un sprite de disco
             var sr = go.AddComponent<SpriteRenderer>();
             sr.sprite       = CreateCircleSprite(32);
-            sr.color        = GetUnitColor(unit);
+            sr.color        = GetUnitColor(unit, turnManager);
             sr.sortingOrder = 1;
             go.transform.localScale = Vector3.one * UNIT_RADIUS * 2f;
 
@@ -134,12 +135,18 @@ namespace TacticFantasy.Adapters
             }
         }
 
-        private Color GetUnitColor(IUnit unit)
+        private Color GetUnitColor(IUnit unit, ITurnManager turnManager)
         {
             // Tinte base por equipo
             Color baseColor = unit.Team == Team.PlayerTeam
                 ? new Color(0.2f, 0.4f, 1f)   // azul
                 : new Color(1f,   0.2f, 0.2f); // rojo
+
+            // Greyout si la unidad ya actuó
+            if (turnManager != null && turnManager.HasUnitActed(unit.Id))
+            {
+                baseColor = Color.Lerp(baseColor, Color.grey, 0.6f);
+            }
 
             // Tinte de status
             if (unit.ActiveStatus != null)

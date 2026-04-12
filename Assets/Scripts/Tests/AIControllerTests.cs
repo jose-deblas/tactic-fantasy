@@ -201,5 +201,85 @@ namespace TacticFantasy.Tests
             Assert.AreEqual(2, moveTarget.Value.x,
                 "AI should prefer the Fort tile (col2) over the Forest tile (col1)");
         }
+
+        // ---- status-aware target selection ---------------------------------
+
+        /// <summary>
+        /// A sleeping target cannot counter-attack, so the AI should prefer
+        /// attacking the sleeping unit over an equally healthy, non-sleeping one.
+        /// </summary>
+        [Test]
+        public void DecideAction_PrefersAttacking_SleepingTarget()
+        {
+            // Two adjacent player units, same HP. One is asleep.
+            IUnit enemy        = MakeEnemy(10, WeaponType.SWORD, pos: (3, 3));
+            IUnit awakePlayer  = MakePlayer(1,  WeaponType.SWORD, hp: 20, pos: (2, 3));
+            IUnit asleepPlayer = MakePlayer(2,  WeaponType.SWORD, hp: 20, pos: (4, 3));
+
+            // Apply Sleep to the second player
+            asleepPlayer.ApplyStatus(new StatusEffect(StatusEffectType.Sleep, 3));
+
+            var allUnits = new List<IUnit> { enemy, awakePlayer, asleepPlayer };
+
+            _ai.DecideAction(enemy, allUnits, _map, _pathFinder,
+                out _, out IUnit attackTarget, out _);
+
+            Assert.IsNotNull(attackTarget, "AI must select an attack target");
+            Assert.AreEqual(asleepPlayer.Id, attackTarget.Id,
+                "AI should prefer the sleeping target (no counter-attack risk)");
+        }
+
+        /// <summary>
+        /// A stunned target cannot counter-attack, so it should also be preferred
+        /// over a healthy, non-stunned one.
+        /// </summary>
+        [Test]
+        public void DecideAction_PrefersAttacking_StunnedTarget()
+        {
+            IUnit enemy        = MakeEnemy(10, WeaponType.SWORD, pos: (3, 3));
+            IUnit healthyPlayer = MakePlayer(1,  WeaponType.SWORD, hp: 20, pos: (2, 3));
+            IUnit stunnedPlayer = MakePlayer(2,  WeaponType.SWORD, hp: 20, pos: (4, 3));
+
+            stunnedPlayer.ApplyStatus(new StatusEffect(StatusEffectType.Stun, 1));
+
+            var allUnits = new List<IUnit> { enemy, healthyPlayer, stunnedPlayer };
+
+            _ai.DecideAction(enemy, allUnits, _map, _pathFinder,
+                out _, out IUnit attackTarget, out _);
+
+            Assert.IsNotNull(attackTarget);
+            Assert.AreEqual(stunnedPlayer.Id, attackTarget.Id,
+                "AI should prefer the stunned target (no counter-attack risk)");
+        }
+
+        /// <summary>
+        /// A target already poisoned should be deprioritized when the attacker
+        /// uses a poison weapon (redundant application). A healthy target should
+        /// be attacked instead.
+        /// </summary>
+        [Test]
+        public void DecideAction_Deprioritsizes_AlreadyPoisonedTarget_WhenAttackerHasPoisonWeapon()
+        {
+            // Create a poison sword attacker
+            var poisonWeapon = new Weapon("PoisonSword", WeaponType.SWORD, DamageType.Physical,
+                5, 0, 80, 0, 1, 1, onHitStatus: StatusEffectType.Poison);
+            var stats = new CharacterStats(20, 5, 0, 5, 5, 5, 5, 0, 5);
+            IUnit enemy = new Unit(10, "PoisonEnemy", Team.EnemyTeam,
+                ClassDataFactory.CreateMyrmidon(), stats, (3, 3), poisonWeapon);
+
+            IUnit healthyPlayer  = MakePlayer(1, WeaponType.SWORD, hp: 20, pos: (2, 3));
+            IUnit poisonedPlayer = MakePlayer(2, WeaponType.SWORD, hp: 20, pos: (4, 3));
+            poisonedPlayer.ApplyStatus(new StatusEffect(StatusEffectType.Poison, 3));
+
+            var allUnits = new List<IUnit> { enemy, healthyPlayer, poisonedPlayer };
+
+            _ai.DecideAction(enemy, allUnits, _map, _pathFinder,
+                out _, out IUnit attackTarget, out _);
+
+            Assert.IsNotNull(attackTarget);
+            Assert.AreEqual(healthyPlayer.Id, attackTarget.Id,
+                "AI with poison weapon should attack the healthy target, not the already-poisoned one");
+        }
     }
 }
+

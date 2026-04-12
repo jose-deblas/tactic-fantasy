@@ -74,6 +74,12 @@ namespace TacticFantasy.Domain.Units
                 onHitStatus: StatusEffectType.Sleep, onHitStatusDuration: 2);
         }
 
+        /// <summary>Refresh staff — allows refreshing an ally who has already acted this turn.</summary>
+        public static IWeapon CreateRefreshStaff()
+        {
+            return new Weapon("Refresh", WeaponType.REFRESH, DamageType.Physical, 0, 0, 100, 0, 1, 1);
+        }
+
         public static IWeapon GetWeaponForClass(WeaponType weaponType)
         {
             return weaponType switch
@@ -84,6 +90,7 @@ namespace TacticFantasy.Domain.Units
                 WeaponType.FIRE => CreateFireTome(),
                 WeaponType.BOW => CreateIronBow(),
                 WeaponType.STAFF => CreateHealStaff(),
+                WeaponType.REFRESH => CreateRefreshStaff(),
                 _ => throw new ArgumentException($"Unknown weapon type: {weaponType}")
             };
         }

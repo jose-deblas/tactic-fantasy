@@ -19,6 +19,9 @@ namespace TacticFantasy.Domain.Turn
         void AdvancePhase();
         GameState GetGameState();
         void HealFortTiles(IGameMap map);
+        bool HasUnitActed(int unitId);
+        bool CanRefreshTarget(IUnit refresher, IUnit target);
+        void RefreshUnit(int targetUnitId);
     }
 
     public enum GameState
@@ -112,6 +115,42 @@ namespace TacticFantasy.Domain.Turn
                     unit.Heal(healAmount);
                 }
             }
+        }
+
+        public bool HasUnitActed(int unitId)
+        {
+            return _unitsWhoActed.Contains(unitId);
+        }
+
+        public bool CanRefreshTarget(IUnit refresher, IUnit target)
+        {
+            // Validation rules:
+            // 1. Refresher must have REFRESH weapon type
+            if (refresher.EquippedWeapon.Type != Weapons.WeaponType.REFRESH)
+                return false;
+
+            // 2. Target must be an ally
+            if (target.Team != refresher.Team)
+                return false;
+
+            // 3. Target must have already acted
+            if (!_unitsWhoActed.Contains(target.Id))
+                return false;
+
+            // 4. Target must be alive and able to act
+            if (!target.IsAlive || !target.CanAct)
+                return false;
+
+            // 5. Cannot refresh self
+            if (refresher.Id == target.Id)
+                return false;
+
+            return true;
+        }
+
+        public void RefreshUnit(int targetUnitId)
+        {
+            _unitsWhoActed.Remove(targetUnitId);
         }
 
         private List<IUnit> GetPhaseUnits()

@@ -13,6 +13,7 @@ namespace TacticFantasy.Adapters
         private Text _phaseIndicatorText;
         private Text _unitInfoText;
         private Text _combatResultText;
+        private Text _infoMessageText;
         private GameObject _gameOverPanel;
         private Text _gameOverText;
         private Button _endTurnButton;
@@ -43,6 +44,7 @@ namespace TacticFantasy.Adapters
             CreatePhaseIndicator();
             CreateUnitInfoPanel();
             CreateCombatResultText();
+            CreateInfoMessageText();
             CreateEndTurnButton();
             CreateGameOverPanel();
         }
@@ -253,6 +255,40 @@ namespace TacticFantasy.Adapters
         private void ClearCombatResultText()
         {
             _combatResultText.text = "";
+        }
+
+        private void CreateInfoMessageText()
+        {
+            GameObject textGO = new GameObject("InfoMessageText");
+            textGO.transform.SetParent(_uiCanvas.transform);
+
+            _infoMessageText = textGO.AddComponent<Text>();
+            _infoMessageText.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+            _infoMessageText.text = "";
+            _infoMessageText.fontSize = 16;
+            _infoMessageText.alignment = TextAnchor.MiddleCenter;
+            _infoMessageText.color = new Color(0.2f, 1f, 1f); // Cyan claro
+
+            RectTransform rt = textGO.GetComponent<RectTransform>();
+            rt.anchorMin = new Vector2(0.5f, 0.5f);
+            rt.anchorMax = new Vector2(0.5f, 0.5f);
+            rt.offsetMin = new Vector2(-200, 50);
+            rt.offsetMax = new Vector2(200, 100);
+        }
+
+        public void ShowInfoMessage(string message)
+        {
+            if (_infoMessageText != null)
+            {
+                _infoMessageText.text = message;
+                CancelInvoke("ClearInfoMessage");
+                Invoke("ClearInfoMessage", 2f);
+            }
+        }
+
+        private void ClearInfoMessage()
+        {
+            _infoMessageText.text = "";
         }
 
         public void UpdatePhaseDisplay(Phase phase, int turnCount)

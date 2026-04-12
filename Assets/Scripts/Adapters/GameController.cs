@@ -21,6 +21,8 @@ namespace TacticFantasy.Adapters
         private UnitRenderer _unitRenderer;
         private UIManager _uiManager;
         private InputHandler _inputHandler;
+        private GamepadCursorController _gamepadCursorController;
+        private CursorRenderer _cursorRenderer;
 
         private List<IUnit> _allUnits;
         private IUnit _selectedUnit;
@@ -28,6 +30,7 @@ namespace TacticFantasy.Adapters
         private HashSet<(int, int)> _currentAttackRange;
 
         private bool _isExecutingEnemyTurn = false;
+        private bool _isShowingAttackRange = false;
 
         public void Awake()
         {
@@ -69,10 +72,23 @@ namespace TacticFantasy.Adapters
             _unitRenderer = GetComponent<UnitRenderer>() ?? gameObject.AddComponent<UnitRenderer>();
             _uiManager = GetComponent<UIManager>() ?? gameObject.AddComponent<UIManager>();
             _inputHandler = GetComponent<InputHandler>() ?? gameObject.AddComponent<InputHandler>();
+            _gamepadCursorController = GetComponent<GamepadCursorController>() ?? gameObject.AddComponent<GamepadCursorController>();
+            _cursorRenderer = GetComponent<CursorRenderer>() ?? gameObject.AddComponent<CursorRenderer>();
 
             _mapRenderer.Initialize(_gameMap);
+            _gamepadCursorController.Initialize(_gameMap);
+            _cursorRenderer.Initialize();
+
+            // Suscribirse a eventos del ratón
             _inputHandler.OnTileClicked += HandleTileClick;
             _inputHandler.OnUnitClicked += HandleUnitClick;
+
+            // Suscribirse a eventos del mando
+            _gamepadCursorController.OnCursorMoved += HandleGamepadCursorMoved;
+            _gamepadCursorController.OnConfirm += HandleGamepadConfirm;
+            _gamepadCursorController.OnCancel += HandleGamepadCancel;
+            _gamepadCursorController.OnEndTurn += HandleGamepadEndTurn;
+            _gamepadCursorController.OnToggleAttackRange += HandleGamepadToggleAttackRange;
         }
 
         private void CreateTeams()
@@ -241,6 +257,95 @@ namespace TacticFantasy.Adapters
             {
                 _turnManager.AdvancePhase();
                 SelectUnit(null);
+            }
+        }
+
+        /// <summary>
+        /// Maneja el movimiento del cursor del mando.
+        /// Actualiza la posición visual del cursor en el mapa.
+        /// </summary>
+        private void HandleGamepadCursorMoved((int x, int y) position)
+        {
+            _cursorRenderer.UpdateCursorPosition(position.x, position.y);
+        }
+
+        /// <summary>
+        /// Maneja la confirmación del mando (botón A).
+        /// Simula un clic en la posición actual del cursor del mando.
+        /// </summary>
+        private void HandleGamepadConfirm()
+        {
+            _inputHandler.SimulateGamepadClick(_gamepadCursorController.CursorPosition.x, _gamepadCursorController.CursorPosition.y);
+        }
+
+        /// <summary>
+        /// Maneja la cancelación del mando (botón B).
+        /// Deselecciona la unidad actualmente seleccionada.
+        /// </summary>
+        private void HandleGamepadCancel()
+        {
+            if (_turnManager.CurrentPhase == Phase.PlayerPhase)
+            {
+                SelectUnit(null);
+            }
+        }
+
+        /// <summary>
+        /// Maneja el fin de turno del mando (botón X).
+        /// Avanza la fase del juego si es el turno del jugador.
+        /// </summary>
+        private void HandleGamepadEndTurn()
+        {
+            EndPlayerPhase();
+        }
+
+        /// <summary>
+        /// Maneja el toggle del rango de ataque del mando (botón Y).
+        /// Muestra u oculta alternativamente los rangos de ataque de las unidades enemigas.
+        /// </summary>
+        private void HandleGamepadToggleAttackRange()
+        {
+            _isShowingAttackRange = !_isShowingAttackRange;
+
+            if (_isShowingAttackRange)
+            {
+                // Mostrar rangos de ataque de todas las unidades enemigas vivas
+                var allEnemyAttackRanges = new HashSet<(int, int)>();
+
+                foreach (var enemy in _allUnits)
+                {
+                    if (enemy.Team == Team.EnemyTeam && enemy.IsAlive)
+                    {
+                        int maxRange = enemy.EquippedWeapon.MaxRange;
+                        int minRange = enemy.EquippedWeapon.MinRange;
+
+                        // Calcular rango de ataque desde la posición del enemigo
+                        for (int dx = -maxRange; dx <= maxRange; dx++)
+                        {
+                            for (int dy = -maxRange; dy <= maxRange; dy++)
+                            {
+                                int tx = enemy.Position.x + dx;
+                                int ty = enemy.Position.y + dy;
+                                int distance = _gameMap.GetDistance(enemy.Position.x, enemy.Position.y, tx, ty);
+
+                                if (_gameMap.IsValidPosition(tx, ty) && distance >= minRange && distance <= maxRange)
+                                {
+                                    allEnemyAttackRanges.Add((tx, ty));
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Mostrar los rangos
+                _mapRenderer.SetAttackRange(allEnemyAttackRanges);
+                _uiManager.ShowInfoMessage("Enemy attack ranges shown");
+            }
+            else
+            {
+                // Ocultar los rangos (volver al estado anterior)
+                _mapRenderer.SetAttackRange(new HashSet<(int, int)>());
+                _uiManager.ShowInfoMessage("Enemy attack ranges hidden");
             }
         }
 

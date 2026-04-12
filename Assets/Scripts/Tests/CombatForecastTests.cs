@@ -39,7 +39,7 @@ namespace TacticFantasy.Tests
         {
             var unit = new Unit(
                 id, "Knight", team,
-                ClassDataFactory.CreateKnight(),
+                ClassDataFactory.CreateSoldier(),
                 new CharacterStats(hp: 24, str: 8, mag: 0, skl: 7, spd: 5, lck: 2, def: 10, res: 2, mov: 5),
                 (x, y),
                 WeaponFactory.CreateIronLance()

@@ -1,220 +1,196 @@
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UI;
 using TacticFantasy.Domain.Units;
 
 namespace TacticFantasy.Adapters
 {
+    /// <summary>
+    /// Renderiza las unidades en 2D como círculos coloreados con barra de HP.
+    /// Plano Z=-1 para que queden por delante de los tiles (Z=0).
+    /// </summary>
     public class UnitRenderer : MonoBehaviour
     {
         private Dictionary<int, GameObject> _unitVisuals = new Dictionary<int, GameObject>();
-        private const float TILE_SIZE = 1f;
-        private const float UNIT_RADIUS = 0.3f;
+
+        private const float UNIT_RADIUS  = 0.35f;
+        private const float TILE_SIZE    = 1f;
+        private const float HP_BAR_WIDTH = 0.8f;
+        private const float HP_BAR_HEIGHT= 0.1f;
 
         public void UpdateAllUnits(List<IUnit> units)
         {
+            var seen = new HashSet<int>();
+
             foreach (var unit in units)
             {
-                UpdateUnitVisual(unit);
+                seen.Add(unit.Id);
+                if (unit.IsAlive)
+                    UpdateUnit(unit);
+                else
+                    RemoveUnit(unit.Id);
             }
 
-            var unitsToRemove = new List<int>();
-            foreach (var unitId in _unitVisuals.Keys)
-            {
-                if (!units.Exists(u => u.Id == unitId))
-                {
-                    unitsToRemove.Add(unitId);
-                }
-            }
-
-            foreach (var unitId in unitsToRemove)
-            {
-                if (_unitVisuals.TryGetValue(unitId, out var go))
-                {
-                    Destroy(go);
-                    _unitVisuals.Remove(unitId);
-                }
-            }
+            // Limpiar unidades que ya no existen
+            var toRemove = new List<int>();
+            foreach (var id in _unitVisuals.Keys)
+                if (!seen.Contains(id)) toRemove.Add(id);
+            foreach (var id in toRemove) RemoveUnit(id);
         }
 
-        private void UpdateUnitVisual(IUnit unit)
+        private void UpdateUnit(IUnit unit)
         {
-            if (!_unitVisuals.TryGetValue(unit.Id, out var unitGO))
-            {
-                unitGO = CreateUnitVisual(unit);
-                _unitVisuals[unit.Id] = unitGO;
-            }
+            if (!_unitVisuals.TryGetValue(unit.Id, out var go))
+                go = CreateUnitVisual(unit);
 
-            unitGO.transform.position = new Vector3(unit.Position.x * TILE_SIZE + TILE_SIZE * 0.5f, 0.5f, unit.Position.y * TILE_SIZE + TILE_SIZE * 0.5f);
-            unitGO.name = unit.Name;
+            // Posición: mismo XY que el tile, Z=-1 (por delante)
+            go.transform.position = new Vector3(
+                unit.Position.x * TILE_SIZE,
+                unit.Position.y * TILE_SIZE,
+                -1f);
 
-            var hpBar = unitGO.GetComponentInChildren<Canvas>();
-            if (hpBar != null)
-            {
-                UpdateHPBar(hpBar, unit);
-            }
+            // Color según equipo + tinte de status
+            var sr = go.GetComponent<SpriteRenderer>();
+            sr.color = GetUnitColor(unit);
 
-            var meshRenderer = unitGO.GetComponent<MeshRenderer>();
-            if (meshRenderer != null)
+            // Actualizar HP bar
+            UpdateHPBar(go, unit);
+        }
+
+        private GameObject CreateUnitVisual(IUnit unit)
+        {
+            var go = new GameObject($"Unit_{unit.Id}_{unit.Name}");
+            go.transform.SetParent(transform);
+
+            // Círculo usando un sprite de disco
+            var sr = go.AddComponent<SpriteRenderer>();
+            sr.sprite       = CreateCircleSprite(32);
+            sr.color        = GetUnitColor(unit);
+            sr.sortingOrder = 1;
+            go.transform.localScale = Vector3.one * UNIT_RADIUS * 2f;
+
+            // HP bar como hijo
+            CreateHPBar(go, unit);
+
+            _unitVisuals[unit.Id] = go;
+            return go;
+        }
+
+        private void CreateHPBar(GameObject parent, IUnit unit)
+        {
+            var bar = new GameObject("HPBar");
+            bar.transform.SetParent(parent.transform);
+            bar.transform.localPosition = new Vector3(0f, 0.65f, 0f); // encima del círculo
+            bar.transform.localScale    = Vector3.one;
+
+            // Fondo (gris)
+            var bg = new GameObject("BG");
+            bg.transform.SetParent(bar.transform);
+            bg.transform.localPosition = Vector3.zero;
+            bg.transform.localScale    = new Vector3(HP_BAR_WIDTH, HP_BAR_HEIGHT, 1f);
+            var bgSr = bg.AddComponent<SpriteRenderer>();
+            bgSr.sprite       = CreateSquareSprite();
+            bgSr.color        = new Color(0.2f, 0.2f, 0.2f);
+            bgSr.sortingOrder = 2;
+
+            // Relleno (verde)
+            var fill = new GameObject("Fill");
+            fill.transform.SetParent(bar.transform);
+            fill.transform.localPosition = new Vector3(-HP_BAR_WIDTH / 2f + HP_BAR_WIDTH / 2f, 0f, 0f);
+            fill.transform.localScale    = new Vector3(HP_BAR_WIDTH, HP_BAR_HEIGHT, 1f);
+            var fillSr = fill.AddComponent<SpriteRenderer>();
+            fillSr.sprite       = CreateSquareSprite();
+            fillSr.color        = Color.green;
+            fillSr.sortingOrder = 3;
+        }
+
+        private void UpdateHPBar(GameObject go, IUnit unit)
+        {
+            var bar  = go.transform.Find("HPBar");
+            if (bar == null) return;
+            var fill = bar.Find("Fill");
+            if (fill == null) return;
+
+            float ratio = (float)unit.CurrentHP / unit.MaxHP;
+            ratio = Mathf.Clamp01(ratio);
+
+            // Escalar horizontalmente desde la izquierda
+            var s = fill.localScale;
+            fill.localScale = new Vector3(HP_BAR_WIDTH * ratio, s.y, s.z);
+            fill.localPosition = new Vector3(
+                -HP_BAR_WIDTH / 2f + (HP_BAR_WIDTH * ratio) / 2f,
+                0f, 0f);
+
+            var fillSr = fill.GetComponent<SpriteRenderer>();
+            fillSr.color = ratio > 0.5f ? Color.green :
+                           ratio > 0.25f ? Color.yellow : Color.red;
+        }
+
+        private void RemoveUnit(int id)
+        {
+            if (_unitVisuals.TryGetValue(id, out var go))
             {
-                meshRenderer.material.color = GetUnitColor(unit);
+                Destroy(go);
+                _unitVisuals.Remove(id);
             }
         }
 
         private Color GetUnitColor(IUnit unit)
         {
-            if (!unit.IsAlive)
-                return Color.gray;
+            // Tinte base por equipo
+            Color baseColor = unit.Team == Team.PlayerTeam
+                ? new Color(0.2f, 0.4f, 1f)   // azul
+                : new Color(1f,   0.2f, 0.2f); // rojo
 
-            // Status tints override team color
+            // Tinte de status
             if (unit.ActiveStatus != null)
             {
-                return unit.ActiveStatus.Type switch
+                baseColor = unit.ActiveStatus.Type switch
                 {
-                    StatusEffectType.Poison => new Color(0.6f, 0.2f, 0.8f),   // purple-ish
-                    StatusEffectType.Sleep  => new Color(0.4f, 0.8f, 1.0f),   // pale blue
-                    StatusEffectType.Stun   => new Color(1.0f, 0.85f, 0.1f),  // yellow
-                    _                       => unit.Team == Team.PlayerTeam ? Color.blue : Color.red
+                    StatusEffectType.Poison => Color.Lerp(baseColor, new Color(0.6f, 0.1f, 0.6f), 0.5f),
+                    StatusEffectType.Sleep  => Color.Lerp(baseColor, new Color(0.5f, 0.5f, 1f),   0.5f),
+                    StatusEffectType.Stun   => Color.Lerp(baseColor, Color.yellow,                  0.4f),
+                    _                       => baseColor
                 };
             }
 
-            return unit.Team == Team.PlayerTeam ? Color.blue : Color.red;
+            return baseColor;
         }
 
-        private GameObject CreateUnitVisual(IUnit unit)
+        // --- Sprites generados en runtime ---
+
+        private static Sprite _squareSprite;
+        private static Sprite CreateSquareSprite()
         {
-            GameObject unitGO = new GameObject($"Unit_{unit.Name}");
-            unitGO.transform.SetParent(transform);
+            if (_squareSprite != null) return _squareSprite;
+            var tex = new Texture2D(2, 2);
+            tex.SetPixels(new[] { Color.white, Color.white, Color.white, Color.white });
+            tex.Apply();
+            _squareSprite = Sprite.Create(tex, new Rect(0, 0, 2, 2), new Vector2(0.5f, 0.5f), 2f);
+            return _squareSprite;
+        }
 
-            Mesh sphereMesh = new Mesh();
-            int meridians = 16;
-            int parallels = 8;
-            Vector3[] vertices = new Vector3[(meridians + 1) * (parallels + 1)];
-            int[] triangles = new int[meridians * parallels * 6];
+        private static Sprite CreateCircleSprite(int resolution)
+        {
+            var tex = new Texture2D(resolution, resolution);
+            var pixels = new Color[resolution * resolution];
+            float center = resolution / 2f;
+            float radius = resolution / 2f - 1f;
 
-            for (int p = 0; p <= parallels; p++)
+            for (int i = 0; i < pixels.Length; i++)
             {
-                float phi = Mathf.PI * p / parallels;
-                for (int m = 0; m <= meridians; m++)
-                {
-                    float theta = 2 * Mathf.PI * m / meridians;
-                    int idx = p * (meridians + 1) + m;
-                    vertices[idx] = new Vector3(
-                        UNIT_RADIUS * Mathf.Sin(phi) * Mathf.Cos(theta),
-                        UNIT_RADIUS * Mathf.Cos(phi),
-                        UNIT_RADIUS * Mathf.Sin(phi) * Mathf.Sin(theta)
-                    );
-                }
+                int px = i % resolution;
+                int py = i / resolution;
+                float dx = px - center;
+                float dy = py - center;
+                pixels[i] = (dx * dx + dy * dy <= radius * radius) ? Color.white : Color.clear;
             }
 
-            int triIdx = 0;
-            for (int p = 0; p < parallels; p++)
-            {
-                for (int m = 0; m < meridians; m++)
-                {
-                    int a = p * (meridians + 1) + m;
-                    int b = a + 1;
-                    int c = (p + 1) * (meridians + 1) + m;
-                    int d = c + 1;
-
-                    triangles[triIdx++] = a;
-                    triangles[triIdx++] = c;
-                    triangles[triIdx++] = b;
-
-                    triangles[triIdx++] = b;
-                    triangles[triIdx++] = c;
-                    triangles[triIdx++] = d;
-                }
-            }
-
-            sphereMesh.vertices = vertices;
-            sphereMesh.triangles = triangles;
-            sphereMesh.RecalculateNormals();
-
-            MeshFilter meshFilter = unitGO.AddComponent<MeshFilter>();
-            meshFilter.mesh = sphereMesh;
-
-            MeshRenderer meshRenderer = unitGO.AddComponent<MeshRenderer>();
-            meshRenderer.material = new Material(Shader.Find("Standard"));
-            meshRenderer.material.color = unit.Team == Team.PlayerTeam ? Color.blue : Color.red;
-
-            unitGO.AddComponent<SphereCollider>();
-
-            CreateHPBar(unitGO, unit);
-
-            return unitGO;
-        }
-
-        private void CreateHPBar(GameObject unitGO, IUnit unit)
-        {
-            GameObject canvasGO = new GameObject("HPCanvas");
-            canvasGO.transform.SetParent(unitGO.transform);
-            canvasGO.transform.localPosition = Vector3.up * 0.8f;
-
-            Canvas canvas = canvasGO.AddComponent<Canvas>();
-            canvas.renderMode = RenderMode.WorldSpace;
-
-            RectTransform canvasRT = canvasGO.GetComponent<RectTransform>();
-            canvasRT.sizeDelta = new Vector2(0.8f, 0.1f);
-            canvasRT.localScale = Vector3.one * 0.005f;
-
-            GameObject bgGO = new GameObject("Background");
-            bgGO.transform.SetParent(canvasGO.transform);
-            Image bgImage = bgGO.AddComponent<Image>();
-            bgImage.color = Color.black;
-            RectTransform bgRT = bgGO.GetComponent<RectTransform>();
-            bgRT.anchorMin = Vector2.zero;
-            bgRT.anchorMax = Vector2.one;
-            bgRT.offsetMin = Vector2.zero;
-            bgRT.offsetMax = Vector2.zero;
-
-            GameObject fillGO = new GameObject("Fill");
-            fillGO.transform.SetParent(canvasGO.transform);
-            Image fillImage = fillGO.AddComponent<Image>();
-            fillImage.color = Color.green;
-            RectTransform fillRT = fillGO.GetComponent<RectTransform>();
-            fillRT.anchorMin = Vector2.zero;
-            fillRT.anchorMax = Vector2.one;
-            fillRT.offsetMin = Vector2.zero;
-            fillRT.offsetMax = Vector2.zero;
-
-            UnitHPBar hpBar = canvasGO.AddComponent<UnitHPBar>();
-            hpBar.SetFillImage(fillImage);
-            hpBar.SetUnit(unit);
-        }
-
-        private void UpdateHPBar(Canvas canvas, IUnit unit)
-        {
-            var hpBar = canvas.GetComponent<UnitHPBar>();
-            if (hpBar != null)
-            {
-                hpBar.UpdateHP();
-            }
-        }
-    }
-
-    public class UnitHPBar : MonoBehaviour
-    {
-        private Image _fillImage;
-        private IUnit _unit;
-
-        public void SetFillImage(Image fillImage)
-        {
-            _fillImage = fillImage;
-        }
-
-        public void SetUnit(IUnit unit)
-        {
-            _unit = unit;
-        }
-
-        public void UpdateHP()
-        {
-            if (_unit != null && _fillImage != null)
-            {
-                float fillAmount = (float)_unit.CurrentHP / _unit.MaxHP;
-                _fillImage.fillAmount = fillAmount;
-            }
+            tex.SetPixels(pixels);
+            tex.Apply();
+            return Sprite.Create(tex,
+                new Rect(0, 0, resolution, resolution),
+                new Vector2(0.5f, 0.5f),
+                resolution);
         }
     }
 }

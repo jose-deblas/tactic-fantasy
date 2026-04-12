@@ -5,126 +5,121 @@ using TacticFantasy.Domain.Units;
 
 namespace TacticFantasy.Adapters
 {
+    /// <summary>
+    /// Renderiza el mapa en 2D usando sprites coloreados en el plano XY.
+    /// Cada tile es un quad con SpriteRenderer. Plano Z=0.
+    /// </summary>
     public class MapRenderer : MonoBehaviour
     {
         private IGameMap _map;
-        private GameObject[,] _tileGameObjects;
+        private GameObject[,] _tileObjects;
         private IUnit _selectedUnit;
         private HashSet<(int, int)> _movementRange = new HashSet<(int, int)>();
-        private HashSet<(int, int)> _attackRange = new HashSet<(int, int)>();
+        private HashSet<(int, int)> _attackRange  = new HashSet<(int, int)>();
 
         private const float TILE_SIZE = 1f;
-        private const float TILE_HEIGHT = 0.1f;
 
         public void Initialize(IGameMap map)
         {
             _map = map;
-            _tileGameObjects = new GameObject[map.Width, map.Height];
+            _tileObjects = new GameObject[map.Width, map.Height];
             RenderMap();
         }
 
         private void RenderMap()
         {
             for (int x = 0; x < _map.Width; x++)
-            {
                 for (int y = 0; y < _map.Height; y++)
-                {
-                    var tile = _map.GetTile(x, y);
-                    CreateTileVisual(tile, x, y);
-                }
-            }
+                    CreateTile(x, y);
         }
 
-        private void CreateTileVisual(ITile tile, int x, int y)
+        private void CreateTile(int x, int y)
         {
-            GameObject tileGO = new GameObject($"Tile_{x}_{y}");
-            tileGO.transform.SetParent(transform);
-            tileGO.transform.position = new Vector3(x * TILE_SIZE, 0, y * TILE_SIZE);
+            var tile = _map.GetTile(x, y);
 
-            Mesh quadMesh = new Mesh();
-            quadMesh.vertices = new Vector3[]
-            {
-                new Vector3(0, 0, 0),
-                new Vector3(TILE_SIZE, 0, 0),
-                new Vector3(TILE_SIZE, 0, TILE_SIZE),
-                new Vector3(0, 0, TILE_SIZE)
-            };
-            quadMesh.triangles = new int[] { 0, 2, 1, 0, 3, 2 };
-            quadMesh.uv = new Vector2[] { Vector2.zero, Vector2.right, Vector2.one, Vector2.up };
-            quadMesh.RecalculateNormals();
+            var go = new GameObject($"Tile_{x}_{y}");
+            go.transform.SetParent(transform);
+            // En 2D usamos XY. Y invertida para que (0,0) quede arriba-izquierda visualmente
+            go.transform.position = new Vector3(x * TILE_SIZE, y * TILE_SIZE, 0f);
 
-            MeshFilter meshFilter = tileGO.AddComponent<MeshFilter>();
-            meshFilter.mesh = quadMesh;
+            var sr = go.AddComponent<SpriteRenderer>();
+            sr.sprite   = CreateSquareSprite();
+            sr.color    = GetTerrainColor(tile.Terrain);
+            sr.sortingOrder = 0;
 
-            MeshRenderer meshRenderer = tileGO.AddComponent<MeshRenderer>();
-            meshRenderer.material = new Material(Shader.Find("Standard"));
-            meshRenderer.material.color = GetTerrainColor(tile.Terrain);
+            // Collider 2D para raycast del ratón
+            var col = go.AddComponent<BoxCollider2D>();
+            col.size = Vector2.one * 0.98f; // ligero gap entre tiles
 
-            MeshCollider meshCollider = tileGO.AddComponent<MeshCollider>();
-            meshCollider.convex = false;
-
-            _tileGameObjects[x, y] = tileGO;
+            _tileObjects[x, y] = go;
         }
 
         public void SetSelectedUnit(IUnit unit)
         {
             _selectedUnit = unit;
-            UpdateTileHighlights();
+            UpdateHighlights();
         }
 
         public void SetMovementRange(HashSet<(int, int)> range)
         {
             _movementRange = new HashSet<(int, int)>(range);
-            UpdateTileHighlights();
+            UpdateHighlights();
         }
 
         public void SetAttackRange(HashSet<(int, int)> range)
         {
             _attackRange = new HashSet<(int, int)>(range);
-            UpdateTileHighlights();
+            UpdateHighlights();
         }
 
-        private void UpdateTileHighlights()
+        private void UpdateHighlights()
         {
+            if (_tileObjects == null) return;
+
             for (int x = 0; x < _map.Width; x++)
             {
                 for (int y = 0; y < _map.Height; y++)
                 {
+                    var sr = _tileObjects[x, y].GetComponent<SpriteRenderer>();
                     var tile = _map.GetTile(x, y);
-                    var tileGO = _tileGameObjects[x, y];
-                    var meshRenderer = tileGO.GetComponent<MeshRenderer>();
 
-                    if (_selectedUnit != null && x == _selectedUnit.Position.x && y == _selectedUnit.Position.y)
-                    {
-                        meshRenderer.material.color = Color.yellow;
-                    }
+                    if (_selectedUnit != null &&
+                        x == _selectedUnit.Position.x && y == _selectedUnit.Position.y)
+                        sr.color = Color.yellow;
                     else if (_movementRange.Contains((x, y)))
-                    {
-                        meshRenderer.material.color = Color.blue;
-                    }
+                        sr.color = new Color(0.3f, 0.5f, 1f, 0.85f);
                     else if (_attackRange.Contains((x, y)))
-                    {
-                        meshRenderer.material.color = Color.red;
-                    }
+                        sr.color = new Color(1f, 0.3f, 0.3f, 0.85f);
                     else
-                    {
-                        meshRenderer.material.color = GetTerrainColor(tile.Terrain);
-                    }
+                        sr.color = GetTerrainColor(tile.Terrain);
                 }
             }
         }
 
-        private Color GetTerrainColor(TerrainType terrain)
+        private Color GetTerrainColor(TerrainType terrain) => terrain switch
         {
-            return terrain switch
-            {
-                TerrainType.Plain => new Color(0.2f, 0.8f, 0.2f),
-                TerrainType.Forest => new Color(0.1f, 0.5f, 0.1f),
-                TerrainType.Fort => new Color(0.9f, 0.8f, 0.2f),
-                TerrainType.Mountain => new Color(0.5f, 0.5f, 0.5f),
-                TerrainType.Wall => new Color(0.2f, 0.2f, 0.2f),
-                _ => Color.white
-            };
+            TerrainType.Plain    => new Color(0.25f, 0.75f, 0.25f),
+            TerrainType.Forest   => new Color(0.1f,  0.45f, 0.1f),
+            TerrainType.Fort     => new Color(0.85f, 0.75f, 0.2f),
+            TerrainType.Mountain => new Color(0.55f, 0.55f, 0.55f),
+            TerrainType.Wall     => new Color(0.2f,  0.2f,  0.2f),
+            _                    => Color.white
+        };
+
+        // Sprite cuadrado blanco 1x1 generado en runtime
+        private static Sprite _cachedSquare;
+        private static Sprite CreateSquareSprite()
+        {
+            if (_cachedSquare != null) return _cachedSquare;
+
+            var tex = new Texture2D(2, 2);
+            tex.SetPixels(new[] { Color.white, Color.white, Color.white, Color.white });
+            tex.Apply();
+            _cachedSquare = Sprite.Create(tex,
+                new Rect(0, 0, 2, 2),
+                new Vector2(0.5f, 0.5f),
+                2f); // pixelsPerUnit = 2 → sprite de 1 unidad Unity
+            return _cachedSquare;
         }
     }
 }

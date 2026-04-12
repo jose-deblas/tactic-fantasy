@@ -4,6 +4,14 @@
 
 ## Changelog
 
+### v1.2 - Save/Load Domain (2026-04-12)
+- **GameSnapshot.cs** - Immutable full-game-state snapshot captured from ITurnManager
+- **UnitSnapshot.cs** - Per-unit mutable state (HP, position, status) for serialization
+- **IGameRepository.cs** - Port (domain interface) for persistence adapters
+- **GameSaveService.cs** - Application service orchestrating save/load (DDD, hexagonal)
+- **InMemoryGameRepository.cs** - In-memory adapter (tests + reference for production)
+- **GameSaveServiceTests.cs** - 8 NUnit tests covering snapshot capture and service behaviour (TDD)
+
 ### v1.1 - Status Effects (2026-04-12)
 - **StatusEffect.cs** - New domain value object: Poison, Sleep, Stun types with duration tracking
 - **Unit.cs** - Extended with `ActiveStatus`, `CanAct`, `ApplyStatus`, `ClearStatus`, `TickStatus`

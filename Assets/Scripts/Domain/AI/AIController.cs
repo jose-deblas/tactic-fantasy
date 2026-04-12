@@ -30,6 +30,13 @@ namespace TacticFantasy.Domain.AI
             attackTarget = null;
             isHealAction = false;
 
+            // A unit with a broken weapon cannot attack or heal — just advance.
+            if (unit.HasBrokenWeapon)
+            {
+                AdvanceTowardNearestEnemy(unit, allUnits, map, pathFinder, out moveTarget);
+                return;
+            }
+
             if (unit.EquippedWeapon.Type == WeaponType.STAFF)
             {
                 DecideHealAction(unit, allUnits, map, pathFinder, out moveTarget, out attackTarget, out isHealAction);
@@ -38,6 +45,30 @@ namespace TacticFantasy.Domain.AI
             {
                 DecideAttackAction(unit, allUnits, map, pathFinder, out moveTarget, out attackTarget);
             }
+        }
+
+        /// <summary>
+        /// Moves the unit one step toward the nearest enemy team member. Used
+        /// when the unit cannot attack (e.g., broken weapon).
+        /// </summary>
+        private void AdvanceTowardNearestEnemy(IUnit unit, List<IUnit> allUnits, IGameMap map, IPathFinder pathFinder,
+            out (int x, int y)? moveTarget)
+        {
+            moveTarget = null;
+            var opponents = allUnits
+                .Where(u => u.Team != unit.Team && u.IsAlive)
+                .OrderBy(e => map.GetDistance(unit.Position.x, unit.Position.y, e.Position.x, e.Position.y))
+                .ToList();
+
+            if (opponents.Count == 0)
+                return;
+
+            var closest = opponents.First();
+            var path = pathFinder.FindPath(unit.Position.x, unit.Position.y,
+                closest.Position.x, closest.Position.y, unit.CurrentStats.MOV, unit, map);
+
+            if (path.Count > 1)
+                moveTarget = path[path.Count - 1];
         }
 
         private void DecideAttackAction(IUnit unit, List<IUnit> allUnits, IGameMap map, IPathFinder pathFinder,

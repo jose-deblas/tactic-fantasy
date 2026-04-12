@@ -280,6 +280,64 @@ namespace TacticFantasy.Tests
             Assert.AreEqual(healthyPlayer.Id, attackTarget.Id,
                 "AI with poison weapon should attack the healthy target, not the already-poisoned one");
         }
+
+        // ---- broken weapon handling ----------------------------------------
+
+        /// <summary>
+        /// An AI unit with a broken weapon cannot attack. DecideAction should
+        /// set a moveTarget toward the nearest enemy but leave attackTarget null.
+        /// </summary>
+        [Test]
+        public void DecideAction_BrokenWeaponUnit_DoesNotAttack_ButStillMoves()
+        {
+            // Create enemy with a 1-use weapon, then exhaust it
+            var brokenWeapon = new Weapon("BrokenSword", WeaponType.SWORD, DamageType.Physical,
+                5, 0, 80, 0, 1, 1, uses: 1);
+            brokenWeapon.ConsumeUse(); // now IsBroken == true
+
+            var stats = new CharacterStats(20, 5, 0, 5, 5, 5, 5, 0, 5);
+            IUnit enemy = new Unit(10, "BrokenEnemy", Team.EnemyTeam,
+                ClassDataFactory.CreateMyrmidon(), stats, (0, 0), brokenWeapon);
+
+            IUnit player = MakePlayer(1, WeaponType.SWORD, hp: 20, pos: (3, 0));
+            var allUnits = new List<IUnit> { enemy, player };
+
+            _ai.DecideAction(enemy, allUnits, _map, _pathFinder,
+                out (int x, int y)? moveTarget, out IUnit attackTarget, out _);
+
+            Assert.IsNull(attackTarget, "Unit with broken weapon must not select an attack target");
+            Assert.IsNotNull(moveTarget, "Unit with broken weapon should still advance toward the enemy");
+        }
+
+        /// <summary>
+        /// An AI healer with a broken staff cannot heal. DecideAction should
+        /// leave both moveTarget and attackTarget null (no-op).
+        /// </summary>
+        [Test]
+        public void DecideAction_BrokenStaffHealer_DoesNothing()
+        {
+            var brokenStaff = new Weapon("BrokenStaff", WeaponType.STAFF, DamageType.Magical,
+                5, 0, 80, 0, 1, 1, uses: 1);
+            brokenStaff.ConsumeUse();
+
+            var stats = new CharacterStats(20, 5, 0, 5, 5, 5, 5, 0, 5);
+            IUnit healer = new Unit(20, "BrokenHealer", Team.EnemyTeam,
+                ClassDataFactory.CreateMyrmidon(), stats, (0, 0), brokenStaff);
+
+            // Injured ally nearby
+            var allyWeapon = new Weapon("Sword", WeaponType.SWORD, DamageType.Physical, 5, 0, 80, 0, 1, 1);
+            var allyStats = new CharacterStats(20, 5, 0, 5, 5, 5, 5, 0, 5);
+            IUnit injuredAlly = new Unit(21, "InjuredAlly", Team.EnemyTeam,
+                ClassDataFactory.CreateMyrmidon(), allyStats, (1, 0), allyWeapon);
+            injuredAlly.TakeDamage(10);
+
+            var allUnits = new List<IUnit> { healer, injuredAlly };
+
+            _ai.DecideAction(healer, allUnits, _map, _pathFinder,
+                out (int x, int y)? moveTarget, out IUnit attackTarget, out _);
+
+            Assert.IsNull(attackTarget, "Healer with broken staff must not select a heal target");
+        }
     }
 }
 

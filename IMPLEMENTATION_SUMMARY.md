@@ -4,6 +4,13 @@
 
 ## Changelog
 
+### v1.6 - Status-Aware AI Target Scoring (2026-04-12)
+- **AIController.cs** - `ScoreAttackOption` now factors in target's active status effect
+  - `NoCounterBias` (-20): AI prefers attacking sleeping or stunned targets (they cannot counter-attack)
+  - `RedundantStatusPenalty` (+20): AI deprioritizes re-applying a status the target already has (e.g. poison on already-poisoned)
+  - Constants are tuned to interact sensibly with existing triangle and terrain biases
+- **AIControllerTests.cs** - 3 new TDD tests: prefer sleeping target, prefer stunned target, avoid re-poisoning
+
 ### v1.4 - Terrain-Aware AI Positioning (2026-04-12)
 - **AIController.cs** - `FindBestAttackPosition` now factors in terrain defense bonus when scoring attack positions
   - `ScoreTerrainBonus()`: each point of tile defense reduces score by `TerrainDefenseBiasPerPoint` (8)

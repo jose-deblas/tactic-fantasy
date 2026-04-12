@@ -21,6 +21,15 @@ namespace TacticFantasy.Domain.Save
             Units        = units.AsReadOnly();
         }
 
+        /// <summary>
+        /// Reconstructs a snapshot from persisted data (e.g. loaded from disk).
+        /// Used by persistence adapters; avoids exposing a public constructor.
+        /// </summary>
+        public static GameSnapshot Rebuild(Phase phase, int turnCount, List<UnitSnapshot> units)
+        {
+            return new GameSnapshot(phase, turnCount, units);
+        }
+
         /// <summary>Creates a snapshot from the current ITurnManager state.</summary>
         public static GameSnapshot Capture(ITurnManager tm)
         {

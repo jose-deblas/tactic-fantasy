@@ -1,3 +1,5 @@
+using TacticFantasy.Domain.Units;
+
 namespace TacticFantasy.Domain.Combat
 {
     public class CombatResult
@@ -16,6 +18,12 @@ namespace TacticFantasy.Domain.Combat
         /// <summary>XP awarded to the defender after this combat exchange.</summary>
         public int DefenderXpGained { get; }
 
+        /// <summary>Status effect applied to the defender on hit, if any.</summary>
+        public StatusEffectType? DefenderStatusApplied { get; }
+
+        /// <summary>Status effect applied to the attacker via counter-hit, if any.</summary>
+        public StatusEffectType? AttackerStatusApplied { get; }
+
         public CombatResult(
             int damage,
             bool hit,
@@ -25,7 +33,9 @@ namespace TacticFantasy.Domain.Combat
             bool attackerDoubles,
             bool defenderCounters,
             int attackerXpGained = 0,
-            int defenderXpGained = 0)
+            int defenderXpGained = 0,
+            StatusEffectType? defenderStatusApplied = null,
+            StatusEffectType? attackerStatusApplied = null)
         {
             Damage = damage;
             Hit = hit;
@@ -36,6 +46,8 @@ namespace TacticFantasy.Domain.Combat
             DefenderCounters = defenderCounters;
             AttackerXpGained = attackerXpGained;
             DefenderXpGained = defenderXpGained;
+            DefenderStatusApplied = defenderStatusApplied;
+            AttackerStatusApplied = attackerStatusApplied;
         }
     }
 }

@@ -124,6 +124,21 @@ namespace TacticFantasy.Tests
         }
 
         [Test]
+        public void HasUnitActed_UnitNotActed_ReturnsFalse()
+        {
+            int unitId = _testUnits[0].Id;
+            Assert.IsFalse(_turnManager.HasUnitActed(unitId));
+        }
+
+        [Test]
+        public void HasUnitActed_SpecificUnitAfterMarking_ReturnsTrue()
+        {
+            int unitId = _testUnits[0].Id;
+            _turnManager.MarkCurrentUnitAsActed();
+            Assert.IsTrue(_turnManager.HasUnitActed(unitId));
+        }
+
+        [Test]
         public void CurrentUnit_StartsWithFirstPlayerUnit()
         {
             var currentUnit = _turnManager.CurrentUnit;

@@ -74,10 +74,19 @@ namespace TacticFantasy.Domain.Combat
                     defenderXp += CombatXp.CounteredBonus;
             }
 
+            // ── Weapon durability ────────────────────────────────────────────
+            // Attacker always consumes a use (the attack attempt was made)
+            attacker.EquippedWeapon.ConsumeUse();
+            // Defender consumes a use only if they counter-attacked
+            if (defenderCounters && defenderHP > 0)
+                defender.EquippedWeapon.ConsumeUse();
+
             return new CombatResult(damage, attackerHits, attackerCrits, attackerHP, defenderHP,
                 attackerDoubles, defenderCounters,
                 attackerXpGained: attackerXp,
-                defenderXpGained: defenderXp);
+                defenderXpGained: defenderXp,
+                defenderStatusApplied: ResolveOnHitStatus(attacker, attackerHits, defenderHP),
+                attackerStatusApplied: ResolveOnHitStatus(defender, defenderCounterLanded, attackerHP));
         }
 
         public int CalculateDamage(IUnit attacker, IUnit defender, IGameMap map)
@@ -177,6 +186,19 @@ namespace TacticFantasy.Domain.Combat
             int dx = Math.Abs(unit1.Position.x - unit2.Position.x);
             int dy = Math.Abs(unit1.Position.y - unit2.Position.y);
             return Math.Max(dx, dy);
+        }
+
+        /// <summary>
+        /// Returns the on-hit status that should be applied to the struck unit,
+        /// or null if no status was triggered.
+        /// Only applies when the hit landed and the target survived.
+        /// </summary>
+        private static StatusEffectType? ResolveOnHitStatus(IUnit striker, bool didHit, int targetRemainingHP)
+        {
+            if (!didHit) return null;
+            if (targetRemainingHP <= 0) return null;  // dead units don't get statused
+            if (striker.EquippedWeapon.OnHitStatus == null) return null;
+            return striker.EquippedWeapon.OnHitStatus;
         }
     }
 }

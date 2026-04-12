@@ -61,5 +61,19 @@ namespace TacticFantasy.Domain.Save
                 statusType, statusTurns,
                 unit.Level, unit.Experience);
         }
+
+        /// <summary>
+        /// Reconstructs a snapshot from persisted data (e.g. loaded from disk).
+        /// Used by persistence adapters; avoids exposing a public constructor.
+        /// </summary>
+        public static UnitSnapshot Rebuild(
+            int id, string name, Team team, string className, string weaponName,
+            int currentHP, int posX, int posY,
+            StatusEffectType statusType, int statusTurns,
+            int level, int experience)
+        {
+            return new UnitSnapshot(id, name, team, className, weaponName,
+                currentHP, posX, posY, statusType, statusTurns, level, experience);
+        }
     }
 }

@@ -112,6 +112,30 @@ namespace TacticFantasy.Domain.Units
             );
         }
 
+        public static IClassData CreateHeron()
+        {
+            return new ClassData(
+                "Heron",
+                new CharacterStats(14, 0, 5, 7, 10, 10, 2, 8, 5),
+                new CharacterStats(26, 0, 18, 22, 28, 25, 12, 22, 9),
+                new CharacterStats(45, 0, 45, 40, 50, 50, 15, 40, 0),
+                WeaponType.REFRESH,
+                MoveType.Infantry
+            );
+        }
+
+        public static IClassData CreateDancer()
+        {
+            return new ClassData(
+                "Dancer",
+                new CharacterStats(16, 0, 4, 6, 12, 8, 3, 6, 5),
+                new CharacterStats(28, 0, 16, 20, 30, 23, 14, 20, 9),
+                new CharacterStats(50, 0, 40, 35, 55, 45, 18, 35, 0),
+                WeaponType.REFRESH,
+                MoveType.Infantry
+            );
+        }
+
         public static IClassData[] GetAllClasses()
         {
             return new IClassData[]
@@ -121,7 +145,9 @@ namespace TacticFantasy.Domain.Units
                 CreateFighter(),
                 CreateMage(),
                 CreateArcher(),
-                CreateCleric()
+                CreateCleric(),
+                CreateHeron(),
+                CreateDancer()
             };
         }
     }

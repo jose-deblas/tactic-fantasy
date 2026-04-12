@@ -12,6 +12,8 @@ namespace TacticFantasy.Adapters
     {
         public event Action<int, int> OnTileClicked;
         public event Action<int, int> OnUnitClicked;
+        public event Action OnEndTurnPressed;  // NEW: Keyboard shortcut for end turn
+        public event Action OnMenuTogglePressed;  // NEW: ESC key to toggle menu
 
         private Camera _mainCamera;
         private const float TILE_SIZE = 1f;
@@ -25,6 +27,22 @@ namespace TacticFantasy.Adapters
         {
             if (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame)
                 HandleMouseClick();
+
+            if (Keyboard.current != null)
+            {
+                // NEW: ESC key to toggle menu
+                if (Keyboard.current.escapeKey.wasPressedThisFrame)
+                {
+                    OnMenuTogglePressed?.Invoke();
+                }
+
+                // Space or Enter to end turn
+                if (Keyboard.current.spaceKey.wasPressedThisFrame ||
+                    Keyboard.current.enterKey.wasPressedThisFrame)
+                {
+                    OnEndTurnPressed?.Invoke();
+                }
+            }
         }
 
         private void HandleMouseClick()

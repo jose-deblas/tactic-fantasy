@@ -266,5 +266,101 @@ namespace TacticFantasy.Tests
                 Assert.AreNotEqual(defenderHPBefore, result.DefenderHP);
             }
         }
+
+        // ── On-hit status effect tests ─────────────────────────────────────
+
+        [Test]
+        public void ResolveCombat_PoisonSword_AppliesPoisonToDefenderOnHit()
+        {
+            // Attacker uses a Poison Sword — should infect defender when hit lands
+            var attacker = new Unit(
+                1, "Assassin", Team.PlayerTeam,
+                ClassDataFactory.CreateMyrmidon(),
+                new CharacterStats(18, 10, 0, 15, 15, 8, 5, 0, 5),
+                (0, 0),
+                WeaponFactory.CreatePoisonSword()
+            );
+
+            // Sturdy defender so they survive the hit
+            var defender = new Unit(
+                2, "Soldier", Team.EnemyTeam,
+                ClassDataFactory.CreateSoldier(),
+                new CharacterStats(30, 7, 0, 8, 8, 3, 12, 3, 5),
+                (1, 0),
+                WeaponFactory.CreateIronLance()
+            );
+
+            // Run many times: at least one hit should carry Poison
+            bool poisonSeen = false;
+            for (int i = 0; i < 50; i++)
+            {
+                var result = _combatResolver.ResolveCombat(attacker, defender, _map);
+                if (result.Hit && result.DefenderHP > 0)
+                {
+                    if (result.DefenderStatusApplied == StatusEffectType.Poison)
+                    {
+                        poisonSeen = true;
+                        break;
+                    }
+                }
+            }
+            Assert.IsTrue(poisonSeen, "Poison Sword should apply Poison to defender on a hit that doesn't kill");
+        }
+
+        [Test]
+        public void ResolveCombat_NormalSword_DoesNotApplyAnyStatus()
+        {
+            var attacker = new Unit(
+                1, "Fighter", Team.PlayerTeam,
+                ClassDataFactory.CreateMyrmidon(),
+                new CharacterStats(18, 8, 0, 10, 10, 5, 5, 0, 5),
+                (0, 0),
+                WeaponFactory.CreateIronSword()
+            );
+            var defender = new Unit(
+                2, "Soldier", Team.EnemyTeam,
+                ClassDataFactory.CreateSoldier(),
+                new CharacterStats(30, 7, 0, 8, 8, 3, 10, 3, 5),
+                (1, 0),
+                WeaponFactory.CreateIronLance()
+            );
+
+            for (int i = 0; i < 20; i++)
+            {
+                var result = _combatResolver.ResolveCombat(attacker, defender, _map);
+                Assert.IsNull(result.DefenderStatusApplied,
+                    "Iron Sword should never apply a status effect");
+            }
+        }
+
+        [Test]
+        public void ResolveCombat_KillingBlow_DoesNotApplyStatus()
+        {
+            // Even with a Poison Sword, a lethal hit should NOT record a status
+            // (dead units can't be poisoned — it's irrelevant)
+            var attacker = new Unit(
+                1, "Assassin", Team.PlayerTeam,
+                ClassDataFactory.CreateMyrmidon(),
+                new CharacterStats(18, 30, 0, 20, 20, 15, 5, 0, 5),
+                (0, 0),
+                WeaponFactory.CreatePoisonSword()
+            );
+            var defender = new Unit(
+                2, "WeakUnit", Team.EnemyTeam,
+                ClassDataFactory.CreateSoldier(),
+                new CharacterStats(1, 1, 0, 1, 1, 1, 0, 0, 5),
+                (1, 0),
+                WeaponFactory.CreateIronSword()
+            );
+
+            // Should always kill in one hit → no status
+            for (int i = 0; i < 20; i++)
+            {
+                var result = _combatResolver.ResolveCombat(attacker, defender, _map);
+                if (result.DefenderHP <= 0)
+                    Assert.IsNull(result.DefenderStatusApplied,
+                        "Killing blow should not apply status effect");
+            }
+        }
     }
 }

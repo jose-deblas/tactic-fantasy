@@ -18,6 +18,9 @@ namespace TacticFantasy.Domain.Units
         bool IsAlive { get; }
         StatusEffect ActiveStatus { get; }
         bool CanAct { get; }
+
+        /// <summary>True when the equipped weapon is broken (no uses left).</summary>
+        bool HasBrokenWeapon { get; }
         int Level { get; }
         int Experience { get; }
 
@@ -49,8 +52,8 @@ namespace TacticFantasy.Domain.Units
         public IWeapon EquippedWeapon { get; private set; }
         public bool IsAlive => CurrentHP > 0;
         public StatusEffect ActiveStatus { get; private set; }
-        /// <summary>False when Sleeping or Stunned.</summary>
         public bool CanAct => IsAlive && (ActiveStatus == null || (ActiveStatus.Type != StatusEffectType.Sleep && ActiveStatus.Type != StatusEffectType.Stun));
+        public bool HasBrokenWeapon => EquippedWeapon != null && EquippedWeapon.IsBroken;
 
         public int Level { get; private set; }
         public int Experience { get; private set; }

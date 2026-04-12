@@ -38,6 +38,8 @@ namespace TacticFantasy.Adapters
             InitializeAdapters();
             CreateTeams();
             _turnManager.Initialize(_allUnits);
+            // CRITICAL: Render all units immediately after initialization so they're visible on load
+            _unitRenderer.UpdateAllUnits(_allUnits, _turnManager);
         }
 
         public void Update()
@@ -82,6 +84,8 @@ namespace TacticFantasy.Adapters
             // Suscribirse a eventos del ratón
             _inputHandler.OnTileClicked += HandleTileClick;
             _inputHandler.OnUnitClicked += HandleUnitClick;
+            _inputHandler.OnEndTurnPressed += HandleEndTurnPressed;  // NEW: Keyboard shortcut
+            _inputHandler.OnMenuTogglePressed += HandleMenuTogglePressed;  // NEW: ESC key for menu
 
             // Suscribirse a eventos del mando
             _gamepadCursorController.OnCursorMoved += HandleGamepadCursorMoved;
@@ -89,6 +93,7 @@ namespace TacticFantasy.Adapters
             _gamepadCursorController.OnCancel += HandleGamepadCancel;
             _gamepadCursorController.OnEndTurn += HandleGamepadEndTurn;
             _gamepadCursorController.OnToggleAttackRange += HandleGamepadToggleAttackRange;
+            _gamepadCursorController.OnMenuToggle += HandleMenuTogglePressed;  // NEW: Start button for menu
         }
 
         private void CreateTeams()
@@ -136,6 +141,10 @@ namespace TacticFantasy.Adapters
 
         private void HandleUnitClick(int x, int y)
         {
+            // NEW: Ignore input if menu is open
+            if (_uiManager.IsModalMenuOpen())
+                return;
+
             if (_turnManager.CurrentPhase != Phase.PlayerPhase)
                 return;
 
@@ -147,17 +156,27 @@ namespace TacticFantasy.Adapters
                 return;
             }
 
-            if (unit.Team != Team.PlayerTeam)
+            // NEW: Toggle behavior - clicking same unit deselects
+            if (_selectedUnit != null && _selectedUnit.Id == unit.Id)
             {
                 SelectUnit(null);
                 return;
             }
 
+            // NEW: Allow selection of any unit (player or enemy) for inspection
             SelectUnit(unit);
         }
 
         private void HandleTileClick(int x, int y)
         {
+            // NEW: Ignore input if menu is open
+            if (_uiManager.IsModalMenuOpen())
+                return;
+
+            // NEW: Always show terrain info on tile click (even without unit selected)
+            var tile = _gameMap.GetTile(x, y);
+            _uiManager.ShowTerrainInfo(tile.Terrain);
+
             if (_turnManager.CurrentPhase != Phase.PlayerPhase || _selectedUnit == null)
                 return;
 
@@ -171,9 +190,24 @@ namespace TacticFantasy.Adapters
             else if (_currentAttackRange.Contains((x, y)))
             {
                 var targetUnit = _allUnits.FirstOrDefault(u => u.Position.x == x && u.Position.y == y && u.IsAlive);
-                if (targetUnit != null && targetUnit.Team == Team.EnemyTeam)
+                if (targetUnit != null)
                 {
-                    AttackUnit(_selectedUnit, targetUnit);
+                    // NEW: Check if this is a refresh action (unit has REFRESH weapon)
+                    if (_selectedUnit.EquippedWeapon.Type == WeaponType.REFRESH)
+                    {
+                        if (_turnManager.CanRefreshTarget(_selectedUnit, targetUnit))
+                        {
+                            RefreshUnit(_selectedUnit, targetUnit);
+                        }
+                        else
+                        {
+                            _uiManager.ShowInfoMessage("Cannot refresh this unit!");
+                        }
+                    }
+                    else if (targetUnit.Team == Team.EnemyTeam)
+                    {
+                        AttackUnit(_selectedUnit, targetUnit);
+                    }
                 }
             }
         }
@@ -185,21 +219,46 @@ namespace TacticFantasy.Adapters
             _currentMovementRange.Clear();
             _currentAttackRange.Clear();
 
-            if (unit != null && unit.Team == Team.PlayerTeam)
+            if (unit != null)
             {
-                _currentMovementRange = _pathFinder.GetMovementRange(unit.Position.x, unit.Position.y, unit.CurrentStats.MOV, unit, _gameMap);
-
-                foreach (var pos in _currentMovementRange)
+                if (unit.Team == Team.PlayerTeam)
                 {
-                    for (int dx = -unit.EquippedWeapon.MaxRange; dx <= unit.EquippedWeapon.MaxRange; dx++)
+                    // Player units: Show full movement + attack range
+                    _currentMovementRange = _pathFinder.GetMovementRange(unit.Position.x, unit.Position.y, unit.CurrentStats.MOV, unit, _gameMap);
+
+                    foreach (var pos in _currentMovementRange)
                     {
-                        for (int dy = -unit.EquippedWeapon.MaxRange; dy <= unit.EquippedWeapon.MaxRange; dy++)
+                        for (int dx = -unit.EquippedWeapon.MaxRange; dx <= unit.EquippedWeapon.MaxRange; dx++)
                         {
-                            int tx = pos.Item1 + dx;
-                            int ty = pos.Item2 + dy;
-                            if (_gameMap.IsValidPosition(tx, ty) &&
-                                _gameMap.GetDistance(pos.Item1, pos.Item2, tx, ty) >= unit.EquippedWeapon.MinRange &&
-                                _gameMap.GetDistance(pos.Item1, pos.Item2, tx, ty) <= unit.EquippedWeapon.MaxRange)
+                            for (int dy = -unit.EquippedWeapon.MaxRange; dy <= unit.EquippedWeapon.MaxRange; dy++)
+                            {
+                                int tx = pos.Item1 + dx;
+                                int ty = pos.Item2 + dy;
+                                if (_gameMap.IsValidPosition(tx, ty) &&
+                                    _gameMap.GetDistance(pos.Item1, pos.Item2, tx, ty) >= unit.EquippedWeapon.MinRange &&
+                                    _gameMap.GetDistance(pos.Item1, pos.Item2, tx, ty) <= unit.EquippedWeapon.MaxRange)
+                                {
+                                    _currentAttackRange.Add((tx, ty));
+                                }
+                            }
+                        }
+                    }
+                }
+                else if (unit.Team == Team.EnemyTeam)
+                {
+                    // Enemy units: Show ONLY attack range from current position
+                    int maxRange = unit.EquippedWeapon.MaxRange;
+                    int minRange = unit.EquippedWeapon.MinRange;
+
+                    for (int dx = -maxRange; dx <= maxRange; dx++)
+                    {
+                        for (int dy = -maxRange; dy <= maxRange; dy++)
+                        {
+                            int tx = unit.Position.x + dx;
+                            int ty = unit.Position.y + dy;
+                            int distance = _gameMap.GetDistance(unit.Position.x, unit.Position.y, tx, ty);
+
+                            if (_gameMap.IsValidPosition(tx, ty) && distance >= minRange && distance <= maxRange)
                             {
                                 _currentAttackRange.Add((tx, ty));
                             }
@@ -211,7 +270,7 @@ namespace TacticFantasy.Adapters
             _mapRenderer.SetSelectedUnit(_selectedUnit);
             _mapRenderer.SetMovementRange(_currentMovementRange);
             _mapRenderer.SetAttackRange(_currentAttackRange);
-            _unitRenderer.UpdateAllUnits(_allUnits);
+            _unitRenderer.UpdateAllUnits(_allUnits, _turnManager);
             _uiManager.UpdateSelectedUnitInfo(_selectedUnit);
         }
 
@@ -238,7 +297,7 @@ namespace TacticFantasy.Adapters
                 defender.TakeDamage(result.Damage);
             }
 
-            _unitRenderer.UpdateAllUnits(_allUnits);
+            _unitRenderer.UpdateAllUnits(_allUnits, _turnManager);
             _uiManager.ShowCombatResult(result);
 
             _turnManager.MarkCurrentUnitAsActed();
@@ -251,12 +310,38 @@ namespace TacticFantasy.Adapters
             SelectUnit(null);
         }
 
+        private void RefreshUnit(IUnit refresher, IUnit target)
+        {
+            // NEW: Refresh mechanic - remove acted status from target
+            _turnManager.RefreshUnit(target.Id);
+
+            // Mark refresher as acted
+            _turnManager.MarkCurrentUnitAsActed();
+
+            // Visual feedback
+            _uiManager.ShowInfoMessage($"{refresher.Name} refreshed {target.Name}!");
+            _unitRenderer.UpdateAllUnits(_allUnits, _turnManager);
+
+            SelectUnit(null);
+        }
+
         public void EndPlayerPhase()
         {
             if (_turnManager.CurrentPhase == Phase.PlayerPhase)
             {
                 _turnManager.AdvancePhase();
                 SelectUnit(null);
+            }
+        }
+
+        /// <summary>
+        /// Maneja el fin de turno por teclado (Space o Enter).
+        /// </summary>
+        private void HandleEndTurnPressed()
+        {
+            if (_turnManager.CurrentPhase == Phase.PlayerPhase)
+            {
+                EndPlayerPhase();
             }
         }
 
@@ -275,6 +360,10 @@ namespace TacticFantasy.Adapters
         /// </summary>
         private void HandleGamepadConfirm()
         {
+            // NEW: Ignore input if menu is open
+            if (_uiManager.IsModalMenuOpen())
+                return;
+
             _inputHandler.SimulateGamepadClick(_gamepadCursorController.CursorPosition.x, _gamepadCursorController.CursorPosition.y);
         }
 
@@ -349,6 +438,22 @@ namespace TacticFantasy.Adapters
             }
         }
 
+        /// <summary>
+        /// Maneja el toggle del menú modal (ESC o Start button).
+        /// Abre o cierra el menú dependiendo del estado actual.
+        /// </summary>
+        private void HandleMenuTogglePressed()
+        {
+            if (_uiManager.IsModalMenuOpen())
+            {
+                _uiManager.HideModalMenu();
+            }
+            else
+            {
+                _uiManager.ShowModalMenu();
+            }
+        }
+
         private System.Collections.IEnumerator ExecuteEnemyPhase()
         {
             yield return new WaitForSeconds(0.5f);
@@ -388,7 +493,7 @@ namespace TacticFantasy.Adapters
                     }
                 }
 
-                _unitRenderer.UpdateAllUnits(_allUnits);
+                _unitRenderer.UpdateAllUnits(_allUnits, _turnManager);
                 yield return new WaitForSeconds(0.3f);
             }
 

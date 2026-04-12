@@ -4,6 +4,35 @@
 
 ## Changelog
 
+### v1.9 - Weapon Durability (2026-04-12)
+- `IWeapon` extended with `MaxUses`, `CurrentUses`, `IsBroken`, `ConsumeUse()`
+- Sentinel value `-1` = unlimited uses (legacy factory methods unchanged)
+- `Unit.HasBrokenWeapon` computed property for UI/AI checks
+- `CombatResolver` consumes attacker use each engagement; defender use on counter
+- `WeaponFactory` gains `*WithDurability()` variants: 30 uses for weapons, 15 for staves
+- 10 new TDD tests in `WeaponDurabilityTests.cs`
+
+### v1.8 - JSON File Persistence Adapter (2026-04-12)
+- **JsonFileGameRepository.cs** - Hexagonal adapter in `Adapters/Persistence`: persists `GameSnapshot` to a JSON file on disk
+  - Pure C# / `System.Text.Json` — zero Unity dependencies, fully testable outside the engine
+  - Private DTO layer (`GameSnapshotDto`, `UnitSnapshotDto`) keeps serialisation details out of the domain
+  - Auto-creates parent directories; idempotent overwrites on re-save
+- **GameSnapshot.Rebuild()** / **UnitSnapshot.Rebuild()** — static factory methods added to domain objects so adapters can reconstruct snapshots without exposing public constructors (open/closed)
+- **JsonFileGameRepositoryTests.cs** - 13 new TDD tests: `HasSave` guards, full round-trip for phase, turn, unit count, identity, HP, position, status effects, file creation, nested directory creation, and overwrite behaviour
+### v1.7 - Combat Forecast (2026-04-12)
+- **CombatForecast.cs** - Immutable value object: deterministic battle stats (damage, hit%, crit%, doubles flag, counter info) computed before dice are rolled
+- **CombatForecastService** - Pure domain service; mirrors CombatResolver formulas (SKL×2, AS×2, weapon triangle, terrain avoid) but deterministic
+- `FormatSummary()` / `FormatFull()` — one-line and two-sided panel display text
+- **UIManager.cs** - `ShowForecast(attacker, defender, map)` / `HideForecast()`: right-side overlay panel with blue border, classic Fire Emblem style
+- **CombatForecastTests.cs** - 12 new TDD tests covering structure, clamping, doubles, counter range, weapon-triangle advantage, formatting
+
+### v1.6 - Status-Aware AI Target Scoring (2026-04-12)
+- **AIController.cs** - `ScoreAttackOption` now factors in target's active status effect
+  - `NoCounterBias` (-20): AI prefers attacking sleeping or stunned targets (they cannot counter-attack)
+  - `RedundantStatusPenalty` (+20): AI deprioritizes re-applying a status the target already has (e.g. poison on already-poisoned)
+  - Constants are tuned to interact sensibly with existing triangle and terrain biases
+- **AIControllerTests.cs** - 3 new TDD tests: prefer sleeping target, prefer stunned target, avoid re-poisoning
+
 ### v1.4 - Terrain-Aware AI Positioning (2026-04-12)
 - **AIController.cs** - `FindBestAttackPosition` now factors in terrain defense bonus when scoring attack positions
   - `ScoreTerrainBonus()`: each point of tile defense reduces score by `TerrainDefenseBiasPerPoint` (8)
@@ -36,6 +65,13 @@
 - **TurnManager.cs** - Auto-ticks status effects on all alive units at end of EnemyPhase
 - **StatusEffectTests.cs** - 16 new NUnit tests (TDD)
 - **TurnManagerTests.cs** - +1 integration test for status tick on phase transition
+
+### v1.5 - On-Hit Status Weapons (2026-04-12)
+- **Weapon.cs** - Added `OnHitStatus` (nullable) and `OnHitStatusDuration` to `IWeapon`/`Weapon`
+- **CombatResult.cs** - Added `DefenderStatusApplied` and `AttackerStatusApplied` properties
+- **CombatResolver.cs** - `ResolveOnHitStatus` helper: populates status in result when hit lands and target survives
+- **UnitFactory.cs** (WeaponFactory) - New weapons: `CreatePoisonSword()` (Poison 3t), `CreateSleepStaff()` (Sleep 2t)
+- **CombatResolverTests.cs** - +3 TDD tests: PoisonSword applies Poison, IronSword applies nothing, killing blow has no status
 
 ---
 All domain logic, adapters, tests, and documentation are ready. The project compiles cleanly and is ready to play in the Unity editor.
@@ -451,11 +487,12 @@ MapRenderer.UpdateTileHighlights() (when unit selected)
 ## Test Coverage
 
 ### Test Statistics
-- **Total Tests**: 34 NUnit tests
+- **Total Tests**: 48 NUnit tests
 - **Combat**: 12 tests (damage, speed, doubles, counters, hit/crit)
 - **Weapons**: 8 tests (all triangle matchups + non-triangle)
 - **Pathfinding**: 6 tests (movement, range, boundaries)
 - **Turn Management**: 8 tests (phase flow, states, healing)
+- **Victory Conditions**: 14 tests (Rout, Seize, Survive — all edge cases)
 
 ### How to Run Tests
 1. Window → Testing → Test Runner (Ctrl+Alt+T)
@@ -585,7 +622,7 @@ MapRenderer.UpdateTileHighlights() (when unit selected)
 4. **Run Tests (Optional)**
    - Window → Testing → Test Runner
    - Click "Run All" in EditMode tab
-   - All 34 tests pass ✅
+   - All 48 tests pass ✅
 
 5. **Start Playing**
    - Click blue units to select
@@ -605,7 +642,7 @@ For questions about architecture, code structure, or how specific systems work, 
 ---
 
 **Project Status**: ✅ Feature Complete & Ready to Play
-**Version**: 1.0.0
+**Version**: 2.0.0
 **Build Date**: 2026-04-12
 **Architecture**: Domain-Driven Design + Hexagonal Architecture
 **Code Quality**: SOLID Principles, Clean Code standards

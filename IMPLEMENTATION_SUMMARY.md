@@ -4,6 +4,13 @@
 
 ## Changelog
 
+### v1.7 - Combat Forecast (2026-04-12)
+- **CombatForecast.cs** - Immutable value object: deterministic battle stats (damage, hit%, crit%, doubles flag, counter info) computed before dice are rolled
+- **CombatForecastService** - Pure domain service; mirrors CombatResolver formulas (SKL×2, AS×2, weapon triangle, terrain avoid) but deterministic
+- `FormatSummary()` / `FormatFull()` — one-line and two-sided panel display text
+- **UIManager.cs** - `ShowForecast(attacker, defender, map)` / `HideForecast()`: right-side overlay panel with blue border, classic Fire Emblem style
+- **CombatForecastTests.cs** - 12 new TDD tests covering structure, clamping, doubles, counter range, weapon-triangle advantage, formatting
+
 ### v1.6 - Status-Aware AI Target Scoring (2026-04-12)
 - **AIController.cs** - `ScoreAttackOption` now factors in target's active status effect
   - `NoCounterBias` (-20): AI prefers attacking sleeping or stunned targets (they cannot counter-attack)
@@ -619,7 +626,7 @@ For questions about architecture, code structure, or how specific systems work, 
 ---
 
 **Project Status**: ✅ Feature Complete & Ready to Play
-**Version**: 1.0.0
+**Version**: 1.7.0
 **Build Date**: 2026-04-12
 **Architecture**: Domain-Driven Design + Hexagonal Architecture
 **Code Quality**: SOLID Principles, Clean Code standards

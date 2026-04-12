@@ -1,0 +1,59 @@
+using TacticFantasy.Domain.Units;
+
+namespace TacticFantasy.Domain.Save
+{
+    /// <summary>
+    /// Serialisable snapshot of a single unit's mutable state.
+    /// Captures only what changes at runtime (HP, position, status).
+    /// Identity data (id, name, team, class, weapon) is preserved to allow
+    /// reconstruction via UnitFactory on load.
+    /// </summary>
+    public class UnitSnapshot
+    {
+        public int Id              { get; }
+        public string Name         { get; }
+        public Team Team           { get; }
+        public string ClassName    { get; }
+        public string WeaponName   { get; }
+
+        public int CurrentHP       { get; }
+        public int PositionX       { get; }
+        public int PositionY       { get; }
+
+        public StatusEffectType StatusType          { get; }
+        public int              StatusRemainingTurns { get; }
+
+        private UnitSnapshot(
+            int id, string name, Team team, string className, string weaponName,
+            int currentHP, int posX, int posY,
+            StatusEffectType statusType, int statusTurns)
+        {
+            Id                   = id;
+            Name                 = name;
+            Team                 = team;
+            ClassName            = className;
+            WeaponName           = weaponName;
+            CurrentHP            = currentHP;
+            PositionX            = posX;
+            PositionY            = posY;
+            StatusType           = statusType;
+            StatusRemainingTurns = statusTurns;
+        }
+
+        /// <summary>Captures the mutable runtime state of a unit.</summary>
+        public static UnitSnapshot Capture(IUnit unit)
+        {
+            var status      = unit.ActiveStatus;
+            var statusType  = status?.Type  ?? StatusEffectType.None;
+            var statusTurns = status?.RemainingTurns ?? 0;
+
+            return new UnitSnapshot(
+                unit.Id, unit.Name, unit.Team,
+                unit.Class?.Name ?? string.Empty,
+                unit.EquippedWeapon?.Name ?? string.Empty,
+                unit.CurrentHP,
+                unit.Position.x, unit.Position.y,
+                statusType, statusTurns);
+        }
+    }
+}

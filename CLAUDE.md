@@ -4,7 +4,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Quick Start
 
-This is a Fire Emblem-style tactical RPG built with **Unity 6** (C#). It uses **Domain-Driven Design** with **Hexagonal Architecture** — pure domain logic separated from Unity adapters, with all game rules testable without the runtime.
+This is a Fire Emblem-style tactical RPG built with **Unity 6** (C#). 
+It uses **Domain-Driven Design** with **Hexagonal Architecture** — pure domain logic separated from Unity adapters, with all game rules testable without the runtime. And when building we use TDD and SOLID principles.
 
 ## Build & Test Commands
 

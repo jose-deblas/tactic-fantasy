@@ -60,6 +60,20 @@ namespace TacticFantasy.Domain.Units
             return new Weapon("Heal Staff", WeaponType.STAFF, DamageType.Magical, 0, 3, 100, 0, 1, 1);
         }
 
+        /// <summary>Inflicts Poison (3 turns) on a successful hit.</summary>
+        public static IWeapon CreatePoisonSword()
+        {
+            return new Weapon("Poison Sword", WeaponType.SWORD, DamageType.Physical, 4, 5, 80, 0, 1, 1,
+                onHitStatus: StatusEffectType.Poison, onHitStatusDuration: 3);
+        }
+
+        /// <summary>Sleep tome — puts target to sleep (2 turns) on hit but deals 0 damage.</summary>
+        public static IWeapon CreateSleepStaff()
+        {
+            return new Weapon("Sleep Staff", WeaponType.STAFF, DamageType.Magical, 0, 2, 75, 0, 1, 2,
+                onHitStatus: StatusEffectType.Sleep, onHitStatusDuration: 2);
+        }
+
         public static IWeapon GetWeaponForClass(WeaponType weaponType)
         {
             return weaponType switch

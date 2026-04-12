@@ -37,6 +37,13 @@
 - **StatusEffectTests.cs** - 16 new NUnit tests (TDD)
 - **TurnManagerTests.cs** - +1 integration test for status tick on phase transition
 
+### v1.5 - On-Hit Status Weapons (2026-04-12)
+- **Weapon.cs** - Added `OnHitStatus` (nullable) and `OnHitStatusDuration` to `IWeapon`/`Weapon`
+- **CombatResult.cs** - Added `DefenderStatusApplied` and `AttackerStatusApplied` properties
+- **CombatResolver.cs** - `ResolveOnHitStatus` helper: populates status in result when hit lands and target survives
+- **UnitFactory.cs** (WeaponFactory) - New weapons: `CreatePoisonSword()` (Poison 3t), `CreateSleepStaff()` (Sleep 2t)
+- **CombatResolverTests.cs** - +3 TDD tests: PoisonSword applies Poison, IronSword applies nothing, killing blow has no status
+
 ---
 All domain logic, adapters, tests, and documentation are ready. The project compiles cleanly and is ready to play in the Unity editor.
 

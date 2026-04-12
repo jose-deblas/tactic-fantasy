@@ -74,6 +74,13 @@ namespace TacticFantasy.Domain.Combat
                     defenderXp += CombatXp.CounteredBonus;
             }
 
+            // ── Weapon durability ────────────────────────────────────────────
+            // Attacker always consumes a use (the attack attempt was made)
+            attacker.EquippedWeapon.ConsumeUse();
+            // Defender consumes a use only if they counter-attacked
+            if (defenderCounters && defenderHP > 0)
+                defender.EquippedWeapon.ConsumeUse();
+
             return new CombatResult(damage, attackerHits, attackerCrits, attackerHP, defenderHP,
                 attackerDoubles, defenderCounters,
                 attackerXpGained: attackerXp,

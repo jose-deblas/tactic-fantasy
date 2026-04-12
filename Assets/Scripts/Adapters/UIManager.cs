@@ -4,6 +4,7 @@ using TacticFantasy.Domain.Combat;
 using TacticFantasy.Domain.Map;
 using TacticFantasy.Domain.Turn;
 using TacticFantasy.Domain.Units;
+using TacticFantasy.Domain.Weapons;
 
 namespace TacticFantasy.Adapters
 {

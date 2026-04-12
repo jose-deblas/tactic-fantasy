@@ -19,6 +19,8 @@ namespace TacticFantasy.Domain.Save
         public int CurrentHP       { get; }
         public int PositionX       { get; }
         public int PositionY       { get; }
+        public int Level            { get; }
+        public int Experience       { get; }
 
         public StatusEffectType StatusType          { get; }
         public int              StatusRemainingTurns { get; }
@@ -26,7 +28,8 @@ namespace TacticFantasy.Domain.Save
         private UnitSnapshot(
             int id, string name, Team team, string className, string weaponName,
             int currentHP, int posX, int posY,
-            StatusEffectType statusType, int statusTurns)
+            StatusEffectType statusType, int statusTurns,
+            int level, int experience)
         {
             Id                   = id;
             Name                 = name;
@@ -38,6 +41,8 @@ namespace TacticFantasy.Domain.Save
             PositionY            = posY;
             StatusType           = statusType;
             StatusRemainingTurns = statusTurns;
+            Level                = level;
+            Experience           = experience;
         }
 
         /// <summary>Captures the mutable runtime state of a unit.</summary>
@@ -53,7 +58,8 @@ namespace TacticFantasy.Domain.Save
                 unit.EquippedWeapon?.Name ?? string.Empty,
                 unit.CurrentHP,
                 unit.Position.x, unit.Position.y,
-                statusType, statusTurns);
+                statusType, statusTurns,
+                unit.Level, unit.Experience);
         }
     }
 }

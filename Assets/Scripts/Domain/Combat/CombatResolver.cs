@@ -39,12 +39,14 @@ namespace TacticFantasy.Domain.Combat
 
             bool attackerDoubles = CanDoubleAttack(attacker, defender);
             bool defenderCounters = attackerHits && CanCounterAttack(attacker, defender);
+            bool defenderCounterLanded = false;
 
             if (defenderCounters && defenderHP > 0)
             {
                 bool defenderHits = CalculateHit(defender, attacker, map);
                 if (defenderHits)
                 {
+                    defenderCounterLanded = true;
                     bool defenderCrits = CalculateCritical(defender, attacker);
                     int counterDamage = CalculateDamage(defender, attacker, map);
                     if (defenderCrits)
@@ -53,7 +55,29 @@ namespace TacticFantasy.Domain.Combat
                 }
             }
 
-            return new CombatResult(damage, attackerHits, attackerCrits, attackerHP, defenderHP, attackerDoubles, defenderCounters);
+            // ── XP calculation ──────────────────────────────────────────────
+            bool defenderKilled = defenderHP <= 0;
+            bool attackerKilled = attackerHP <= 0;
+
+            int attackerXp = 0;
+            int defenderXp = 0;
+
+            if (attackerHits)
+            {
+                attackerXp = defenderKilled ? CombatXp.KillBonus : CombatXp.DamageBonus;
+            }
+
+            if (!attackerKilled)
+            {
+                defenderXp += CombatXp.SurvivedBonus;
+                if (defenderCounterLanded)
+                    defenderXp += CombatXp.CounteredBonus;
+            }
+
+            return new CombatResult(damage, attackerHits, attackerCrits, attackerHP, defenderHP,
+                attackerDoubles, defenderCounters,
+                attackerXpGained: attackerXp,
+                defenderXpGained: defenderXp);
         }
 
         public int CalculateDamage(IUnit attacker, IUnit defender, IGameMap map)

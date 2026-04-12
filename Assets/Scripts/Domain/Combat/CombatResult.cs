@@ -10,6 +10,12 @@ namespace TacticFantasy.Domain.Combat
         public bool AttackerDoubles { get; }
         public bool DefenderCounters { get; }
 
+        /// <summary>XP awarded to the attacker after this combat exchange.</summary>
+        public int AttackerXpGained { get; }
+
+        /// <summary>XP awarded to the defender after this combat exchange.</summary>
+        public int DefenderXpGained { get; }
+
         public CombatResult(
             int damage,
             bool hit,
@@ -17,7 +23,9 @@ namespace TacticFantasy.Domain.Combat
             int attackerHP,
             int defenderHP,
             bool attackerDoubles,
-            bool defenderCounters)
+            bool defenderCounters,
+            int attackerXpGained = 0,
+            int defenderXpGained = 0)
         {
             Damage = damage;
             Hit = hit;
@@ -26,6 +34,8 @@ namespace TacticFantasy.Domain.Combat
             DefenderHP = defenderHP;
             AttackerDoubles = attackerDoubles;
             DefenderCounters = defenderCounters;
+            AttackerXpGained = attackerXpGained;
+            DefenderXpGained = defenderXpGained;
         }
     }
 }

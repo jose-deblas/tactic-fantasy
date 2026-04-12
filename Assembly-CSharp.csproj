@@ -48,6 +48,7 @@
     <Analyzer Include="/Applications/Unity/Hub/Editor/6000.4.2f1/Unity.app/Contents/Resources/BuildPipeline/Unity.SourceGenerators/Unity.UIToolkit.SourceGenerator.dll" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Assets/Scripts/Domain/Save/GameSnapshot.cs" />
     <Compile Include="Assets/Scripts/Domain/Units/ClassData.cs" />
     <Compile Include="Assets/Scripts/Domain/Map/TerrainType.cs" />
     <Compile Include="Assets/Scripts/Domain/Units/CharacterStats.cs" />
@@ -59,14 +60,23 @@
     <Compile Include="Assets/Scripts/Domain/Turn/Phase.cs" />
     <Compile Include="Assets/Scripts/Domain/Map/PathFinder.cs" />
     <Compile Include="Assets/Scripts/Adapters/InputHandler.cs" />
+    <Compile Include="Assets/Scripts/Domain/Units/UnitDisplayFormatter.cs" />
+    <Compile Include="Assets/Scripts/Domain/Save/UnitSnapshot.cs" />
     <Compile Include="Assets/Scripts/Adapters/MapRenderer.cs" />
     <Compile Include="Assets/Scripts/Domain/Map/GameMap.cs" />
     <Compile Include="Assets/Scripts/Domain/Weapons/DamageType.cs" />
+    <Compile Include="Assets/Scripts/Tests/AIControllerTests.cs" />
     <Compile Include="Assets/Scripts/Domain/AI/AIController.cs" />
     <Compile Include="Assets/Scripts/Domain/Units/UnitFactory.cs" />
     <Compile Include="Assets/Scripts/Adapters/UnitRenderer.cs" />
     <Compile Include="Assets/Scripts/Domain/Weapons/WeaponType.cs" />
     <Compile Include="Assets/Scripts/Domain/Units/StatusEffect.cs" />
+    <Compile Include="Assets/Scripts/Domain/Combat/CombatXp.cs" />
+    <Compile Include="Assets/Scripts/Tests/ExperienceSystemTests.cs" />
+    <Compile Include="Assets/Scripts/Domain/Save/InMemoryGameRepository.cs" />
+    <Compile Include="Assets/Scripts/Domain/Save/IGameRepository.cs" />
+    <Compile Include="Assets/Scripts/Domain/Save/GameSaveService.cs" />
+    <Compile Include="Assets/Scripts/Adapters/GamepadCursorController.cs" />
     <Compile Include="Assets/Scripts/Domain/Units/MoveType.cs" />
     <Compile Include="Assets/Scripts/Adapters/GameController.cs" />
     <Compile Include="Assets/Scripts/Adapters/UIManager.cs" />
@@ -74,11 +84,15 @@
     <Compile Include="Assets/Scripts/Adapters/GameSceneSetup.cs" />
     <Compile Include="Assets/Scripts/Domain/Map/Tile.cs" />
     <Compile Include="Assets/Scripts/Domain/Units/Team.cs" />
+    <Compile Include="Assets/Scripts/Tests/GamepadCursorControllerTests.cs" />
     <Compile Include="Assets/Scripts/Domain/Units/Unit.cs" />
+    <Compile Include="Assets/Scripts/Tests/UnitDisplayFormatterTests.cs" />
     <Compile Include="Assets/Scripts/Tests/WeaponTriangleTests.cs" />
     <Compile Include="Assets/Scripts/Tests/TurnManagerTests.cs" />
     <Compile Include="Assets/Scripts/Domain/Combat/WeaponTriangle.cs" />
     <Compile Include="Assets/Scripts/Tests/PathFinderTests.cs" />
+    <Compile Include="Assets/Scripts/Adapters/CursorRenderer.cs" />
+    <Compile Include="Assets/Scripts/Tests/GameSaveServiceTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="UnityEngine">

@@ -4,6 +4,17 @@
 
 ## Changelog
 
+### v1.3 - Experience & Level-Up System (2026-04-12)
+- **Unit.cs** - Extended with `Level`, `Experience`, `GainExperience(amount, rng)` method
+  - GrowthRate-based probabilistic stat gains on level-up (capped by CapStats)
+  - MaxHP updates when HP stat grows; CurrentHP heals by the HP gain amount
+  - Level cap at 20; XP resets at cap
+- **CombatXp.cs** - New constants: KillBonus (60), DamageBonus (20), SurvivedBonus (10), CounteredBonus (15)
+- **CombatResult.cs** - Added `AttackerXpGained` and `DefenderXpGained` fields
+- **CombatResolver.cs** - `ResolveCombat` now computes and returns XP for both combatants
+- **UnitSnapshot.cs** - Added `Level` and `Experience` fields so save/load persists progression
+- **ExperienceSystemTests.cs** - 11 new NUnit TDD tests covering XP accumulation, level-up, stat caps, combat XP constants
+
 ### v1.2 - Save/Load Domain (2026-04-12)
 - **GameSnapshot.cs** - Immutable full-game-state snapshot captured from ITurnManager
 - **UnitSnapshot.cs** - Per-unit mutable state (HP, position, status) for serialization

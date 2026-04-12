@@ -487,11 +487,12 @@ MapRenderer.UpdateTileHighlights() (when unit selected)
 ## Test Coverage
 
 ### Test Statistics
-- **Total Tests**: 34 NUnit tests
+- **Total Tests**: 48 NUnit tests
 - **Combat**: 12 tests (damage, speed, doubles, counters, hit/crit)
 - **Weapons**: 8 tests (all triangle matchups + non-triangle)
 - **Pathfinding**: 6 tests (movement, range, boundaries)
 - **Turn Management**: 8 tests (phase flow, states, healing)
+- **Victory Conditions**: 14 tests (Rout, Seize, Survive — all edge cases)
 
 ### How to Run Tests
 1. Window → Testing → Test Runner (Ctrl+Alt+T)
@@ -621,7 +622,7 @@ MapRenderer.UpdateTileHighlights() (when unit selected)
 4. **Run Tests (Optional)**
    - Window → Testing → Test Runner
    - Click "Run All" in EditMode tab
-   - All 34 tests pass ✅
+   - All 48 tests pass ✅
 
 5. **Start Playing**
    - Click blue units to select
@@ -641,7 +642,7 @@ For questions about architecture, code structure, or how specific systems work, 
 ---
 
 **Project Status**: ✅ Feature Complete & Ready to Play
-**Version**: 1.9.0
+**Version**: 2.0.0
 **Build Date**: 2026-04-12
 **Architecture**: Domain-Driven Design + Hexagonal Architecture
 **Code Quality**: SOLID Principles, Clean Code standards

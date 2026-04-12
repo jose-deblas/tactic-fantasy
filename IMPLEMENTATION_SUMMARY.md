@@ -4,6 +4,13 @@
 
 ## Changelog
 
+### v1.8 - JSON File Persistence Adapter (2026-04-12)
+- **JsonFileGameRepository.cs** - Hexagonal adapter in `Adapters/Persistence`: persists `GameSnapshot` to a JSON file on disk
+  - Pure C# / `System.Text.Json` — zero Unity dependencies, fully testable outside the engine
+  - Private DTO layer (`GameSnapshotDto`, `UnitSnapshotDto`) keeps serialisation details out of the domain
+  - Auto-creates parent directories; idempotent overwrites on re-save
+- **GameSnapshot.Rebuild()** / **UnitSnapshot.Rebuild()** — static factory methods added to domain objects so adapters can reconstruct snapshots without exposing public constructors (open/closed)
+- **JsonFileGameRepositoryTests.cs** - 13 new TDD tests: `HasSave` guards, full round-trip for phase, turn, unit count, identity, HP, position, status effects, file creation, nested directory creation, and overwrite behaviour
 ### v1.7 - Combat Forecast (2026-04-12)
 - **CombatForecast.cs** - Immutable value object: deterministic battle stats (damage, hit%, crit%, doubles flag, counter info) computed before dice are rolled
 - **CombatForecastService** - Pure domain service; mirrors CombatResolver formulas (SKL×2, AS×2, weapon triangle, terrain avoid) but deterministic

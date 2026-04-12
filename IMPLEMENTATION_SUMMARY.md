@@ -4,6 +4,14 @@
 
 ## Changelog
 
+### v1.9 - Weapon Durability (2026-04-12)
+- `IWeapon` extended with `MaxUses`, `CurrentUses`, `IsBroken`, `ConsumeUse()`
+- Sentinel value `-1` = unlimited uses (legacy factory methods unchanged)
+- `Unit.HasBrokenWeapon` computed property for UI/AI checks
+- `CombatResolver` consumes attacker use each engagement; defender use on counter
+- `WeaponFactory` gains `*WithDurability()` variants: 30 uses for weapons, 15 for staves
+- 10 new TDD tests in `WeaponDurabilityTests.cs`
+
 ### v1.8 - JSON File Persistence Adapter (2026-04-12)
 - **JsonFileGameRepository.cs** - Hexagonal adapter in `Adapters/Persistence`: persists `GameSnapshot` to a JSON file on disk
   - Pure C# / `System.Text.Json` — zero Unity dependencies, fully testable outside the engine
@@ -633,7 +641,7 @@ For questions about architecture, code structure, or how specific systems work, 
 ---
 
 **Project Status**: ✅ Feature Complete & Ready to Play
-**Version**: 1.7.0
+**Version**: 1.9.0
 **Build Date**: 2026-04-12
 **Architecture**: Domain-Driven Design + Hexagonal Architecture
 **Code Quality**: SOLID Principles, Clean Code standards

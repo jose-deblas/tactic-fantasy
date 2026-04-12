@@ -1,0 +1,43 @@
+# Unity
+Library/
+Temp/
+Logs/
+Build/
+Builds/
+*.csproj
+*.sln
+*.unitypackage
+*.meta
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+*.iml
+.vs/
+
+# OS
+Thumbs.db
+.DS_Store
+*.exe
+*.app
+
+# User local settings
+UserSettings/
+Assets/Audio/
+Assets/Art/
+*.asset.bak
+
+# Build outputs
+*.apk
+*.ipa
+*.exe
+*.app
+*.dmg
+WebGL/
+
+# Editor crash dumps
+crash_dump_*

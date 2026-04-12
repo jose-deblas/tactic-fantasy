@@ -28,6 +28,9 @@ namespace TacticFantasy.Adapters
         /// <summary>Evento disparado cuando se presiona el botón para mostrar/ocultar rango de ataque (Y/North).</summary>
         public event Action OnToggleAttackRange;
 
+        /// <summary>Evento disparado cuando se presiona el botón Start/Menu.</summary>
+        public event Action OnMenuToggle;
+
         private const float MOVEMENT_DELAY = 0.2f;
         private const float STICK_DEADZONE = 0.5f;
         private const int MAP_WIDTH = 16;
@@ -116,6 +119,10 @@ namespace TacticFantasy.Adapters
 
             if (gamepad.buttonNorth.wasPressedThisFrame)
                 OnToggleAttackRange?.Invoke();
+
+            // NEW: Start button for menu
+            if (gamepad.startButton.wasPressedThisFrame)
+                OnMenuToggle?.Invoke();
         }
 
         public void SetCursorPosition(int x, int y)

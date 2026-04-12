@@ -38,6 +38,8 @@ namespace TacticFantasy.Adapters
             InitializeAdapters();
             CreateTeams();
             _turnManager.Initialize(_allUnits);
+            // CRITICAL: Render all units immediately after initialization so they're visible on load
+            _unitRenderer.UpdateAllUnits(_allUnits, _turnManager);
         }
 
         public void Update()
@@ -83,6 +85,7 @@ namespace TacticFantasy.Adapters
             _inputHandler.OnTileClicked += HandleTileClick;
             _inputHandler.OnUnitClicked += HandleUnitClick;
             _inputHandler.OnEndTurnPressed += HandleEndTurnPressed;  // NEW: Keyboard shortcut
+            _inputHandler.OnMenuTogglePressed += HandleMenuTogglePressed;  // NEW: ESC key for menu
 
             // Suscribirse a eventos del mando
             _gamepadCursorController.OnCursorMoved += HandleGamepadCursorMoved;
@@ -90,6 +93,7 @@ namespace TacticFantasy.Adapters
             _gamepadCursorController.OnCancel += HandleGamepadCancel;
             _gamepadCursorController.OnEndTurn += HandleGamepadEndTurn;
             _gamepadCursorController.OnToggleAttackRange += HandleGamepadToggleAttackRange;
+            _gamepadCursorController.OnMenuToggle += HandleMenuTogglePressed;  // NEW: Start button for menu
         }
 
         private void CreateTeams()
@@ -137,6 +141,10 @@ namespace TacticFantasy.Adapters
 
         private void HandleUnitClick(int x, int y)
         {
+            // NEW: Ignore input if menu is open
+            if (_uiManager.IsModalMenuOpen())
+                return;
+
             if (_turnManager.CurrentPhase != Phase.PlayerPhase)
                 return;
 
@@ -161,6 +169,14 @@ namespace TacticFantasy.Adapters
 
         private void HandleTileClick(int x, int y)
         {
+            // NEW: Ignore input if menu is open
+            if (_uiManager.IsModalMenuOpen())
+                return;
+
+            // NEW: Always show terrain info on tile click (even without unit selected)
+            var tile = _gameMap.GetTile(x, y);
+            _uiManager.ShowTerrainInfo(tile.Terrain);
+
             if (_turnManager.CurrentPhase != Phase.PlayerPhase || _selectedUnit == null)
                 return;
 
@@ -344,6 +360,10 @@ namespace TacticFantasy.Adapters
         /// </summary>
         private void HandleGamepadConfirm()
         {
+            // NEW: Ignore input if menu is open
+            if (_uiManager.IsModalMenuOpen())
+                return;
+
             _inputHandler.SimulateGamepadClick(_gamepadCursorController.CursorPosition.x, _gamepadCursorController.CursorPosition.y);
         }
 
@@ -415,6 +435,22 @@ namespace TacticFantasy.Adapters
                 // Ocultar los rangos (volver al estado anterior)
                 _mapRenderer.SetAttackRange(new HashSet<(int, int)>());
                 _uiManager.ShowInfoMessage("Enemy attack ranges hidden");
+            }
+        }
+
+        /// <summary>
+        /// Maneja el toggle del menú modal (ESC o Start button).
+        /// Abre o cierra el menú dependiendo del estado actual.
+        /// </summary>
+        private void HandleMenuTogglePressed()
+        {
+            if (_uiManager.IsModalMenuOpen())
+            {
+                _uiManager.HideModalMenu();
+            }
+            else
+            {
+                _uiManager.ShowModalMenu();
             }
         }
 

@@ -1,0 +1,167 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using TacticFantasy.Domain.Combat;
+using TacticFantasy.Domain.Map;
+using TacticFantasy.Domain.Units;
+using TacticFantasy.Domain.Weapons;
+
+namespace TacticFantasy.Domain.AI
+{
+    public interface IAIController
+    {
+        void DecideAction(IUnit unit, List<IUnit> allUnits, IGameMap map, IPathFinder pathFinder, out (int x, int y)? moveTarget, out IUnit attackTarget, out bool isHealAction);
+    }
+
+    public class AIController : IAIController
+    {
+        private readonly ICombatResolver _combatResolver;
+        private readonly Random _rng = new Random();
+
+        public AIController(ICombatResolver combatResolver)
+        {
+            _combatResolver = combatResolver;
+        }
+
+        public void DecideAction(IUnit unit, List<IUnit> allUnits, IGameMap map, IPathFinder pathFinder,
+            out (int x, int y)? moveTarget, out IUnit attackTarget, out bool isHealAction)
+        {
+            moveTarget = null;
+            attackTarget = null;
+            isHealAction = false;
+
+            if (unit.EquippedWeapon.Type == WeaponType.STAFF)
+            {
+                DecideHealAction(unit, allUnits, map, pathFinder, out moveTarget, out attackTarget, out isHealAction);
+            }
+            else
+            {
+                DecideAttackAction(unit, allUnits, map, pathFinder, out moveTarget, out attackTarget);
+            }
+        }
+
+        private void DecideAttackAction(IUnit unit, List<IUnit> allUnits, IGameMap map, IPathFinder pathFinder,
+            out (int x, int y)? moveTarget, out IUnit attackTarget)
+        {
+            moveTarget = null;
+            attackTarget = null;
+
+            var playerUnits = allUnits.Where(u => u.Team == Team.PlayerTeam && u.IsAlive).ToList();
+
+            if (playerUnits.Count == 0)
+                return;
+
+            var reachable = pathFinder.GetMovementRange(unit.Position.x, unit.Position.y, unit.CurrentStats.MOV, unit, map);
+
+            var bestAttackOption = FindBestAttackPosition(unit, playerUnits, reachable, map);
+
+            if (bestAttackOption.HasValue)
+            {
+                var (targetPosition, target) = bestAttackOption.Value;
+                moveTarget = targetPosition;
+                attackTarget = target;
+            }
+            else
+            {
+                var closestEnemy = playerUnits
+                    .OrderBy(e => map.GetDistance(unit.Position.x, unit.Position.y, e.Position.x, e.Position.y))
+                    .First();
+
+                var pathToEnemy = pathFinder.FindPath(unit.Position.x, unit.Position.y,
+                    closestEnemy.Position.x, closestEnemy.Position.y, unit.CurrentStats.MOV, unit, map);
+
+                if (pathToEnemy.Count > 1)
+                {
+                    moveTarget = pathToEnemy[pathToEnemy.Count - 1];
+                }
+            }
+        }
+
+        private void DecideHealAction(IUnit unit, List<IUnit> allUnits, IGameMap map, IPathFinder pathFinder,
+            out (int x, int y)? moveTarget, out IUnit attackTarget, out bool isHealAction)
+        {
+            moveTarget = null;
+            attackTarget = null;
+            isHealAction = false;
+
+            var allyUnits = allUnits.Where(u => u.Team == Team.EnemyTeam && u.IsAlive && u.Id != unit.Id).ToList();
+            var injuredAllies = allyUnits.Where(u => u.CurrentHP < u.MaxHP).OrderBy(u => u.CurrentHP).ToList();
+
+            if (injuredAllies.Count == 0)
+                return;
+
+            var targetAlly = injuredAllies.First();
+            int distance = map.GetDistance(unit.Position.x, unit.Position.y, targetAlly.Position.x, targetAlly.Position.y);
+
+            if (distance <= unit.EquippedWeapon.MaxRange)
+            {
+                attackTarget = targetAlly;
+                isHealAction = true;
+            }
+            else
+            {
+                var pathToAlly = pathFinder.FindPath(unit.Position.x, unit.Position.y,
+                    targetAlly.Position.x, targetAlly.Position.y, unit.CurrentStats.MOV, unit, map);
+
+                if (pathToAlly.Count > 1)
+                {
+                    moveTarget = pathToAlly[pathToAlly.Count - 1];
+                }
+            }
+        }
+
+        /// <summary>
+        /// Scores a potential attack option for AI decision-making.
+        /// Lower score = more attractive target.
+        ///
+        /// Scoring factors (additive penalties/bonuses):
+        ///  - Base: target's current HP (lower HP → easier kill → preferred)
+        ///  - Triangle advantage  : -15 bonus  (strongly prefer advantaged targets)
+        ///  - Triangle disadvantage: +30 penalty (avoid unfavorable matchups)
+        /// A near-dead unit (HP ≤ weapon power) scores so low that it beats any
+        /// triangle consideration — the finisher heuristic.
+        /// </summary>
+        private int ScoreAttackOption(IUnit attacker, IUnit target)
+        {
+            int score = target.CurrentHP;
+
+            var (dmgBonus, _) = WeaponTriangle.GetTriangleModifiers(attacker.EquippedWeapon, target.EquippedWeapon);
+
+            if (dmgBonus > 0)
+                score -= TriangleAdvantageBias;      // advantage: more attractive
+            else if (dmgBonus < 0)
+                score += TriangleDisadvantagePenalty; // disadvantage: less attractive
+
+            return score;
+        }
+
+        // Tuning constants for the target-selection heuristic
+        private const int TriangleAdvantageBias      = 15;
+        private const int TriangleDisadvantagePenalty = 30;
+
+        private (int, int, IUnit)? FindBestAttackPosition(IUnit unit, List<IUnit> enemies, HashSet<(int, int)> reachable, IGameMap map)
+        {
+            var validTargets = new List<(int x, int y, IUnit target, int score)>();
+
+            foreach (var position in reachable)
+            {
+                foreach (var enemy in enemies)
+                {
+                    int distance = map.GetDistance(position.Item1, position.Item2, enemy.Position.x, enemy.Position.y);
+
+                    if (distance >= unit.EquippedWeapon.MinRange && distance <= unit.EquippedWeapon.MaxRange)
+                    {
+                        int score = ScoreAttackOption(unit, enemy);
+                        validTargets.Add((position.Item1, position.Item2, enemy, score));
+                    }
+                }
+            }
+
+            if (validTargets.Count == 0)
+                return null;
+
+            var selected = validTargets.OrderBy(t => t.score).First();
+            return ((selected.x, selected.y), selected.target);
+        }
+    }
+}

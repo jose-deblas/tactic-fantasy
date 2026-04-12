@@ -138,5 +138,68 @@ namespace TacticFantasy.Tests
             Assert.IsNotNull(attackTarget);
             Assert.AreEqual(player.Id, attackTarget.Id);
         }
+
+        // ---- terrain-aware positioning ------------------------------------
+
+        /// <summary>
+        /// When two reachable tiles can both attack the same target, the AI
+        /// should prefer the tile with the higher defense bonus (Forest > Plain).
+        /// </summary>
+        [Test]
+        public void DecideAction_PrefersDefensiveTile_WhenMultipleAttackPositionsAvailable()
+        {
+            // Build a controlled 5x1 map:
+            //  col0=Plain, col1=Forest, col2=Plain(enemy start), col3=Plain(player)
+            var tiles = new ITile[5, 1];
+            tiles[0, 0] = new Tile(0, 0, TerrainType.Plain);
+            tiles[1, 0] = new Tile(1, 0, TerrainType.Forest);  // defense bonus
+            tiles[2, 0] = new Tile(2, 0, TerrainType.Plain);   // enemy starts here
+            tiles[3, 0] = new Tile(3, 0, TerrainType.Plain);
+            tiles[4, 0] = new Tile(4, 0, TerrainType.Plain);
+            var controlledMap = new GameMap(5, 1, tiles);
+
+            // Enemy has MOV=3, so it can reach cols 0-4 from col2.
+            // Player is at col3, so col2 and col1 are both within weapon range (1).
+            // col1 is Forest (+1 def); col2 is Plain (+0 def) — AI should choose col1.
+            IUnit enemy  = MakeEnemy(10, WeaponType.SWORD, pos: (2, 0));
+            IUnit player = MakePlayer(1, WeaponType.LANCE,  hp: 20, pos: (3, 0));
+            var allUnits = new List<IUnit> { enemy, player };
+
+            _ai.DecideAction(enemy, allUnits, controlledMap, _pathFinder,
+                out (int x, int y)? moveTarget, out IUnit attackTarget, out _);
+
+            Assert.IsNotNull(attackTarget, "AI should attack the player");
+            Assert.IsNotNull(moveTarget, "AI should move to a specific tile");
+            Assert.AreEqual(1, moveTarget.Value.x,
+                "AI should prefer the Forest tile (col1) for its defense bonus");
+        }
+
+        /// <summary>
+        /// Fort tiles (heal% + defense) should be preferred over Forest tiles.
+        /// </summary>
+        [Test]
+        public void DecideAction_PrefersFortTile_OverForestTile()
+        {
+            var tiles = new ITile[5, 1];
+            tiles[0, 0] = new Tile(0, 0, TerrainType.Plain);
+            tiles[1, 0] = new Tile(1, 0, TerrainType.Forest); // def +1
+            tiles[2, 0] = new Tile(2, 0, TerrainType.Fort);   // def +2  ← should be chosen
+            tiles[3, 0] = new Tile(3, 0, TerrainType.Plain);  // player here
+            tiles[4, 0] = new Tile(4, 0, TerrainType.Plain);
+            var controlledMap = new GameMap(5, 1, tiles);
+
+            // Enemy at col0, player at col3 — enemy can move to col1 or col2 to attack
+            IUnit enemy  = MakeEnemy(10, WeaponType.SWORD, pos: (0, 0));
+            IUnit player = MakePlayer(1, WeaponType.LANCE,  hp: 20, pos: (3, 0));
+            var allUnits = new List<IUnit> { enemy, player };
+
+            _ai.DecideAction(enemy, allUnits, controlledMap, _pathFinder,
+                out (int x, int y)? moveTarget, out IUnit attackTarget, out _);
+
+            Assert.IsNotNull(attackTarget);
+            Assert.IsNotNull(moveTarget);
+            Assert.AreEqual(2, moveTarget.Value.x,
+                "AI should prefer the Fort tile (col2) over the Forest tile (col1)");
+        }
     }
 }

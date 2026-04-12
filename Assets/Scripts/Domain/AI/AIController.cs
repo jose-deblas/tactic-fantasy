@@ -152,6 +152,7 @@ namespace TacticFantasy.Domain.AI
                     if (distance >= unit.EquippedWeapon.MinRange && distance <= unit.EquippedWeapon.MaxRange)
                     {
                         int score = ScoreAttackOption(unit, enemy);
+                        score -= ScoreTerrainBonus(position.Item1, position.Item2, map);
                         validTargets.Add((position.Item1, position.Item2, enemy, score));
                     }
                 }
@@ -163,5 +164,21 @@ namespace TacticFantasy.Domain.AI
             var selected = validTargets.OrderBy(t => t.score).First();
             return ((selected.x, selected.y), selected.target);
         }
+
+        /// <summary>
+        /// Returns a bonus (lower score = more attractive) based on the defense
+        /// value of the tile at the given position. This makes the AI prefer
+        /// defensive terrain (Fort, Forest, Mountain) when attacking from it.
+        /// Bonus scale matches <see cref="TriangleAdvantageBias"/> to allow
+        /// meaningful trade-offs between terrain and target quality.
+        /// </summary>
+        private int ScoreTerrainBonus(int x, int y, IGameMap map)
+        {
+            int defBonus = TerrainProperties.GetDefenseBonus(map.GetTile(x, y).Terrain);
+            // Each point of defense is worth TerrainDefenseBiasPerPoint in the score
+            return defBonus * TerrainDefenseBiasPerPoint;
+        }
+
+        private const int TerrainDefenseBiasPerPoint = 8;
     }
 }

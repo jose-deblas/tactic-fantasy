@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TacticFantasy.Domain.Combat;
+using TacticFantasy.Domain.Map;
 using TacticFantasy.Domain.Turn;
 using TacticFantasy.Domain.Units;
 
@@ -18,6 +19,8 @@ namespace TacticFantasy.Adapters
         private Text _gameOverText;
         private Button _endTurnButton;
         private GameController _gameController;
+    private GameObject _forecastPanel;
+    private Text _forecastText;
 
         public void Awake()
         {
@@ -47,6 +50,7 @@ namespace TacticFantasy.Adapters
             CreateInfoMessageText();
             CreateEndTurnButton();
             CreateGameOverPanel();
+            CreateForecastPanel();
         }
 
         private void CreateTurnCounter()
@@ -311,6 +315,63 @@ namespace TacticFantasy.Adapters
             _turnCounterText.text = $"Turn: {turnCount}";
             _phaseIndicatorText.text = phase == Phase.PlayerPhase ? "PLAYER PHASE" : "ENEMY PHASE";
             _phaseIndicatorText.color = phase == Phase.PlayerPhase ? Color.cyan : Color.red;
+        }
+
+        private void CreateForecastPanel()
+        {
+            _forecastPanel = new GameObject("ForecastPanel");
+            _forecastPanel.transform.SetParent(_uiCanvas.transform);
+
+            Image panelImage = _forecastPanel.AddComponent<Image>();
+            panelImage.color = new Color(0.05f, 0.05f, 0.15f, 0.92f);
+
+            var outline = _forecastPanel.AddComponent<Outline>();
+            outline.effectColor = new Color(0.4f, 0.7f, 1f, 0.9f);
+            outline.effectDistance = new Vector2(2, -2);
+
+            RectTransform panelRT = _forecastPanel.GetComponent<RectTransform>();
+            panelRT.anchorMin = new Vector2(1, 0.5f);
+            panelRT.anchorMax = new Vector2(1, 0.5f);
+            panelRT.offsetMin = new Vector2(-220, -120);
+            panelRT.offsetMax = new Vector2(-10, 120);
+
+            GameObject textGO = new GameObject("ForecastText");
+            textGO.transform.SetParent(_forecastPanel.transform);
+
+            _forecastText = textGO.AddComponent<Text>();
+            _forecastText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            _forecastText.fontSize = 13;
+            _forecastText.alignment = TextAnchor.UpperLeft;
+            _forecastText.color = Color.white;
+            _forecastText.text = "";
+
+            RectTransform textRT = textGO.GetComponent<RectTransform>();
+            textRT.anchorMin = Vector2.zero;
+            textRT.anchorMax = Vector2.one;
+            textRT.offsetMin = new Vector2(10, 10);
+            textRT.offsetMax = new Vector2(-10, -10);
+
+            _forecastPanel.SetActive(false);
+        }
+
+        /// <summary>
+        /// Shows the battle forecast panel for a potential engagement.
+        /// Call before confirming an attack; call HideForecast() to dismiss.
+        /// </summary>
+        public void ShowForecast(IUnit attacker, IUnit defender, IGameMap map)
+        {
+            if (_forecastPanel == null) return;
+
+            var service  = new CombatForecastService(new CombatResolver());
+            var forecast = service.Calculate(attacker, defender, map);
+            _forecastText.text = forecast.FormatFull(attacker.Name, defender.Name);
+            _forecastPanel.SetActive(true);
+        }
+
+        /// <summary>Hides the battle forecast panel.</summary>
+        public void HideForecast()
+        {
+            _forecastPanel?.SetActive(false);
         }
 
         public void ShowGameOverScreen(GameState state, int turnCount)

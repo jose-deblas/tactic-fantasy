@@ -55,7 +55,7 @@ namespace TacticFantasy.Adapters
             textGO.transform.SetParent(_uiCanvas.transform);
 
             _turnCounterText = textGO.AddComponent<Text>();
-            _turnCounterText.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+            _turnCounterText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
             _turnCounterText.text = "Turn: 1";
             _turnCounterText.fontSize = 30;
             _turnCounterText.fontStyle = FontStyle.Bold;
@@ -75,7 +75,7 @@ namespace TacticFantasy.Adapters
             textGO.transform.SetParent(_uiCanvas.transform);
 
             _phaseIndicatorText = textGO.AddComponent<Text>();
-            _phaseIndicatorText.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+            _phaseIndicatorText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
             _phaseIndicatorText.text = "PLAYER PHASE";
             _phaseIndicatorText.fontSize = 24;
             _phaseIndicatorText.alignment = TextAnchor.UpperCenter;
@@ -106,7 +106,7 @@ namespace TacticFantasy.Adapters
             textGO.transform.SetParent(panelGO.transform);
 
             _unitInfoText = textGO.AddComponent<Text>();
-            _unitInfoText.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+            _unitInfoText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
             _unitInfoText.text = "Select a unit";
             _unitInfoText.fontSize = 14;
             _unitInfoText.alignment = TextAnchor.UpperLeft;
@@ -125,7 +125,7 @@ namespace TacticFantasy.Adapters
             textGO.transform.SetParent(_uiCanvas.transform);
 
             _combatResultText = textGO.AddComponent<Text>();
-            _combatResultText.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+            _combatResultText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
             _combatResultText.text = "";
             _combatResultText.fontSize = 18;
             _combatResultText.alignment = TextAnchor.MiddleCenter;
@@ -159,7 +159,7 @@ namespace TacticFantasy.Adapters
             textGO.transform.SetParent(buttonGO.transform);
 
             Text buttonText = textGO.AddComponent<Text>();
-            buttonText.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+            buttonText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
             buttonText.text = "End Turn";
             buttonText.fontSize = 16;
             buttonText.alignment = TextAnchor.MiddleCenter;
@@ -193,7 +193,7 @@ namespace TacticFantasy.Adapters
             textGO.transform.SetParent(_gameOverPanel.transform);
 
             _gameOverText = textGO.AddComponent<Text>();
-            _gameOverText.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+            _gameOverText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
             _gameOverText.text = "Game Over";
             _gameOverText.fontSize = 50;
             _gameOverText.fontStyle = FontStyle.Bold;
@@ -263,7 +263,7 @@ namespace TacticFantasy.Adapters
             textGO.transform.SetParent(_uiCanvas.transform);
 
             _infoMessageText = textGO.AddComponent<Text>();
-            _infoMessageText.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+            _infoMessageText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
             _infoMessageText.text = "";
             _infoMessageText.fontSize = 16;
             _infoMessageText.alignment = TextAnchor.MiddleCenter;

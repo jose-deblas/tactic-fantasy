@@ -1,21 +1,22 @@
 using System;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 namespace TacticFantasy.Adapters
 {
     /// <summary>
-    /// Gestor centralizado de entrada del usuario.
-    /// Maneja tanto input de ratón como de mando (coexistencia simultánea).
+    /// Gestor centralizado de entrada del usuario (ratón).
+    /// Usa el nuevo Input System de Unity 6.
     /// Emite eventos que son procesados por GameController.
     ///
-    /// Arquitectura Hexagonal: Adapter que traduce entrada de usuario a eventos.
+    /// Arquitectura Hexagonal: Adapter que traduce entrada de usuario a eventos de dominio.
     /// </summary>
     public class InputHandler : MonoBehaviour
     {
-        /// <summary>Evento disparado cuando se hace clic en una casilla (ratón o confirmación del mando).</summary>
+        /// <summary>Evento disparado cuando se hace clic en una casilla.</summary>
         public event Action<int, int> OnTileClicked;
 
-        /// <summary>Evento disparado cuando se hace clic en una unidad (ratón o confirmación del mando).</summary>
+        /// <summary>Evento disparado cuando se hace clic en una unidad.</summary>
         public event Action<int, int> OnUnitClicked;
 
         private Camera _mainCamera;
@@ -28,19 +29,16 @@ namespace TacticFantasy.Adapters
 
         public void Update()
         {
-            // Manejar entrada de ratón (no interfiere con el mando)
-            if (Input.GetMouseButtonDown(0))
+            if (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame)
             {
                 HandleMouseClick();
             }
         }
 
-        /// <summary>
-        /// Maneja el clic del ratón detectando qué tile o unidad fue clickeado.
-        /// </summary>
         private void HandleMouseClick()
         {
-            Ray ray = _mainCamera.ScreenPointToRay(Input.mousePosition);
+            Vector2 mousePos = Mouse.current.position.ReadValue();
+            Ray ray = _mainCamera.ScreenPointToRay(mousePos);
 
             if (Physics.Raycast(ray, out RaycastHit hit))
             {
@@ -55,7 +53,6 @@ namespace TacticFantasy.Adapters
 
         /// <summary>
         /// Emite un evento de tile clickeado para ser usado por el mando.
-        /// Permite que GamepadCursorController dispare eventos como si fuera un clic.
         /// </summary>
         public void SimulateGamepadClick(int x, int y)
         {

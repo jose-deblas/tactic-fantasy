@@ -4,6 +4,13 @@
 
 ## Changelog
 
+### v1.4 - Terrain-Aware AI Positioning (2026-04-12)
+- **AIController.cs** - `FindBestAttackPosition` now factors in terrain defense bonus when scoring attack positions
+  - `ScoreTerrainBonus()`: each point of tile defense reduces score by `TerrainDefenseBiasPerPoint` (8)
+  - AI prefers Fort > Forest > Plain when multiple tiles can attack the same target
+  - Tuned so terrain preference coexists with weapon triangle and finisher heuristics without overriding them
+- **AIControllerTests.cs** - 2 new TDD tests: Forest preference over Plain, Fort preference over Forest
+
 ### v1.3 - Experience & Level-Up System (2026-04-12)
 - **Unit.cs** - Extended with `Level`, `Experience`, `GainExperience(amount, rng)` method
   - GrowthRate-based probabilistic stat gains on level-up (capped by CapStats)

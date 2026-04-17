@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using NUnit.Framework;
 using TacticFantasy.Domain.Combat;
 using TacticFantasy.Domain.Map;

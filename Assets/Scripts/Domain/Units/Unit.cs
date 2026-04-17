@@ -34,6 +34,9 @@ namespace TacticFantasy.Domain.Units
 
         /// <summary>Adds <paramref name="amount"/> XP; returns true if a level-up occurred.</summary>
         bool GainExperience(int amount, Random rng = null);
+
+        /// <summary>Changes the unit's class to <paramref name="newClass"/> and resets level/XP.</summary>
+        void ChangeClass(IClassData newClass);
     }
 
     public class Unit : IUnit
@@ -44,7 +47,9 @@ namespace TacticFantasy.Domain.Units
         public int Id { get; }
         public string Name { get; }
         public Team Team { get; }
-        public IClassData Class { get; }
+        private IClassData _class;
+        public IClassData Class => _class;
+
         public CharacterStats CurrentStats { get; private set; }
         public int CurrentHP { get; private set; }
         public int MaxHP { get; private set; }
@@ -71,7 +76,7 @@ namespace TacticFantasy.Domain.Units
             Id = id;
             Name = name;
             Team = team;
-            Class = classData;
+            _class = classData;
             CurrentStats = stats;
             MaxHP = stats.HP;
             CurrentHP = stats.HP;
@@ -164,6 +169,37 @@ namespace TacticFantasy.Domain.Units
                 Experience = 0;
 
             return leveledUp;
+        }
+
+        /// <summary>
+        /// Promotes this unit to <paramref name="newClass"/>.
+        /// Stats are bumped by the difference between new class base stats and current stats
+        /// (only increases are applied). Level and XP reset to 1/0.
+        /// </summary>
+        public void ChangeClass(IClassData newClass)
+        {
+            var newBase = newClass.BaseStats;
+            var current = CurrentStats;
+
+            // Apply stat bonuses: each stat becomes max(current, newBase)
+            int newHP  = Math.Max(current.HP,  newBase.HP);
+            int newSTR = Math.Max(current.STR, newBase.STR);
+            int newMAG = Math.Max(current.MAG, newBase.MAG);
+            int newSKL = Math.Max(current.SKL, newBase.SKL);
+            int newSPD = Math.Max(current.SPD, newBase.SPD);
+            int newLCK = Math.Max(current.LCK, newBase.LCK);
+            int newDEF = Math.Max(current.DEF, newBase.DEF);
+            int newRES = Math.Max(current.RES, newBase.RES);
+            int newMOV = Math.Max(current.MOV, newBase.MOV);
+
+            int hpGain = newHP - MaxHP;
+            CurrentStats = new CharacterStats(newHP, newSTR, newMAG, newSKL, newSPD, newLCK, newDEF, newRES, newMOV);
+            MaxHP    += Math.Max(0, hpGain);
+            CurrentHP = Math.Min(CurrentHP + Math.Max(0, hpGain), MaxHP);
+
+            _class = newClass;
+            Level = 1;
+            Experience = 0;
         }
 
         // ── Private helpers ──────────────────────────────────────────────────

@@ -4,6 +4,7 @@ namespace TacticFantasy.Domain.Units
     {
         Infantry,
         Cavalry,
-        Flying
+        Flying,
+        Armored
     }
 }

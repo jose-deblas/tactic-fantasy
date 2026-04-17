@@ -4,6 +4,21 @@
 
 ## Changelog
 
+### v2.2 - Class Promotion System (2026-04-13)
+- **ClassPromotionService.cs** - Pure domain service: `CanPromote(unit)` + `Promote(unit)` with full promotion map
+- **ClassDataFactory** - 6 promoted classes added: Swordmaster, General, Warrior, Sage, Sniper, Bishop with Fire Emblem-accurate stats/growths/caps
+- **MoveType** - `Armored` variant added (General uses it)
+- **Unit.ChangeClass(newClass)** - Applies promotion stat bumps (max of current vs new base), resets Level to 1, XP to 0
+- Promotion paths: Myrmidon→Swordmaster, Soldier→General, Fighter→Warrior, Mage→Sage, Archer→Sniper, Cleric→Bishop
+- Promoted classes have no further promotion (CanPromote returns false)
+- **ClassPromotionTests.cs** - 14 TDD tests covering CanPromote guards, stat bumps, class name changes, level/XP reset, all promotion paths
+
+### v2.1 - Broken Weapon Guard in AI (2026-04-12)
+- **AIController.cs** - `DecideAction` now checks `unit.HasBrokenWeapon` before any attack/heal logic
+- Units with a broken weapon call the new `AdvanceTowardNearestEnemy` helper: they still move toward opponents but never attempt to attack or heal
+- Healers with a broken staff simply do nothing (no heal target, no movement toward injured ally)
+- **AIControllerTests.cs** - 2 new TDD tests: `DecideAction_BrokenWeaponUnit_DoesNotAttack_ButStillMoves` and `DecideAction_BrokenStaffHealer_DoesNothing`
+
 ### v1.9 - Weapon Durability (2026-04-12)
 - `IWeapon` extended with `MaxUses`, `CurrentUses`, `IsBroken`, `ConsumeUse()`
 - Sentinel value `-1` = unlimited uses (legacy factory methods unchanged)

@@ -106,5 +106,129 @@ namespace TacticFantasy.Tests
             Assert.AreEqual(1, reachable.Count);
             Assert.IsTrue(reachable.Contains((7, 7)));
         }
+
+        // ---- Unit occupancy tests ----
+
+        private IGameMap CreatePlainMap(int width, int height)
+        {
+            var tiles = new ITile[width, height];
+            for (int x = 0; x < width; x++)
+                for (int y = 0; y < height; y++)
+                    tiles[x, y] = new Tile(x, y, TerrainType.Plain);
+            return new GameMap(width, height, tiles);
+        }
+
+        private IUnit CreateUnit(int id, Team team, (int x, int y) pos)
+        {
+            return new Unit(id, $"Unit{id}", team,
+                ClassDataFactory.CreateMyrmidon(),
+                new CharacterStats(18, 6, 0, 11, 12, 5, 5, 0, 5),
+                pos, WeaponFactory.CreateIronSword());
+        }
+
+        [Test]
+        public void GetMovementRange_ExcludesEnemyOccupiedTiles()
+        {
+            var map = CreatePlainMap(5, 5);
+            var mover = CreateUnit(1, Team.PlayerTeam, (2, 2));
+            var enemy = CreateUnit(2, Team.EnemyTeam, (3, 2));
+            var allUnits = new List<IUnit> { mover, enemy };
+
+            var reachable = _pathFinder.GetMovementRange(2, 2, 3, mover, map, allUnits);
+
+            Assert.IsFalse(reachable.Contains((3, 2)), "Should not include enemy-occupied tile");
+        }
+
+        [Test]
+        public void GetMovementRange_ExcludesAllyOccupiedTiles()
+        {
+            var map = CreatePlainMap(5, 5);
+            var mover = CreateUnit(1, Team.PlayerTeam, (2, 2));
+            var ally = CreateUnit(2, Team.PlayerTeam, (3, 2));
+            var allUnits = new List<IUnit> { mover, ally };
+
+            var reachable = _pathFinder.GetMovementRange(2, 2, 3, mover, map, allUnits);
+
+            Assert.IsFalse(reachable.Contains((3, 2)), "Should not include ally-occupied tile as stop destination");
+        }
+
+        [Test]
+        public void GetMovementRange_CanPassThroughAllies()
+        {
+            var map = CreatePlainMap(5, 1);
+            // Mover at (0,0), ally at (1,0), target tile (2,0)
+            var mover = CreateUnit(1, Team.PlayerTeam, (0, 0));
+            var ally = CreateUnit(2, Team.PlayerTeam, (1, 0));
+            var allUnits = new List<IUnit> { mover, ally };
+
+            var reachable = _pathFinder.GetMovementRange(0, 0, 3, mover, map, allUnits);
+
+            Assert.IsTrue(reachable.Contains((2, 0)), "Should be able to pass through ally to reach tile beyond");
+        }
+
+        [Test]
+        public void GetMovementRange_CannotPassThroughEnemies()
+        {
+            var map = CreatePlainMap(5, 1);
+            // Mover at (0,0), enemy at (1,0), tile beyond (2,0)
+            var mover = CreateUnit(1, Team.PlayerTeam, (0, 0));
+            var enemy = CreateUnit(2, Team.EnemyTeam, (1, 0));
+            var allUnits = new List<IUnit> { mover, enemy };
+
+            var reachable = _pathFinder.GetMovementRange(0, 0, 3, mover, map, allUnits);
+
+            Assert.IsFalse(reachable.Contains((2, 0)), "Should not be able to pass through enemy");
+        }
+
+        [Test]
+        public void FindPath_ToOccupiedTile_ReturnsEmptyPath()
+        {
+            var map = CreatePlainMap(5, 5);
+            var mover = CreateUnit(1, Team.PlayerTeam, (0, 0));
+            var enemy = CreateUnit(2, Team.EnemyTeam, (2, 0));
+            var allUnits = new List<IUnit> { mover, enemy };
+
+            var path = _pathFinder.FindPath(0, 0, 2, 0, 5, mover, map, allUnits);
+
+            Assert.AreEqual(0, path.Count, "Should not path to an occupied tile");
+        }
+
+        [Test]
+        public void FindPath_ThroughAlly_Succeeds()
+        {
+            var map = CreatePlainMap(5, 1);
+            var mover = CreateUnit(1, Team.PlayerTeam, (0, 0));
+            var ally = CreateUnit(2, Team.PlayerTeam, (1, 0));
+            var allUnits = new List<IUnit> { mover, ally };
+
+            var path = _pathFinder.FindPath(0, 0, 2, 0, 5, mover, map, allUnits);
+
+            Assert.Greater(path.Count, 0, "Should find path through ally");
+            Assert.AreEqual((2, 0), path[path.Count - 1]);
+        }
+
+        [Test]
+        public void FindPath_ThroughEnemy_ReturnsEmptyPath()
+        {
+            var map = CreatePlainMap(5, 1);
+            var mover = CreateUnit(1, Team.PlayerTeam, (0, 0));
+            var enemy = CreateUnit(2, Team.EnemyTeam, (1, 0));
+            var allUnits = new List<IUnit> { mover, enemy };
+
+            var path = _pathFinder.FindPath(0, 0, 2, 0, 5, mover, map, allUnits);
+
+            Assert.AreEqual(0, path.Count, "Should not path through enemy");
+        }
+
+        [Test]
+        public void GetMovementRange_WithoutAllUnits_IgnoresOccupancy()
+        {
+            var map = CreatePlainMap(5, 5);
+            var mover = CreateUnit(1, Team.PlayerTeam, (2, 2));
+
+            var reachable = _pathFinder.GetMovementRange(2, 2, 1, mover, map);
+
+            Assert.IsTrue(reachable.Contains((3, 2)), "Without allUnits, no occupancy check");
+        }
     }
 }

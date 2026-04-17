@@ -22,6 +22,12 @@ namespace TacticFantasy.Domain.Skills
         public CharacterStats DefenderEffectiveStats { get; set; }
 
         public bool HasParagon { get; set; }
+        /// <summary>Set by Luna; when true, defender DEF/RES is halved for this strike.</summary>
+        public bool LunaActive { get; set; }
+        /// <summary>HP healed by Sol after a successful hit. Accumulated over strikes.</summary>
+        public int SolHealAmount { get; set; }
+        /// <summary>Damage dealt by the most recent attacker strike (for Sol to reference).</summary>
+        public int LastStrikeDamage { get; set; }
         public List<string> ActivatedSkills { get; }
 
         public CombatContext(IUnit attacker, IUnit defender, IGameMap map, Random rng)
@@ -36,6 +42,9 @@ namespace TacticFantasy.Domain.Skills
             DefenderSkillsNegated = false;
             VantageActivated = false;
             HasParagon = false;
+            LunaActive = false;
+            SolHealAmount = 0;
+            LastStrikeDamage = 0;
             AttackerEffectiveStats = attacker.CurrentStats;
             DefenderEffectiveStats = defender.CurrentStats;
             ActivatedSkills = new List<string>();

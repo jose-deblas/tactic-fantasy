@@ -64,7 +64,9 @@ namespace TacticFantasy.Domain.Combat
                 int extraAttacks = 0;
                 if (!ctx.AttackerSkillsNegated)
                 {
-                    foreach (var skill in attacker.EquippedSkills.Where(s => s.ActivationPhase == SkillActivationPhase.OnAttack))
+                    // Fire OnAttack skills (excluding Luna which is per-strike)
+                    foreach (var skill in attacker.EquippedSkills.Where(s =>
+                        s.ActivationPhase == SkillActivationPhase.OnAttack && s.Name != "Luna"))
                     {
                         if (skill.CanActivate(attacker, defender, ctx.Rng))
                             skill.Apply(ctx);
@@ -76,13 +78,37 @@ namespace TacticFantasy.Domain.Combat
                 int totalStrikes = braveStrikes + extraAttacks;
                 for (int i = 0; i < totalStrikes && defenderHP > 0 && attackerHP > 0; i++)
                 {
+                    // Roll Luna independently per strike
+                    ctx.LunaActive = false;
+                    if (!ctx.AttackerSkillsNegated)
+                    {
+                        foreach (var skill in attacker.EquippedSkills.Where(s =>
+                            s.ActivationPhase == SkillActivationPhase.OnAttack && s.Name == "Luna"))
+                        {
+                            if (skill.CanActivate(attacker, defender, ctx.Rng))
+                                skill.Apply(ctx);
+                        }
+                    }
+
                     var strikeResult = ExecuteStrike(ctx, attacker, defender, attackerHP, defenderHP, isCounter: false);
                     defenderHP = strikeResult.targetHP;
+                    ctx.LunaActive = false; // reset after strike
                     if (strikeResult.hit)
                     {
                         anyAttackerHit = true;
                         totalDamage += strikeResult.damage;
                         if (strikeResult.crit) anyAttackerCrit = true;
+
+                        // Sol: OnDamageDealt — check after each hit that deals damage
+                        if (!ctx.AttackerSkillsNegated && strikeResult.damage > 0)
+                        {
+                            ctx.LastStrikeDamage = strikeResult.damage;
+                            foreach (var skill in attacker.EquippedSkills.Where(s => s.ActivationPhase == SkillActivationPhase.OnDamageDealt))
+                            {
+                                if (skill.CanActivate(attacker, defender, ctx.Rng))
+                                    skill.Apply(ctx);
+                            }
+                        }
                     }
                 }
             }
@@ -101,13 +127,34 @@ namespace TacticFantasy.Domain.Combat
                 int followUpStrikes = braveStrikes;
                 for (int i = 0; i < followUpStrikes && defenderHP > 0 && attackerHP > 0; i++)
                 {
+                    ctx.LunaActive = false;
+                    if (!ctx.AttackerSkillsNegated)
+                    {
+                        foreach (var skill in attacker.EquippedSkills.Where(s =>
+                            s.ActivationPhase == SkillActivationPhase.OnAttack && s.Name == "Luna"))
+                        {
+                            if (skill.CanActivate(attacker, defender, ctx.Rng))
+                                skill.Apply(ctx);
+                        }
+                    }
                     var strikeResult = ExecuteStrike(ctx, attacker, defender, attackerHP, defenderHP, isCounter: false);
                     defenderHP = strikeResult.targetHP;
+                    ctx.LunaActive = false;
                     if (strikeResult.hit)
                     {
                         anyAttackerHit = true;
                         totalDamage += strikeResult.damage;
                         if (strikeResult.crit) anyAttackerCrit = true;
+
+                        if (!ctx.AttackerSkillsNegated && strikeResult.damage > 0)
+                        {
+                            ctx.LastStrikeDamage = strikeResult.damage;
+                            foreach (var skill in attacker.EquippedSkills.Where(s => s.ActivationPhase == SkillActivationPhase.OnDamageDealt))
+                            {
+                                if (skill.CanActivate(attacker, defender, ctx.Rng))
+                                    skill.Apply(ctx);
+                            }
+                        }
                     }
                 }
             }
@@ -135,6 +182,14 @@ namespace TacticFantasy.Domain.Combat
             if (ctx.HasParagon)
                 attackerXp *= 2;
 
+            // Sol: apply healing to attacker
+            int solHeal = 0;
+            if (ctx.SolHealAmount > 0 && anyAttackerHit)
+            {
+                solHeal = Math.Min(ctx.SolHealAmount, attacker.MaxHP - attackerHP);
+                attackerHP = Math.Min(attacker.MaxHP, attackerHP + ctx.SolHealAmount);
+            }
+
             // Phase 8: Weapon durability
             attacker.EquippedWeapon.ConsumeUse();
             if (defenderCounterLanded || ctx.VantageActivated)
@@ -146,7 +201,8 @@ namespace TacticFantasy.Domain.Combat
                 defenderXpGained: defenderXp,
                 defenderStatusApplied: ResolveOnHitStatus(attacker, anyAttackerHit, defenderHP),
                 attackerStatusApplied: ResolveOnHitStatus(defender, defenderCounterLanded, attackerHP),
-                activatedSkills: ctx.ActivatedSkills);
+                activatedSkills: ctx.ActivatedSkills,
+                attackerHealedHP: solHeal);
         }
 
         private (bool hit, bool crit, int damage, int targetHP) ExecuteStrike(
@@ -165,7 +221,8 @@ namespace TacticFantasy.Domain.Combat
                 crit = ctx.ForceCritical && striker == ctx.Attacker && !isCounter
                     ? true
                     : CalculateCriticalWithStats(strikerStats, striker, target);
-                damage = CalculateDamageWithStats(strikerStats, targetStats, striker, target, ctx.Map);
+                damage = CalculateDamageWithStats(strikerStats, targetStats, striker, target, ctx.Map,
+                    lunaActive: !isCounter && ctx.LunaActive);
                 if (crit)
                     damage *= 3;
                 targetHP -= damage;
@@ -270,10 +327,12 @@ namespace TacticFantasy.Domain.Combat
 
         // ── Stats-aware calculation methods ──────────────────────────────────
 
-        private int CalculateDamageWithStats(CharacterStats attackerStats, CharacterStats defenderStats, IUnit attacker, IUnit defender, IGameMap map)
+        private int CalculateDamageWithStats(CharacterStats attackerStats, CharacterStats defenderStats, IUnit attacker, IUnit defender, IGameMap map, bool lunaActive = false)
         {
             int attackPower = CalculateAttackPowerWithStats(attackerStats, attacker, defender, map);
             int defensePower = CalculateDefensePowerWithStats(defenderStats, attacker, defender, map);
+            if (lunaActive)
+                defensePower /= 2; // Luna halves defender DEF/RES for this strike
             return Math.Max(0, attackPower - defensePower);
         }
 

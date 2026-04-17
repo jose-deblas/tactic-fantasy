@@ -110,6 +110,49 @@ namespace TacticFantasy.Domain.Skills
             }
         }
 
+        public static ISkill CreateSol() => new SolSkill();
+        public static ISkill CreateLuna() => new LunaSkill();
+
+        private class SolSkill : ISkill
+        {
+            public string Name => "Sol";
+            public SkillActivationPhase ActivationPhase => SkillActivationPhase.OnDamageDealt;
+
+            /// <summary>Activation chance = SKL / 2 percent.</summary>
+            public bool CanActivate(IUnit owner, IUnit opponent, Random rng)
+            {
+                int chance = owner.CurrentStats.SKL / 2;
+                return chance > 0 && rng.Next(100) < chance;
+            }
+
+            /// <summary>Heals the attacker for the amount of damage dealt this strike.</summary>
+            public void Apply(CombatContext ctx)
+            {
+                ctx.SolHealAmount += ctx.LastStrikeDamage;
+                ctx.ActivatedSkills.Add(Name);
+            }
+        }
+
+        private class LunaSkill : ISkill
+        {
+            public string Name => "Luna";
+            public SkillActivationPhase ActivationPhase => SkillActivationPhase.OnAttack;
+
+            /// <summary>Activation chance = SKL / 2 percent.</summary>
+            public bool CanActivate(IUnit owner, IUnit opponent, Random rng)
+            {
+                int chance = owner.CurrentStats.SKL / 2;
+                return chance > 0 && rng.Next(100) < chance;
+            }
+
+            /// <summary>Flags that defender DEF/RES should be halved for the current strike.</summary>
+            public void Apply(CombatContext ctx)
+            {
+                ctx.LunaActive = true;
+                ctx.ActivatedSkills.Add(Name);
+            }
+        }
+
         private class ParagonSkill : ISkill
         {
             public string Name => "Paragon";

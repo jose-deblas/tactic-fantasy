@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using TacticFantasy.Domain.Skills;
 using TacticFantasy.Domain.Weapons;
 
 namespace TacticFantasy.Domain.Units
@@ -37,6 +38,11 @@ namespace TacticFantasy.Domain.Units
 
         /// <summary>Changes the unit's class to <paramref name="newClass"/> and resets level/XP.</summary>
         void ChangeClass(IClassData newClass);
+
+        IReadOnlyList<ISkill> EquippedSkills { get; }
+        void LearnSkill(ISkill skill);
+        void EquipSkill(ISkill skill);
+        void UnequipSkill(ISkill skill);
     }
 
     public class Unit : IUnit
@@ -62,6 +68,9 @@ namespace TacticFantasy.Domain.Units
 
         public int Level { get; private set; }
         public int Experience { get; private set; }
+
+        private readonly List<ISkill> _equippedSkills = new List<ISkill>();
+        public IReadOnlyList<ISkill> EquippedSkills => _equippedSkills.AsReadOnly();
 
         public Unit(
             int id,
@@ -200,6 +209,24 @@ namespace TacticFantasy.Domain.Units
             _class = newClass;
             Level = 1;
             Experience = 0;
+        }
+
+        public void LearnSkill(ISkill skill)
+        {
+            if (skill == null) return;
+            if (!_equippedSkills.Contains(skill))
+                _equippedSkills.Add(skill);
+        }
+
+        public void EquipSkill(ISkill skill)
+        {
+            LearnSkill(skill);
+        }
+
+        public void UnequipSkill(ISkill skill)
+        {
+            if (skill == null) return;
+            _equippedSkills.Remove(skill);
         }
 
         // ── Private helpers ──────────────────────────────────────────────────

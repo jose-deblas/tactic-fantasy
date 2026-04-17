@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using TacticFantasy.Domain.Units;
 
 namespace TacticFantasy.Domain.Combat
@@ -24,6 +25,9 @@ namespace TacticFantasy.Domain.Combat
         /// <summary>Status effect applied to the attacker via counter-hit, if any.</summary>
         public StatusEffectType? AttackerStatusApplied { get; }
 
+        /// <summary>Names of skills that activated during this combat.</summary>
+        public IReadOnlyList<string> ActivatedSkills { get; }
+
         public CombatResult(
             int damage,
             bool hit,
@@ -35,7 +39,8 @@ namespace TacticFantasy.Domain.Combat
             int attackerXpGained = 0,
             int defenderXpGained = 0,
             StatusEffectType? defenderStatusApplied = null,
-            StatusEffectType? attackerStatusApplied = null)
+            StatusEffectType? attackerStatusApplied = null,
+            IReadOnlyList<string> activatedSkills = null)
         {
             Damage = damage;
             Hit = hit;
@@ -48,6 +53,7 @@ namespace TacticFantasy.Domain.Combat
             DefenderXpGained = defenderXpGained;
             DefenderStatusApplied = defenderStatusApplied;
             AttackerStatusApplied = attackerStatusApplied;
+            ActivatedSkills = activatedSkills ?? new List<string>();
         }
     }
 }

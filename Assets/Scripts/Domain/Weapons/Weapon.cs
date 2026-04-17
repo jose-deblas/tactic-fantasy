@@ -39,6 +39,12 @@ namespace TacticFantasy.Domain.Weapons
         /// <summary>True when CurrentUses == 0 (and MaxUses != -1).</summary>
         bool IsBroken { get; }
 
+        /// <summary>True for Brave weapons that strike twice before the counter.</summary>
+        bool IsBrave { get; }
+
+        /// <summary>Minimum weapon rank required to equip.</summary>
+        WeaponRank RequiredRank { get; }
+
         /// <summary>Consumes one use. No-op for unlimited or already-broken weapons.</summary>
         void ConsumeUse();
     }
@@ -60,6 +66,8 @@ namespace TacticFantasy.Domain.Weapons
         public int MaxUses { get; }
         public int CurrentUses { get; private set; }
         public bool IsBroken => MaxUses != -1 && CurrentUses <= 0;
+        public bool IsBrave { get; }
+        public WeaponRank RequiredRank { get; }
 
         /// <summary>
         /// Creates a weapon. Pass <paramref name="uses"/> = -1 (default) for unlimited durability.
@@ -76,7 +84,9 @@ namespace TacticFantasy.Domain.Weapons
             int maxRange,
             StatusEffectType? onHitStatus = null,
             int onHitStatusDuration = 0,
-            int uses = -1)
+            int uses = -1,
+            bool isBrave = false,
+            WeaponRank requiredRank = WeaponRank.E)
         {
             Name = name;
             Type = type;
@@ -91,6 +101,8 @@ namespace TacticFantasy.Domain.Weapons
             OnHitStatusDuration = onHitStatusDuration;
             MaxUses = uses;
             CurrentUses = uses;
+            IsBrave = isBrave;
+            RequiredRank = requiredRank;
         }
 
         /// <inheritdoc/>

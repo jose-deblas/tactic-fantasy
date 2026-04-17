@@ -70,6 +70,7 @@
     <Compile Include="Assets/Scripts/Domain/Units/UnitDisplayFormatter.cs" />
     <Compile Include="Assets/Scripts/Domain/Save/UnitSnapshot.cs" />
     <Compile Include="Assets/Scripts/Adapters/MapRenderer.cs" />
+    <Compile Include="Assets/Scripts/Domain/Skills/SkillActivationPhase.cs" />
     <Compile Include="Assets/Scripts/Domain/Combat/CombatForecast.cs" />
     <Compile Include="Assets/Scripts/Domain/Map/GameMap.cs" />
     <Compile Include="Assets/Scripts/Domain/Weapons/DamageType.cs" />
@@ -89,6 +90,7 @@
     <Compile Include="Assets/Scripts/Domain/Units/MoveType.cs" />
     <Compile Include="Assets/Scripts/Adapters/GameController.cs" />
     <Compile Include="Assets/Scripts/Adapters/UIManager.cs" />
+    <Compile Include="Assets/Scripts/Domain/Skills/SkillDatabase.cs" />
     <Compile Include="Assets/Scripts/Domain/Weapons/Weapon.cs" />
     <Compile Include="Assets/Scripts/Adapters/GameSceneSetup.cs" />
     <Compile Include="Assets/Scripts/Domain/Map/Tile.cs" />
@@ -96,11 +98,15 @@
     <Compile Include="Assets/Scripts/Tests/GamepadCursorControllerTests.cs" />
     <Compile Include="Assets/Scripts/Domain/Units/Unit.cs" />
     <Compile Include="Assets/Scripts/Tests/UnitDisplayFormatterTests.cs" />
+    <Compile Include="Assets/Scripts/Tests/SkillSystemTests.cs" />
+    <Compile Include="Assets/Scripts/Domain/Skills/CombatContext.cs" />
     <Compile Include="Assets/Scripts/Tests/VictoryConditionTests.cs" />
+    <Compile Include="Assets/Scripts/Domain/Skills/ISkill.cs" />
     <Compile Include="Assets/Scripts/Tests/WeaponTriangleTests.cs" />
     <Compile Include="Assets/Scripts/Tests/JsonFileGameRepositoryTests.cs" />
     <Compile Include="Assets/Scripts/Tests/TurnManagerTests.cs" />
     <Compile Include="Assets/Scripts/Domain/Combat/WeaponTriangle.cs" />
+    <Compile Include="Assets/Scripts/Domain/Weapons/WeaponRank.cs" />
     <Compile Include="Assets/Scripts/Tests/PathFinderTests.cs" />
     <Compile Include="Assets/Scripts/Adapters/CursorRenderer.cs" />
     <Compile Include="Assets/Scripts/Tests/GameSaveServiceTests.cs" />

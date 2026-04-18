@@ -200,6 +200,10 @@ namespace TacticFantasy.Domain.AI
                 score += RedundantStatusPenalty;
             }
 
+            // Prefer attacking higher-attack (threat) units when other factors are equal.
+            // Higher target ATK reduces the score (more attractive to eliminate high-threat units).
+            score -= target.CurrentStats.ATK * AttackStatBias;
+
             return score;
         }
 
@@ -208,6 +212,7 @@ namespace TacticFantasy.Domain.AI
         private const int TriangleDisadvantagePenalty = 30;
         private const int NoCounterBias               = 20; // bonus for targets that can't counter (sleep/stun)
         private const int RedundantStatusPenalty      = 20; // penalty for applying a status the target already has
+        private const int AttackStatBias              = 2;  // weight for preferring high-ATK targets
 
         private ((int x, int y) position, IUnit target)? FindBestAttackPosition(IUnit unit, List<IUnit> enemies, HashSet<(int, int)> reachable, IGameMap map)
         {

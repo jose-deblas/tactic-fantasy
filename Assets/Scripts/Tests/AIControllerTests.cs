@@ -428,6 +428,32 @@ namespace TacticFantasy.Tests
             Assert.IsNotNull(attackTarget,
                 "Unit above the low-HP threshold should attack, not retreat");
         }
+
+        /// <summary>
+        /// When two targets are otherwise equal (HP, triangle, status), the AI
+        /// should prefer attacking the higher-ATK (more dangerous) target.
+        /// </summary>
+        [Test]
+        public void DecideAction_PrefersHigherAttackStatTarget_WhenOtherFactorsEqual()
+        {
+            IUnit enemy = MakeEnemy(10, WeaponType.SWORD, pos: (3, 3));
+
+            // Two adjacent players, same HP and weapon type
+            IUnit weakPlayer  = MakePlayer(1, WeaponType.SWORD, hp: 20, pos: (2, 3));
+            IUnit strongPlayer = MakePlayer(2, WeaponType.SWORD, hp: 20, pos: (4, 3));
+
+            // Bump the ATK stat of the strong player to make it higher threat
+            strongPlayer.CurrentStats.ATK = weakPlayer.CurrentStats.ATK + 5;
+
+            var allUnits = new List<IUnit> { enemy, weakPlayer, strongPlayer };
+
+            _ai.DecideAction(enemy, allUnits, _map, _pathFinder,
+                out _, out IUnit attackTarget, out _);
+
+            Assert.IsNotNull(attackTarget);
+            Assert.AreEqual(strongPlayer.Id, attackTarget.Id,
+                "AI should prefer the higher-ATK (more dangerous) target when other factors are equal");
+        }
     }
 }
 

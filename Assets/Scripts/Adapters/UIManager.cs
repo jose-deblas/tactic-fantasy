@@ -30,6 +30,7 @@ namespace TacticFantasy.Adapters
         private GameObject _turnInterstitialPanel;
         private Text _turnInterstitialText;
         private Button _turnInterstitialButton;
+        private Text _versionText;
 
         public void Awake()
         {
@@ -62,6 +63,7 @@ namespace TacticFantasy.Adapters
             CreateForecastPanel();
             CreateModalMenuPanel();
             CreateTurnInterstitialPanel();
+            CreateVersionText();
         }
 
         private void CreateTurnPhaseHeader()
@@ -470,6 +472,25 @@ namespace TacticFantasy.Adapters
             btnTextRT.offsetMax = Vector2.zero;
 
             _turnInterstitialPanel.SetActive(false);
+        }
+
+        private void CreateVersionText()
+        {
+            GameObject textGO = new GameObject("VersionText");
+            textGO.transform.SetParent(_uiCanvas.transform);
+
+            _versionText = textGO.AddComponent<Text>();
+            _versionText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            _versionText.text = "v2.5";
+            _versionText.fontSize = 12;
+            _versionText.alignment = TextAnchor.LowerRight;
+            _versionText.color = new Color(1f, 1f, 1f, 0.5f);
+
+            RectTransform rt = textGO.GetComponent<RectTransform>();
+            rt.anchorMin = new Vector2(1, 0);
+            rt.anchorMax = new Vector2(1, 0);
+            rt.offsetMin = new Vector2(-80, 5);
+            rt.offsetMax = new Vector2(-5, 25);
         }
 
         public void ShowTurnInterstitial(int turnNumber, System.Action onStart)

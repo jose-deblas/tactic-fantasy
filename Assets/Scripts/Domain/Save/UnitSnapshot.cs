@@ -1,11 +1,13 @@
+using System.Collections.Generic;
+using System.Linq;
 using TacticFantasy.Domain.Units;
 
 namespace TacticFantasy.Domain.Save
 {
     /// <summary>
     /// Serialisable snapshot of a single unit's mutable state.
-    /// Captures only what changes at runtime (HP, position, status).
-    /// Identity data (id, name, team, class, weapon) is preserved to allow
+    /// Captures only what changes at runtime (HP, position, status, inventory).
+    /// Identity data (id, name, team, class) is preserved to allow
     /// reconstruction via UnitFactory on load.
     /// </summary>
     public class UnitSnapshot
@@ -14,7 +16,12 @@ namespace TacticFantasy.Domain.Save
         public string Name         { get; }
         public Team Team           { get; }
         public string ClassName    { get; }
-        public string WeaponName   { get; }
+
+        /// <summary>Ordered list of item names in the unit's inventory.</summary>
+        public IReadOnlyList<string> InventoryItemNames { get; }
+
+        /// <summary>Backward-compat: returns the first inventory item name, or empty string.</summary>
+        public string WeaponName => InventoryItemNames.Count > 0 ? InventoryItemNames[0] : string.Empty;
 
         public int CurrentHP       { get; }
         public int PositionX       { get; }
@@ -26,7 +33,8 @@ namespace TacticFantasy.Domain.Save
         public int              StatusRemainingTurns { get; }
 
         private UnitSnapshot(
-            int id, string name, Team team, string className, string weaponName,
+            int id, string name, Team team, string className,
+            IReadOnlyList<string> inventoryItemNames,
             int currentHP, int posX, int posY,
             StatusEffectType statusType, int statusTurns,
             int level, int experience)
@@ -35,7 +43,7 @@ namespace TacticFantasy.Domain.Save
             Name                 = name;
             Team                 = team;
             ClassName            = className;
-            WeaponName           = weaponName;
+            InventoryItemNames   = inventoryItemNames;
             CurrentHP            = currentHP;
             PositionX            = posX;
             PositionY            = posY;
@@ -52,10 +60,15 @@ namespace TacticFantasy.Domain.Save
             var statusType  = status?.Type  ?? StatusEffectType.None;
             var statusTurns = status?.RemainingTurns ?? 0;
 
+            var itemNames = unit.Inventory.Items
+                .Select(i => i.Name)
+                .ToList()
+                .AsReadOnly();
+
             return new UnitSnapshot(
                 unit.Id, unit.Name, unit.Team,
                 unit.Class?.Name ?? string.Empty,
-                unit.EquippedWeapon?.Name ?? string.Empty,
+                itemNames,
                 unit.CurrentHP,
                 unit.Position.x, unit.Position.y,
                 statusType, statusTurns,
@@ -63,8 +76,22 @@ namespace TacticFantasy.Domain.Save
         }
 
         /// <summary>
-        /// Reconstructs a snapshot from persisted data (e.g. loaded from disk).
-        /// Used by persistence adapters; avoids exposing a public constructor.
+        /// Reconstructs a snapshot from persisted data with inventory support.
+        /// </summary>
+        public static UnitSnapshot Rebuild(
+            int id, string name, Team team, string className,
+            IReadOnlyList<string> inventoryItemNames,
+            int currentHP, int posX, int posY,
+            StatusEffectType statusType, int statusTurns,
+            int level, int experience)
+        {
+            return new UnitSnapshot(id, name, team, className,
+                inventoryItemNames,
+                currentHP, posX, posY, statusType, statusTurns, level, experience);
+        }
+
+        /// <summary>
+        /// Backward-compatible rebuild from old save format with single weapon name.
         /// </summary>
         public static UnitSnapshot Rebuild(
             int id, string name, Team team, string className, string weaponName,
@@ -72,7 +99,12 @@ namespace TacticFantasy.Domain.Save
             StatusEffectType statusType, int statusTurns,
             int level, int experience)
         {
-            return new UnitSnapshot(id, name, team, className, weaponName,
+            var itemNames = string.IsNullOrEmpty(weaponName)
+                ? new List<string>().AsReadOnly()
+                : new List<string> { weaponName }.AsReadOnly();
+
+            return new UnitSnapshot(id, name, team, className,
+                itemNames,
                 currentHP, posX, posY, statusType, statusTurns, level, experience);
         }
     }

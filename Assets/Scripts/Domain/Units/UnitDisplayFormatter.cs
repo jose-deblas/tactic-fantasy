@@ -45,5 +45,19 @@ namespace TacticFantasy.Domain.Units
 
             return lines;
         }
+
+        /// <summary>
+        /// Returns a short level/XP string such as "Lv 5  EXP 42/100" or "Lv 20 (MAX)".
+        /// </summary>
+        public static string FormatLevelInfo(IUnit unit)
+        {
+            if (unit == null)
+                return "";
+
+            if (unit.Level >= Unit.MaxLevel)
+                return $"Lv {unit.Level} (MAX)";
+
+            return $"Lv {unit.Level}  EXP {unit.Experience}/{Unit.XpPerLevel}";
+        }
     }
 }

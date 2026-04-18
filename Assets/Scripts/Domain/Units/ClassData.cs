@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using TacticFantasy.Domain.Weapons;
 
 namespace TacticFantasy.Domain.Units
@@ -9,6 +10,7 @@ namespace TacticFantasy.Domain.Units
         CharacterStats CapStats { get; }
         CharacterStats GrowthRates { get; }
         WeaponType WeaponType { get; }
+        IReadOnlyList<WeaponType> UsableWeaponTypes { get; }
         MoveType MoveType { get; }
     }
 
@@ -18,7 +20,8 @@ namespace TacticFantasy.Domain.Units
         public CharacterStats BaseStats { get; }
         public CharacterStats CapStats { get; }
         public CharacterStats GrowthRates { get; }
-        public WeaponType WeaponType { get; }
+        public IReadOnlyList<WeaponType> UsableWeaponTypes { get; }
+        public WeaponType WeaponType => UsableWeaponTypes[0];
         public MoveType MoveType { get; }
 
         public ClassData(
@@ -28,12 +31,23 @@ namespace TacticFantasy.Domain.Units
             CharacterStats growthRates,
             WeaponType weaponType,
             MoveType moveType)
+            : this(name, baseStats, capStats, growthRates, new[] { weaponType }, moveType)
+        {
+        }
+
+        public ClassData(
+            string name,
+            CharacterStats baseStats,
+            CharacterStats capStats,
+            CharacterStats growthRates,
+            IReadOnlyList<WeaponType> usableWeaponTypes,
+            MoveType moveType)
         {
             Name = name;
             BaseStats = baseStats;
             CapStats = capStats;
             GrowthRates = growthRates;
-            WeaponType = weaponType;
+            UsableWeaponTypes = usableWeaponTypes;
             MoveType = moveType;
         }
     }
@@ -157,7 +171,7 @@ namespace TacticFantasy.Domain.Units
                 new CharacterStats(26, 12, 0, 10, 8, 4, 15, 8, 4),
                 new CharacterStats(42, 28, 5, 24, 22, 20, 30, 20, 7),
                 new CharacterStats(70, 50, 5, 40, 35, 25, 35, 20, 0),
-                WeaponType.LANCE,
+                new[] { WeaponType.LANCE, WeaponType.SWORD },
                 MoveType.Armored
             );
         }
@@ -169,7 +183,7 @@ namespace TacticFantasy.Domain.Units
                 new CharacterStats(30, 14, 0, 8, 9, 5, 10, 2, 6),
                 new CharacterStats(46, 34, 5, 24, 26, 22, 28, 10, 9),
                 new CharacterStats(75, 65, 0, 35, 40, 28, 25, 8, 0),
-                WeaponType.AXE,
+                new[] { WeaponType.AXE, WeaponType.BOW },
                 MoveType.Infantry
             );
         }
@@ -181,7 +195,7 @@ namespace TacticFantasy.Domain.Units
                 new CharacterStats(22, 0, 13, 10, 10, 7, 6, 12, 6),
                 new CharacterStats(36, 8, 30, 26, 26, 24, 18, 30, 9),
                 new CharacterStats(55, 5, 65, 40, 45, 35, 15, 40, 0),
-                WeaponType.FIRE,
+                new[] { WeaponType.FIRE, WeaponType.STAFF },
                 MoveType.Infantry
             );
         }
@@ -205,7 +219,7 @@ namespace TacticFantasy.Domain.Units
                 new CharacterStats(20, 0, 12, 8, 8, 9, 5, 13, 6),
                 new CharacterStats(34, 0, 28, 22, 22, 28, 16, 28, 9),
                 new CharacterStats(50, 0, 60, 35, 35, 45, 14, 45, 0),
-                WeaponType.STAFF,
+                new[] { WeaponType.STAFF, WeaponType.FIRE },
                 MoveType.Infantry
             );
         }

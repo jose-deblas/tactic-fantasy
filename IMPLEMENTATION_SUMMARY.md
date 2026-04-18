@@ -4,6 +4,18 @@
 
 ## Changelog
 
+### v2.5 - Inventory System, Items & Multi-Weapon Classes (2026-04-18)
+- **IItem interface** (`Domain/Items/IItem.cs`) — Base interface for all items (weapons, consumables, key items). `IWeapon` now extends `IItem`
+- **Inventory** (`Domain/Items/Inventory.cs`) — 7-slot item container with Add, Remove, Swap, GetWeapons, GetFirstUsableWeapon
+- **ConsumableItem** (`Domain/Items/ConsumableItem.cs`) — Consumable items with use-count tracking: Vulnerary (heal 10 HP, 3 uses), Elixir (full heal, 3 uses), Antitoxin (cure Poison), Pure Water (+7 RES)
+- **StatBooster** (`Domain/Items/StatBooster.cs`) — Single-use permanent stat items: Energy Drop (+2 STR), Spirit Dust (+2 MAG), Speedwing (+2 SPD), Seraph Robe (+7 HP), Boots (+2 MOV), and more
+- **Unit.cs** — `EquippedWeapon` is now a computed property from inventory (first usable weapon). New `Inventory` property, `CanEquip(IWeapon)` validation, `ApplyStatBoost()` for stat boosters. Backward-compatible constructor preserved
+- **ClassData.cs** — `WeaponType` replaced by `UsableWeaponTypes` (IReadOnlyList). `WeaponType` kept as computed property (primary weapon) for backward compat. Promoted classes updated: General (Lance+Sword), Warrior (Axe+Bow), Sage (Fire+Staff), Bishop (Staff+Fire)
+- **UnitSnapshot.cs** — Now captures full inventory (`InventoryItemNames`) instead of single weapon. Backward-compatible `Rebuild` overload for old save format
+- **JsonFileGameRepository.cs** — DTO updated with `InventoryItems` list, backward compat with old `WeaponName` field on load
+- **UIManager.cs** — Version label ("v2.5") displayed in bottom-right corner, semi-transparent
+- 4 new test files: `InventoryTests.cs`, `ConsumableItemTests.cs`, `UnitInventoryTests.cs`, `MultiWeaponClassTests.cs`
+
 ### v2.4 - AI Self-Preservation: Retreat to Fort (2026-04-18)
 - **AIController.cs** - New `TryRetreatToFort` method: when a unit's HP ≤ 30% of MaxHP AND a Fort tile is reachable within its MOV, the unit retreats to the nearest Fort instead of attacking
 - Retreat gives the unit the Fort's 20% HP heal per turn (processed by TurnManager at end of phase)

@@ -1,8 +1,9 @@
+using TacticFantasy.Domain.Items;
 using TacticFantasy.Domain.Units;
 
 namespace TacticFantasy.Domain.Weapons
 {
-    public interface IWeapon
+    public interface IWeapon : IItem
     {
         string Name { get; }
         WeaponType Type { get; }
@@ -52,6 +53,10 @@ namespace TacticFantasy.Domain.Weapons
     public class Weapon : IWeapon
     {
         public string Name { get; }
+        public ItemType ItemType => ItemType.Weapon;
+        public bool IsUsable => !IsBroken;
+        public void Use(IUnit unit) { }
+
         public WeaponType Type { get; }
         public DamageType DamageType { get; }
         public int Might { get; }

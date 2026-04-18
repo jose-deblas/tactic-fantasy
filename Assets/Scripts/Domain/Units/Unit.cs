@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using TacticFantasy.Domain.Items;
 using TacticFantasy.Domain.Skills;
 using TacticFantasy.Domain.Weapons;
 
@@ -16,6 +18,8 @@ namespace TacticFantasy.Domain.Units
         int MaxHP { get; }
         (int x, int y) Position { get; }
         IWeapon EquippedWeapon { get; }
+        Inventory Inventory { get; }
+        bool CanEquip(IWeapon weapon);
         bool IsAlive { get; }
         StatusEffect ActiveStatus { get; }
         bool CanAct { get; }
@@ -43,6 +47,8 @@ namespace TacticFantasy.Domain.Units
         void LearnSkill(ISkill skill);
         void EquipSkill(ISkill skill);
         void UnequipSkill(ISkill skill);
+
+        void ApplyStatBoost(int hp, int str, int mag, int skl, int spd, int lck, int def, int res, int mov);
     }
 
     public class Unit : IUnit
@@ -60,7 +66,13 @@ namespace TacticFantasy.Domain.Units
         public int CurrentHP { get; private set; }
         public int MaxHP { get; private set; }
         public (int x, int y) Position { get; private set; }
-        public IWeapon EquippedWeapon { get; private set; }
+
+        private readonly Inventory _inventory;
+        public Inventory Inventory => _inventory;
+        public IWeapon EquippedWeapon =>
+            _inventory.GetFirstUsableWeapon()
+            ?? _inventory.GetWeapons().FirstOrDefault();
+
         public bool IsAlive => CurrentHP > 0;
         public StatusEffect ActiveStatus { get; private set; }
         public bool CanAct => IsAlive && (ActiveStatus == null || (ActiveStatus.Type != StatusEffectType.Sleep && ActiveStatus.Type != StatusEffectType.Stun));
@@ -81,6 +93,19 @@ namespace TacticFantasy.Domain.Units
             (int x, int y) position,
             IWeapon weapon,
             int levelOverride = 1)
+            : this(id, name, team, classData, stats, position, new Inventory(weapon), levelOverride)
+        {
+        }
+
+        public Unit(
+            int id,
+            string name,
+            Team team,
+            IClassData classData,
+            CharacterStats stats,
+            (int x, int y) position,
+            Inventory inventory,
+            int levelOverride = 1)
         {
             Id = id;
             Name = name;
@@ -90,7 +115,7 @@ namespace TacticFantasy.Domain.Units
             MaxHP = stats.HP;
             CurrentHP = stats.HP;
             Position = position;
-            EquippedWeapon = weapon;
+            _inventory = inventory ?? new Inventory();
             Level = Math.Max(1, Math.Min(levelOverride, MaxLevel));
             Experience = 0;
         }
@@ -112,7 +137,23 @@ namespace TacticFantasy.Domain.Units
 
         public void EquipWeapon(IWeapon weapon)
         {
-            EquippedWeapon = weapon;
+            if (weapon == null) return;
+            if (!_inventory.Items.Contains(weapon))
+                _inventory.Add(weapon);
+
+            var items = _inventory.Items;
+            int index = -1;
+            for (int i = 0; i < items.Count; i++)
+            {
+                if (items[i] == weapon) { index = i; break; }
+            }
+            if (index > 0)
+                _inventory.Swap(0, index);
+        }
+
+        public bool CanEquip(IWeapon weapon)
+        {
+            return weapon != null && _class.UsableWeaponTypes.Contains(weapon.Type);
         }
 
         public void ApplyStatus(StatusEffect effect)
@@ -227,6 +268,20 @@ namespace TacticFantasy.Domain.Units
         {
             if (skill == null) return;
             _equippedSkills.Remove(skill);
+        }
+
+        public void ApplyStatBoost(int hp, int str, int mag, int skl, int spd, int lck, int def, int res, int mov)
+        {
+            var s = CurrentStats;
+            CurrentStats = new CharacterStats(
+                s.HP + hp, s.STR + str, s.MAG + mag, s.SKL + skl,
+                s.SPD + spd, s.LCK + lck, s.DEF + def, s.RES + res, s.MOV + mov);
+
+            if (hp > 0)
+            {
+                MaxHP += hp;
+                CurrentHP = Math.Min(CurrentHP + hp, MaxHP);
+            }
         }
 
         // ── Private helpers ──────────────────────────────────────────────────

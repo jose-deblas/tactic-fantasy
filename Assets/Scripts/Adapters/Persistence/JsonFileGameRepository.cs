@@ -90,6 +90,8 @@ namespace TacticFantasy.Adapters.Persistence
             public string Name                 { get; set; }
             public string Team                 { get; set; }
             public string ClassName            { get; set; }
+            public List<string> InventoryItems { get; set; }
+            // Backward compat: old saves have WeaponName instead of InventoryItems
             public string WeaponName           { get; set; }
             public int    CurrentHP            { get; set; }
             public int    PositionX            { get; set; }
@@ -107,7 +109,7 @@ namespace TacticFantasy.Adapters.Persistence
                     Name                 = s.Name,
                     Team                 = s.Team.ToString(),
                     ClassName            = s.ClassName,
-                    WeaponName           = s.WeaponName,
+                    InventoryItems       = new List<string>(s.InventoryItemNames),
                     CurrentHP            = s.CurrentHP,
                     PositionX            = s.PositionX,
                     PositionY            = s.PositionY,
@@ -122,8 +124,19 @@ namespace TacticFantasy.Adapters.Persistence
             {
                 var team       = Enum.Parse<Team>(Team);
                 var statusType = Enum.Parse<StatusEffectType>(StatusType);
+
+                // Backward compat: old saves have WeaponName, new saves have InventoryItems
+                if (InventoryItems != null && InventoryItems.Count > 0)
+                {
+                    return UnitSnapshot.Rebuild(
+                        Id, Name, team, ClassName, InventoryItems.AsReadOnly(),
+                        CurrentHP, PositionX, PositionY,
+                        statusType, StatusRemainingTurns,
+                        Level, Experience);
+                }
+
                 return UnitSnapshot.Rebuild(
-                    Id, Name, team, ClassName, WeaponName,
+                    Id, Name, team, ClassName, WeaponName ?? string.Empty,
                     CurrentHP, PositionX, PositionY,
                     statusType, StatusRemainingTurns,
                     Level, Experience);

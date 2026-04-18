@@ -35,7 +35,7 @@ Small domain utilities to avoid duplicated logic and provide clear, well-tested 
 - Added TDD-style test `StatusEffectTests` (Tests/DomainTests/StatusEffectTests.cs) to validate poison ticking, damage application, and expiration behavior.
 
 ### Rationale:
-Add a small, well-contained gameplay mechanic (damage-over-time) in a domain-pure assembly to follow DDD/Hexagonal architecture: status effects live in the domain and are testable outside Unity. This is a minimal step towards a broader status system while respecting small, cohesive changes and TDD.
+Add a small, well-contained gameplay mechanic (damage-over-time) in a domain-pure assembly to follow DDD/Hexagonal architecture: status effects live in the domain and are testable outside Unity. The PoisonEffect implementation previously tracked elapsed time separately from Duration; this made the meaning of Duration ambiguous for summaries and UI. I changed PoisonEffect so Duration represents remaining time and Tick clamps to remaining duration — this makes behavior consistent with other effects and the StatusEffectSummary convention.
 
 **Testing:** See `Tests/DomainTests/StatusEffectTests.cs`. To run tests you can use the included .NET test project (if .NET SDK is installed):
 

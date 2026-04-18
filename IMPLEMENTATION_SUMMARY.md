@@ -51,3 +51,15 @@ Add a small, well-contained gameplay mechanic (damage-over-time) in a domain-pur
 Small presentation improvement to make terrain properties scannable during play; keeps domain logic untouched and follows single-responsibility in UI adapter.
 
 **Testing:** Visual change only; no domain logic changed.
+
+## [2026-04-18]
+**Category:** Extras
+
+### Changes:
+- Added StatusEffectSummary to provide a concise, testable representation of status effects for UI/serialization adapters.
+- Added StatusEffectSummaryTests (TDD-first) to verify formatting and numeric rounding behavior.
+
+### Rationale:
+Small, incremental helper useful for presentation layers or save adapters that need a read-only, serializable summary of a status effect without depending on Unity.
+
+**Testing:** New test at Tests/DomainTests/StatusEffectSummaryTests.cs

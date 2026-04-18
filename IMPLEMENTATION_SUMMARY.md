@@ -1,5 +1,18 @@
 # Implementation Summary
 
+## [2026-04-19]
+**Category:** Extras
+
+### Changes:
+- StatusEffectSummary now prints "(expired)" when the remaining duration is zero or negative.
+- Added TDD tests (StatusEffectSummaryTests) to assert expired formatting for zero and negative durations.
+
+### Rationale:
+Small UX-friendly change: presentation layers consuming StatusEffectSummary can render clearly when an effect has expired without re-evaluating domain logic. Kept change domain-pure and covered by unit tests.
+
+**Testing:** New tests added under Tests/DomainTests/StatusEffectSummaryTests.cs
+
+
 ## [2026-04-18]
 **Category:** AI
 

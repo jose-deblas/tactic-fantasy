@@ -53,6 +53,17 @@ Small presentation improvement to make terrain properties scannable during play;
 **Testing:** Visual change only; no domain logic changed.
 
 ## [2026-04-18]
+**Category:** Presentation
+
+### Changes:
+- Added a very subtle border sprite overlay to each map tile in MapRenderer to improve tile separation and readability, especially on large maps or similar terrain colors.
+
+### Rationale:
+Grid legibility was occasionally poor when adjacent terrain colors were similar; a faint border improves player ability to parse movement/attack overlays without changing game mechanics or colors.
+
+**Testing:** Visual change only; no domain logic changed.
+
+## [2026-04-18]
 **Category:** Extras
 
 ### Changes:

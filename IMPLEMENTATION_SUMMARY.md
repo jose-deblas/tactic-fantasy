@@ -76,3 +76,14 @@ Small, incremental helper useful for presentation layers or save adapters that n
 **Testing:** New test at Tests/DomainTests/StatusEffectSummaryTests.cs
 
 - feat(ai): added threat-based targeting preference — AI now prefers higher-ATK targets when other heuristics are equal (tests added).
+
+## [2026-04-18]
+**Category:** Technical
+
+### Changes:
+- Fixed build/test errors by implementing missing IClassData.Tier in LaguzClassData (small domain model fix).
+
+### Rationale:
+Unit tests failed to build due to LaguzClassData not implementing the Tier property required by IClassData. Adding this property is a minimal, domain-pure change that preserves design while restoring a working test run.
+
+**Testing:** Ran dotnet test; project now progresses further in build (compilation emits many warnings and remaining domain errors unrelated to this fix).

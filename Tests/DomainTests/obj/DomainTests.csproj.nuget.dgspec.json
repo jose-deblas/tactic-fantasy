@@ -1,0 +1,164 @@
+{
+  "format": 1,
+  "restore": {
+    "/Users/r2d2/Projects/fire-emblem/tactic-fantasy/Tests/DomainTests/DomainTests.csproj": {}
+  },
+  "projects": {
+    "/Users/r2d2/Projects/fire-emblem/tactic-fantasy/Assets/Scripts/Domain/Domain.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "/Users/r2d2/Projects/fire-emblem/tactic-fantasy/Assets/Scripts/Domain/Domain.csproj",
+        "projectName": "Domain",
+        "projectPath": "/Users/r2d2/Projects/fire-emblem/tactic-fantasy/Assets/Scripts/Domain/Domain.csproj",
+        "packagesPath": "/Users/r2d2/.nuget/packages/",
+        "outputPath": "/Users/r2d2/Projects/fire-emblem/tactic-fantasy/Assets/Scripts/Domain/obj/",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "/Users/r2d2/.nuget/NuGet/NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "net6.0"
+        ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net6.0": {
+            "targetAlias": "net6.0",
+            "projectReferences": {}
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        },
+        "SdkAnalysisLevel": "10.0.200"
+      },
+      "frameworks": {
+        "net6.0": {
+          "targetAlias": "net6.0",
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "downloadDependencies": [
+            {
+              "name": "Microsoft.AspNetCore.App.Ref",
+              "version": "[6.0.36, 6.0.36]"
+            },
+            {
+              "name": "Microsoft.NETCore.App.Ref",
+              "version": "[6.0.36, 6.0.36]"
+            }
+          ],
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/10.0.201/RuntimeIdentifierGraph.json"
+        }
+      }
+    },
+    "/Users/r2d2/Projects/fire-emblem/tactic-fantasy/Tests/DomainTests/DomainTests.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "/Users/r2d2/Projects/fire-emblem/tactic-fantasy/Tests/DomainTests/DomainTests.csproj",
+        "projectName": "DomainTests",
+        "projectPath": "/Users/r2d2/Projects/fire-emblem/tactic-fantasy/Tests/DomainTests/DomainTests.csproj",
+        "packagesPath": "/Users/r2d2/.nuget/packages/",
+        "outputPath": "/Users/r2d2/Projects/fire-emblem/tactic-fantasy/Tests/DomainTests/obj/",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "/Users/r2d2/.nuget/NuGet/NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "net6.0"
+        ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net6.0": {
+            "targetAlias": "net6.0",
+            "projectReferences": {
+              "/Users/r2d2/Projects/fire-emblem/tactic-fantasy/Assets/Scripts/Domain/Domain.csproj": {
+                "projectPath": "/Users/r2d2/Projects/fire-emblem/tactic-fantasy/Assets/Scripts/Domain/Domain.csproj"
+              }
+            }
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        },
+        "SdkAnalysisLevel": "10.0.200"
+      },
+      "frameworks": {
+        "net6.0": {
+          "targetAlias": "net6.0",
+          "dependencies": {
+            "Microsoft.NET.Test.Sdk": {
+              "target": "Package",
+              "version": "[17.6.3, )"
+            },
+            "NUnit": {
+              "target": "Package",
+              "version": "[3.13.3, )"
+            },
+            "NUnit3TestAdapter": {
+              "target": "Package",
+              "version": "[4.3.1, )"
+            }
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "downloadDependencies": [
+            {
+              "name": "Microsoft.AspNetCore.App.Ref",
+              "version": "[6.0.36, 6.0.36]"
+            },
+            {
+              "name": "Microsoft.NETCore.App.Ref",
+              "version": "[6.0.36, 6.0.36]"
+            }
+          ],
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/10.0.201/RuntimeIdentifierGraph.json"
+        }
+      }
+    }
+  }
+}

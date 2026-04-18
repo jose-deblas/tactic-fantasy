@@ -49,6 +49,13 @@ namespace TacticFantasy.Domain.Units
         void UnequipSkill(ISkill skill);
 
         void ApplyStatBoost(int hp, int str, int mag, int skl, int spd, int lck, int def, int res, int mov);
+
+        // ── Laguz transformation ────────────────────────────────────────────
+        TransformGauge LaguzGauge { get; }
+        bool IsLaguz { get; }
+        bool IsTransformed { get; }
+        void Transform();
+        void Revert();
     }
 
     public class Unit : IUnit
@@ -83,6 +90,11 @@ namespace TacticFantasy.Domain.Units
 
         private readonly List<ISkill> _equippedSkills = new List<ISkill>();
         public IReadOnlyList<ISkill> EquippedSkills => _equippedSkills.AsReadOnly();
+
+        // ── Laguz transformation fields ─────────────────────────────────────
+        public TransformGauge LaguzGauge { get; private set; }
+        public bool IsLaguz => LaguzGauge != null;
+        public bool IsTransformed { get; private set; }
 
         public Unit(
             int id,
@@ -284,7 +296,62 @@ namespace TacticFantasy.Domain.Units
             }
         }
 
-        // ── Private helpers ──────────────────────────────────────────────────
+        // ─��� Laguz transformation ────���───────────────────────────────────────
+
+        /// <summary>
+        /// Initialises Laguz gauge for this unit. Called by factory methods for Laguz units.
+        /// </summary>
+        public void InitLaguzGauge(int fillRate, int drainRate, int initialGauge = 0)
+        {
+            LaguzGauge = new TransformGauge(fillRate, drainRate, initialGauge);
+            IsTransformed = false;
+        }
+
+        /// <summary>
+        /// Transforms the Laguz unit: swaps stats to transformed profile.
+        /// </summary>
+        public void Transform()
+        {
+            if (!IsLaguz || IsTransformed) return;
+            var laguzClass = _class as LaguzClassData;
+            if (laguzClass == null) return;
+
+            CurrentStats = laguzClass.TransformedStats;
+            IsTransformed = true;
+        }
+
+        /// <summary>
+        /// Reverts the Laguz unit to untransformed state: restores halved stats.
+        /// </summary>
+        public void Revert()
+        {
+            if (!IsLaguz || !IsTransformed) return;
+            var laguzClass = _class as LaguzClassData;
+            if (laguzClass == null) return;
+
+            CurrentStats = laguzClass.UntransformedStats;
+            IsTransformed = false;
+        }
+
+        /// <summary>
+        /// Ticks the transform gauge at phase transitions. Returns true if a state change occurred.
+        /// </summary>
+        public bool TickTransformGauge()
+        {
+            if (!IsLaguz) return false;
+            bool stateChange = LaguzGauge.Tick(IsTransformed);
+            if (stateChange)
+            {
+                if (IsTransformed)
+                    Revert();
+                else
+                    Transform();
+                return true;
+            }
+            return false;
+        }
+
+        // ��─ Private helpers ──────────────────────────────────────────────────
 
         /// <summary>
         /// Rolls stat increases using the class growth rates.

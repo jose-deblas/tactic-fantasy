@@ -8,6 +8,7 @@ namespace TacticFantasy.Domain.Weapons
         FIRE,
         BOW,
         STAFF,
-        REFRESH
+        REFRESH,
+        STRIKE
     }
 }

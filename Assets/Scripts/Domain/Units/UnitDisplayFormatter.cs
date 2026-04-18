@@ -31,13 +31,15 @@ namespace TacticFantasy.Domain.Units
             if (unit == null)
                 return "Select a unit";
 
-            string lines =
-                $"{unit.Name}\n" +
-                $"Class: {unit.Class.Name}\n" +
-                $"HP: {unit.CurrentHP}/{unit.MaxHP}\n" +
-                $"STR: {unit.CurrentStats.STR} SPD: {unit.CurrentStats.SPD}\n" +
-                $"DEF: {unit.CurrentStats.DEF} RES: {unit.CurrentStats.RES}\n" +
-                $"Weapon: {unit.EquippedWeapon.Name}";
+            string lines = string.Join("\n", new[]
+            {
+                unit.Name,
+                $"Class: {unit.Class.Name}",
+                $"HP: {unit.CurrentHP}/{unit.MaxHP}",
+                $"STR: {unit.CurrentStats.STR} SPD: {unit.CurrentStats.SPD}",
+                $"DEF: {unit.CurrentStats.DEF} RES: {unit.CurrentStats.RES}",
+                $"Weapon: {unit.EquippedWeapon.Name}"
+            });
 
             string statusLine = FormatStatus(unit);
             if (statusLine.Length > 0)

@@ -38,3 +38,14 @@ Add a small, well-contained gameplay mechanic (damage-over-time) in a domain-pur
 **Testing:** See `Tests/DomainTests/StatusEffectTests.cs`. To run tests you can use the included .NET test project (if .NET SDK is installed):
 
   cd Tests/DomainTests && dotnet test
+
+## [2026-04-18]
+**Category:** Presentation
+
+### Changes:
+- Enhanced terrain info UI: added emoji icons and colored numeric values for move cost, avoid, defense and heal to improve rapid readability.
+
+### Rationale:
+Small presentation improvement to make terrain properties scannable during play; keeps domain logic untouched and follows single-responsibility in UI adapter.
+
+**Testing:** Visual change only; no domain logic changed.

@@ -86,6 +86,7 @@
     <Compile Include="Assets/Scripts/Adapters/UnitRenderer.cs" />
     <Compile Include="Assets/Scripts/Domain/Weapons/WeaponType.cs" />
     <Compile Include="Assets/Scripts/Domain/Units/StatusEffect.cs" />
+    <Compile Include="Assets/Scripts/Domain/StatusEffect.cs" />
     <Compile Include="Assets/Scripts/Domain/Combat/CombatXp.cs" />
     <Compile Include="Assets/Scripts/Tests/ExperienceSystemTests.cs" />
     <Compile Include="Assets/Scripts/Tests/RefreshMechanicTests.cs" />
@@ -94,6 +95,8 @@
     <Compile Include="Assets/Scripts/Domain/Items/IItem.cs" />
     <Compile Include="Assets/Scripts/Domain/Save/InMemoryGameRepository.cs" />
     <Compile Include="Assets/Scripts/Domain/Save/IGameRepository.cs" />
+    <Compile Include="Assets/Scripts/Domain/Utils/PositionUtils.cs" />
+    <Compile Include="Assets/Scripts/Tests/PositionUtilsTests.cs" />
     <Compile Include="Assets/Scripts/Domain/Save/GameSaveService.cs" />
     <Compile Include="Assets/Scripts/Adapters/GamepadCursorController.cs" />
     <Compile Include="Assets/Scripts/Domain/Units/MoveType.cs" />

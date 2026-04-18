@@ -37,6 +37,13 @@ namespace TacticFantasy.Domain.AI
                 return;
             }
 
+            // Untransformed Laguz retreat toward safety — they have halved stats and are vulnerable.
+            if (unit.IsLaguz && !unit.IsTransformed)
+            {
+                RetreatFromEnemies(unit, allUnits, map, pathFinder, out moveTarget);
+                return;
+            }
+
             // Self-preservation: if HP is critically low and a healing Fort is reachable, retreat.
             if (TryRetreatToFort(unit, allUnits, map, pathFinder, out moveTarget))
                 return;
@@ -304,5 +311,48 @@ namespace TacticFantasy.Domain.AI
         /// to retreat to a healing Fort if one is reachable.
         /// </summary>
         private const int LowHpThresholdPercent = 30;
+
+        /// <summary>
+        /// Moves an untransformed Laguz unit away from enemies. Prefers tiles that
+        /// maximise distance from the nearest opponent while favouring defensive terrain.
+        /// </summary>
+        private void RetreatFromEnemies(IUnit unit, List<IUnit> allUnits, IGameMap map,
+            IPathFinder pathFinder, out (int x, int y)? moveTarget)
+        {
+            moveTarget = null;
+            var opponents = allUnits
+                .Where(u => u.Team != unit.Team && u.IsAlive)
+                .ToList();
+
+            if (opponents.Count == 0)
+                return;
+
+            var reachable = pathFinder.GetMovementRange(
+                unit.Position.x, unit.Position.y,
+                unit.CurrentStats.MOV, unit, map, allUnits);
+
+            // Pick the tile that is farthest from the nearest enemy, with terrain defense as tiebreaker
+            (int x, int y)? best = null;
+            int bestMinDist = -1;
+            int bestTerrainDef = -1;
+
+            foreach (var tile in reachable)
+            {
+                int minDistToEnemy = opponents
+                    .Min(e => map.GetDistance(tile.Item1, tile.Item2, e.Position.x, e.Position.y));
+                int terrainDef = TerrainProperties.GetDefenseBonus(map.GetTile(tile.Item1, tile.Item2).Terrain);
+
+                if (minDistToEnemy > bestMinDist ||
+                    (minDistToEnemy == bestMinDist && terrainDef > bestTerrainDef))
+                {
+                    bestMinDist = minDistToEnemy;
+                    bestTerrainDef = terrainDef;
+                    best = tile;
+                }
+            }
+
+            if (best.HasValue && best.Value != (unit.Position.x, unit.Position.y))
+                moveTarget = best;
+        }
     }
 }

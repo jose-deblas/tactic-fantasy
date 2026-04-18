@@ -1,5 +1,6 @@
 using System;
 using TacticFantasy.Domain.Weapons;
+using System.Linq;
 
 namespace TacticFantasy.Domain.Units
 {
@@ -171,6 +172,7 @@ namespace TacticFantasy.Domain.Units
                 WeaponType.BOW => CreateIronBow(),
                 WeaponType.STAFF => CreateHealStaff(),
                 WeaponType.REFRESH => CreateRefreshStaff(),
+                WeaponType.STRIKE => LaguzWeaponFactory.CreateStrike(),
                 _ => throw new ArgumentException($"Unknown weapon type: {weaponType}")
             };
         }

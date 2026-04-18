@@ -1,1 +1,21 @@
-You've hit your limit · resets 6pm (Europe/Madrid)
+All done. Here's a summary of what was implemented:
+
+## Phase 4: Laguz / Shapeshifters — Complete
+
+### 4 commits pushed to `phase-4-laguz-shapeshifters`:
+
+1. **TransformGauge + STRIKE weapon + LaguzWeaponFactory** — Core gauge mechanic (0-30 points, fill/drain per turn), STRIKE weapon type outside weapon triangle, race-specific natural weapons (Strike, Claw, Fang, Talon, Beak, Breath)
+
+2. **LaguzClassData with all 8 races** — Cat/Tiger/Lion (Beast), Hawk/Raven (Bird→Flying), Red/White Dragon, Heron (support). Each with transformed/untransformed stat profiles and per-race gauge rates.
+
+3. **Unit + TurnManager integration** — Transform/Revert stat swapping via composition, auto-transform/revert at phase transitions via TurnManager gauge ticking.
+
+4. **Laguz items + combat tests + AI behavior** — Laguz Stone (instant max gauge), Olivi Grass (+15 points), AI retreats when untransformed and attacks when transformed.
+
+### ~46 new tests across 3 test files:
+- `TransformGaugeTests.cs` (16 tests)
+- `LaguzStatSwapTests.cs` (16 tests)
+- `LaguzCombatTests.cs` (14 tests)
+
+### Note:
+`gh` CLI is not installed and homebrew permissions prevent installation. The branch is pushed — please create the PR manually at: `https://github.com/jose-deblas/tactic-fantasy/pull/new/phase-4-laguz-shapeshifters`

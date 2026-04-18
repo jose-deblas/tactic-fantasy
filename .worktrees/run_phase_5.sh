@@ -5,7 +5,7 @@ cd "$REPO_DIR"
 secs=$(python3 - <<'PY'
 import datetime
 now=datetime.datetime.now()
-target=datetime.datetime.combine(now.date(), datetime.time(15,0))
+target=datetime.datetime.combine(now.date(), datetime.time(20,0))
 secs=int((target-now).total_seconds())
 if secs<0: secs=0
 print(secs)

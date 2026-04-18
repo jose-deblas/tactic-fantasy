@@ -47,6 +47,15 @@ namespace TacticFantasy.Adapters
             sr.color    = GetTerrainColor(tile.Terrain);
             sr.sortingOrder = 0;
 
+            // Añadir borde sutil para mejorar la legibilidad del mapa
+            var borderGo = new GameObject($"TileBorder_{x}_{y}");
+            borderGo.transform.SetParent(go.transform);
+            borderGo.transform.localPosition = Vector3.zero;
+            var borderSr = borderGo.AddComponent<SpriteRenderer>();
+            borderSr.sprite = CreateBorderSprite();
+            borderSr.color = new Color(0f, 0f, 0f, 0.15f); // negro muy tenue
+            borderSr.sortingOrder = 1; // encima del tile base
+
             // Collider 2D para raycast del ratón
             var col = go.AddComponent<BoxCollider2D>();
             col.size = Vector2.one * 0.98f; // ligero gap entre tiles
@@ -120,6 +129,35 @@ namespace TacticFantasy.Adapters
                 new Vector2(0.5f, 0.5f),
                 2f); // pixelsPerUnit = 2 → sprite de 1 unidad Unity
             return _cachedSquare;
+        }
+
+        // Sprite para borde tenue: centro transparente, 1px de borde negro (en runtime)
+        private static Sprite _cachedBorder;
+        private static Sprite CreateBorderSprite()
+        {
+            if (_cachedBorder != null) return _cachedBorder;
+
+            // Textura 4x4 para permitir un borde claro alrededor del centro
+            var size = 4;
+            var tex = new Texture2D(size, size);
+            var pixels = new Color[size * size];
+
+            for (int iy = 0; iy < size; iy++)
+            for (int ix = 0; ix < size; ix++)
+            {
+                // Si estamos en el borde, poner negro; si no, transparente
+                bool isBorder = ix == 0 || iy == 0 || ix == size - 1 || iy == size - 1;
+                pixels[iy * size + ix] = isBorder ? Color.black : new Color(0,0,0,0);
+            }
+
+            tex.SetPixels(pixels);
+            tex.Apply();
+
+            _cachedBorder = Sprite.Create(tex,
+                new Rect(0, 0, size, size),
+                new Vector2(0.5f, 0.5f),
+                size); // pixelsPerUnit = size → sprite de 1 unidad
+            return _cachedBorder;
         }
     }
 }

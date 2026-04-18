@@ -1,7 +1,20 @@
 # Implementation Summary
 
 ## [2026-04-18]
+**Category:** AI
+
+### Changes:
+- Fixed AI target-scoring: implemented the finisher heuristic so AI strongly prefers targets that can be killed in one attack (single-attack kills). This ensures the "finisher" behavior described in comments is enforced.
+
+### Rationale:
+Previously the code documented a finisher heuristic but did not implement it; AI could avoid finishing low-HP enemies due to weapon-triangle or terrain biases. This small, focused fix aligns behavior with tests and game design expectations while keeping change minimal and domain-focused.
+
+**Testing:** Existing AIController tests exercise finisher behavior (`DecideAction_PrefersFinalBlow_OverTriangleAdvantageWhenHpIsVeryLow`).
+
+
+## [2026-04-18]
 **Category:** Extras
+
 
 ### Changes:
 - Added `PositionUtils` (domain utility) to centralize grid distance calculation (Chebyshev distance).

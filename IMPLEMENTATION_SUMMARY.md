@@ -19,11 +19,13 @@ Previously the code documented a finisher heuristic but did not implement it; AI
 ### Changes:
 - Added `PositionUtils` (domain utility) to centralize grid distance calculation (Chebyshev distance).
 - Added `PositionUtilsTests` (TDD-first) verifying correctness and symmetry of the distance function.
+- Added `FloatUtils.Clamp` to safely clamp floats with defensive behavior when min > max.
+- Added `FloatUtilsTests` (TDD) covering within-range, below-min, above-max and swapped min/max scenarios.
 
 ### Rationale:
-Small domain utility to avoid duplicated distance logic and provide a clear, well-tested helper for future refactors (e.g., replacing inline Math.Max distance calculations).
+Small domain utilities to avoid duplicated logic and provide clear, well-tested helpers for future refactors. `FloatUtils.Clamp` is commonly needed across gameplay and UI layers and benefits from centralized, tested behavior.
 
-**Testing:** New tests added under `Assets/Scripts/Tests/PositionUtilsTests.cs`.
+**Testing:** New tests added under `Tests/DomainTests/FloatUtilsTests.cs` and existing tests continue to cover domain status effects.
 
 ## [2026-04-18]
 **Category:** Gameplay

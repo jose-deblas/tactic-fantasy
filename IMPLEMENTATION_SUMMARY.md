@@ -4,6 +4,13 @@
 
 ## Changelog
 
+### v2.4 - AI Self-Preservation: Retreat to Fort (2026-04-18)
+- **AIController.cs** - New `TryRetreatToFort` method: when a unit's HP ≤ 30% of MaxHP AND a Fort tile is reachable within its MOV, the unit retreats to the nearest Fort instead of attacking
+- Retreat gives the unit the Fort's 20% HP heal per turn (processed by TurnManager at end of phase)
+- No retreat if no Fort is within movement range — unit fights normally as fallback
+- **Constant** `LowHpThresholdPercent = 30` (tunable)
+- **AIControllerTests.cs** - 3 new TDD tests: retreat fires when Fort reachable, no retreat when no Fort exists, threshold boundary (>30% HP = normal attack)
+
 ### v2.3 - Sol and Luna Skills (2026-04-17)
 - **SolSkill** (OnDamageDealt, SKL/2% activation): heals the attacker for the exact damage dealt on the triggering strike; heals accumulate across multi-hit combos
 - **LunaSkill** (OnAttack, SKL/2% activation): halves defender DEF/RES for the triggering strike only (per-strike roll, resets between strikes)

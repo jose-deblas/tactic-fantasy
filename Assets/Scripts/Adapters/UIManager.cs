@@ -311,14 +311,21 @@ namespace TacticFantasy.Adapters
 
             string moveCostStr = moveCost == int.MaxValue ? "—" : moveCost.ToString();
 
+            // Friendly icons and colored numeric values for quicker scanning
+            string movePart = moveCost == int.MaxValue ? "—" : $"<color=#ffd27f>{moveCostStr}</color>"; // golden for move cost
+            string avoidPart = $"<color=#a0e7ff>{avoidBonus}</color>"; // cyan for avoid
+            string defPart = defensBonus > 0 ? $"<color=#bdecb6>{defensBonus}</color>" : null; // green for def
+            string healPart = healPercent > 0 ? $"<color=#ff9b9b>{healPercent}%</color>" : null; // light red for heal
+
+            // Emojis for quick recognition
             string info = $"{terrainName}\n" +
-                         $"Move: {moveCostStr} | Avoid: {avoidBonus:+#;-#;0}";
+                          $"🚶 Move: {movePart} | 🌀 Avoid: {avoidPart}";
 
-            if (defensBonus > 0)
-                info += $" | Def: {defensBonus:+#}";
+            if (defPart != null)
+                info += $" | 🛡️ Def: {defPart}";
 
-            if (healPercent > 0)
-                info += $" | Heal: {healPercent}%";
+            if (healPart != null)
+                info += $" | ❤️ Heal: {healPart}";
 
             _terrainInfoText.text = info;
             CancelInvoke("ClearTerrainInfo");

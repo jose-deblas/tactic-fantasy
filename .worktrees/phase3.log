@@ -1,0 +1,26 @@
+All done. Here's a summary of what was implemented:
+
+### Phase 3: Third-Tier Classes + Mastery Skills
+
+**Domain changes (9 files, 874 insertions):**
+
+1. **`ClassData.cs`** — Added `Tier` property (1/2/3) to `IClassData` interface and `ClassData` class. Added 6 third-tier Master classes:
+   - Trueblade (Sword), Marshall (Sword/Lance/Axe), Reaver (Axe/Bow), Archsage (Fire/Staff), Marksman (Bow), Saint (Staff/Fire)
+   - Higher stat caps and bases than Tier 2
+
+2. **`SkillDatabase.cs`** — 5 new mastery skills: Astra, Colossus, Flare, Deadeye, Corona (Sol already existed)
+
+3. **`CombatContext.cs`** — New flags: `AstraActive`, `ColossusActive`, `FlareActive`, `DeadeyeActive`, `CoronaActive`
+
+4. **`CombatResolver.cs`** — Integrated mastery skills into the combat pipeline:
+   - Astra: 5 strikes at half damage
+   - Colossus: +STR to damage
+   - Flare: halve RES (magical attacks)
+   - Deadeye: 2x damage + Sleep
+   - Corona: halve DEF/RES
+
+5. **`ClassPromotionService.cs`** — Tier 2→3 promotion paths + auto-learn mastery skills on promotion
+
+6. **3 new test files** — `ThirdTierPromotionTests.cs`, `MasterySkillTests.cs`, `ThirdTierStatCapTests.cs`
+
+**Note:** `gh` CLI is not installed, so the PR needs to be created manually at: https://github.com/jose-deblas/tactic-fantasy/pull/new/phase-3-third-tier-classes-mastery-skills

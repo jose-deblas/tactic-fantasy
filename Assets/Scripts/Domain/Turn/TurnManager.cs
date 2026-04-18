@@ -91,12 +91,18 @@ namespace TacticFantasy.Domain.Turn
         {
             if (CurrentPhase == Phase.PlayerPhase)
             {
+                // Tick Laguz gauges for player units at end of player phase
+                TickLaguzGauges(Team.PlayerTeam);
+
                 CurrentPhase = Phase.EnemyPhase;
                 _unitsWhoActed.Clear();
                 _currentUnitIndex = 0;
             }
             else if (CurrentPhase == Phase.EnemyPhase)
             {
+                // Tick Laguz gauges for enemy units at end of enemy phase
+                TickLaguzGauges(Team.EnemyTeam);
+
                 // Tick status effects at end of enemy phase (= end of full turn)
                 foreach (var unit in _allUnits.Where(u => u.IsAlive))
                     unit.TickStatus();
@@ -182,6 +188,15 @@ namespace TacticFantasy.Domain.Turn
         public void RefreshUnit(int targetUnitId)
         {
             _unitsWhoActed.Remove(targetUnitId);
+        }
+
+        /// <summary>Ticks transform gauges for all alive Laguz units on the given team.</summary>
+        private void TickLaguzGauges(Team team)
+        {
+            foreach (var unit in _allUnits.Where(u => u.IsAlive && u.Team == team && u.IsLaguz))
+            {
+                unit.TickTransformGauge();
+            }
         }
 
         private List<IUnit> GetPhaseUnits()

@@ -303,7 +303,7 @@ namespace TacticFantasy.Adapters
         {
             if (_terrainInfoText == null) return;
 
-            string terrainName = terrain.ToString();
+            string terrainName = $"<color={GetTerrainColor(terrain)}>{terrain.ToString()}</color>";
             int moveCost = TerrainProperties.GetMovementCost(terrain, true);  // true = infantry
             int defensBonus = TerrainProperties.GetDefenseBonus(terrain);
             int avoidBonus = TerrainProperties.GetAvoidBonus(terrain);
@@ -325,7 +325,19 @@ namespace TacticFantasy.Adapters
             Invoke("ClearTerrainInfo", 3f);
         }
 
-        private void ClearTerrainInfo()
+        private string GetTerrainColor(TerrainType terrain)
+{
+    return terrain switch
+    {
+        TerrainType.Plain => "#87CEEB", // Soft blue
+        TerrainType.Forest => "#228B22", // Forest green
+        TerrainType.Mountain => "#A9A9A9", // Dark gray
+        TerrainType.Fort => "#DAA520", // Goldenrod
+        _ => "#FFFFFF", // Default white
+    };
+}
+
+private void ClearTerrainInfo()
         {
             _terrainInfoText.text = "";
         }

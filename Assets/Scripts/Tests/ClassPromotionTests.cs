@@ -50,10 +50,10 @@ namespace TacticFantasy.Tests
         [Test]
         public void CanPromote_ReturnsFalse_WhenUnitHasNoPromotionPath()
         {
-            // Swordmaster (promoted) has no further promotion
+            // Trueblade (third-tier master) has no further promotion
             var unit = new Unit(1, "Ryu", Team.PlayerTeam,
-                ClassDataFactory.CreateSwordmaster(),
-                ClassDataFactory.CreateSwordmaster().BaseStats,
+                ClassDataFactory.CreateTrueblade(),
+                ClassDataFactory.CreateTrueblade().BaseStats,
                 (0, 0), WeaponFactory.CreateIronSword(),
                 levelOverride: 20);
             Assert.IsFalse(ClassPromotionService.CanPromote(unit));

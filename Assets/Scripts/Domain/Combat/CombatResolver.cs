@@ -42,6 +42,7 @@ namespace TacticFantasy.Domain.Combat
             bool anyAttackerCrit = false;
             int totalDamage = 0;
             bool defenderCounterLanded = false;
+            bool deadeyeSleepApplied = false;
             int braveStrikes = attacker.EquippedWeapon.IsBrave ? 2 : 1;
 
             // Phase 3: Determine attack order
@@ -60,13 +61,13 @@ namespace TacticFantasy.Domain.Combat
             // Phase 4: Attacker strikes (Brave = 2x, normal = 1x)
             if (attackerHP > 0)
             {
-                // Check OnAttack skills for attacker
+                // Check OnAttack skills for attacker (once-per-combat: Adept, Wrath, Astra)
                 int extraAttacks = 0;
                 if (!ctx.AttackerSkillsNegated)
                 {
-                    // Fire OnAttack skills (excluding Luna which is per-strike)
                     foreach (var skill in attacker.EquippedSkills.Where(s =>
-                        s.ActivationPhase == SkillActivationPhase.OnAttack && s.Name != "Luna"))
+                        s.ActivationPhase == SkillActivationPhase.OnAttack
+                        && (s.Name == "Adept" || s.Name == "Wrath" || s.Name == "Astra")))
                     {
                         if (skill.CanActivate(attacker, defender, ctx.Rng))
                             skill.Apply(ctx);
@@ -75,29 +76,48 @@ namespace TacticFantasy.Domain.Combat
                     ctx.ExtraAttacks = 0; // consume
                 }
 
-                int totalStrikes = braveStrikes + extraAttacks;
+                // Astra replaces normal strikes with 5 hits at half damage
+                int totalStrikes = ctx.AstraActive ? 5 : (braveStrikes + extraAttacks);
+                bool astraHalfDamage = ctx.AstraActive;
+                ctx.AstraActive = false; // consumed
+
                 for (int i = 0; i < totalStrikes && defenderHP > 0 && attackerHP > 0; i++)
                 {
-                    // Roll Luna independently per strike
+                    // Roll per-strike OnAttack skills (Luna, Colossus, Flare, Deadeye, Corona)
                     ctx.LunaActive = false;
+                    ctx.ColossusActive = false;
+                    ctx.FlareActive = false;
+                    ctx.DeadeyeActive = false;
+                    ctx.CoronaActive = false;
                     if (!ctx.AttackerSkillsNegated)
                     {
                         foreach (var skill in attacker.EquippedSkills.Where(s =>
-                            s.ActivationPhase == SkillActivationPhase.OnAttack && s.Name == "Luna"))
+                            s.ActivationPhase == SkillActivationPhase.OnAttack
+                            && s.Name != "Adept" && s.Name != "Wrath" && s.Name != "Astra"))
                         {
                             if (skill.CanActivate(attacker, defender, ctx.Rng))
                                 skill.Apply(ctx);
                         }
                     }
 
-                    var strikeResult = ExecuteStrike(ctx, attacker, defender, attackerHP, defenderHP, isCounter: false);
+                    var strikeResult = ExecuteStrike(ctx, attacker, defender, attackerHP, defenderHP,
+                        isCounter: false, halfDamage: astraHalfDamage);
                     defenderHP = strikeResult.targetHP;
-                    ctx.LunaActive = false; // reset after strike
+                    ctx.LunaActive = false;
+                    ctx.ColossusActive = false;
+                    ctx.FlareActive = false;
+                    ctx.CoronaActive = false;
+
                     if (strikeResult.hit)
                     {
                         anyAttackerHit = true;
                         totalDamage += strikeResult.damage;
                         if (strikeResult.crit) anyAttackerCrit = true;
+
+                        // Deadeye applies Sleep on hit
+                        if (ctx.DeadeyeActive && defenderHP > 0)
+                            deadeyeSleepApplied = true;
+                        ctx.DeadeyeActive = false;
 
                         // Sol: OnDamageDealt — check after each hit that deals damage
                         if (!ctx.AttackerSkillsNegated && strikeResult.damage > 0)
@@ -128,10 +148,15 @@ namespace TacticFantasy.Domain.Combat
                 for (int i = 0; i < followUpStrikes && defenderHP > 0 && attackerHP > 0; i++)
                 {
                     ctx.LunaActive = false;
+                    ctx.ColossusActive = false;
+                    ctx.FlareActive = false;
+                    ctx.DeadeyeActive = false;
+                    ctx.CoronaActive = false;
                     if (!ctx.AttackerSkillsNegated)
                     {
                         foreach (var skill in attacker.EquippedSkills.Where(s =>
-                            s.ActivationPhase == SkillActivationPhase.OnAttack && s.Name == "Luna"))
+                            s.ActivationPhase == SkillActivationPhase.OnAttack
+                            && s.Name != "Adept" && s.Name != "Wrath" && s.Name != "Astra"))
                         {
                             if (skill.CanActivate(attacker, defender, ctx.Rng))
                                 skill.Apply(ctx);
@@ -140,11 +165,18 @@ namespace TacticFantasy.Domain.Combat
                     var strikeResult = ExecuteStrike(ctx, attacker, defender, attackerHP, defenderHP, isCounter: false);
                     defenderHP = strikeResult.targetHP;
                     ctx.LunaActive = false;
+                    ctx.ColossusActive = false;
+                    ctx.FlareActive = false;
+                    ctx.CoronaActive = false;
                     if (strikeResult.hit)
                     {
                         anyAttackerHit = true;
                         totalDamage += strikeResult.damage;
                         if (strikeResult.crit) anyAttackerCrit = true;
+
+                        if (ctx.DeadeyeActive && defenderHP > 0)
+                            deadeyeSleepApplied = true;
+                        ctx.DeadeyeActive = false;
 
                         if (!ctx.AttackerSkillsNegated && strikeResult.damage > 0)
                         {
@@ -195,11 +227,16 @@ namespace TacticFantasy.Domain.Combat
             if (defenderCounterLanded || ctx.VantageActivated)
                 defender.EquippedWeapon.ConsumeUse();
 
+            // Deadeye overrides on-hit status with Sleep
+            StatusEffectType? defenderStatus = deadeyeSleepApplied
+                ? StatusEffectType.Sleep
+                : ResolveOnHitStatus(attacker, anyAttackerHit, defenderHP);
+
             return new CombatResult(totalDamage, anyAttackerHit, anyAttackerCrit, attackerHP, defenderHP,
                 attackerDoubles, defenderCounters || ctx.VantageActivated,
                 attackerXpGained: attackerXp,
                 defenderXpGained: defenderXp,
-                defenderStatusApplied: ResolveOnHitStatus(attacker, anyAttackerHit, defenderHP),
+                defenderStatusApplied: defenderStatus,
                 attackerStatusApplied: ResolveOnHitStatus(defender, defenderCounterLanded, attackerHP),
                 activatedSkills: ctx.ActivatedSkills,
                 attackerHealedHP: solHeal);
@@ -207,7 +244,7 @@ namespace TacticFantasy.Domain.Combat
 
         private (bool hit, bool crit, int damage, int targetHP) ExecuteStrike(
             CombatContext ctx, IUnit striker, IUnit target,
-            int strikerHP, int targetHP, bool isCounter)
+            int strikerHP, int targetHP, bool isCounter, bool halfDamage = false)
         {
             CharacterStats strikerStats = striker == ctx.Attacker ? ctx.AttackerEffectiveStats : ctx.DefenderEffectiveStats;
             CharacterStats targetStats = target == ctx.Attacker ? ctx.AttackerEffectiveStats : ctx.DefenderEffectiveStats;
@@ -221,8 +258,25 @@ namespace TacticFantasy.Domain.Combat
                 crit = ctx.ForceCritical && striker == ctx.Attacker && !isCounter
                     ? true
                     : CalculateCriticalWithStats(strikerStats, striker, target);
+
+                bool luna = !isCounter && ctx.LunaActive;
+                bool flare = !isCounter && ctx.FlareActive;
+                bool corona = !isCounter && ctx.CoronaActive;
+
                 damage = CalculateDamageWithStats(strikerStats, targetStats, striker, target, ctx.Map,
-                    lunaActive: !isCounter && ctx.LunaActive);
+                    lunaActive: luna, flareActive: flare, coronaActive: corona);
+
+                // Colossus: add attacker's STR to damage
+                if (!isCounter && ctx.ColossusActive)
+                    damage += strikerStats.STR;
+
+                if (halfDamage)
+                    damage = Math.Max(1, damage / 2);
+
+                // Deadeye: 2x damage
+                if (!isCounter && ctx.DeadeyeActive)
+                    damage *= 2;
+
                 if (crit)
                     damage *= 3;
                 targetHP -= damage;
@@ -327,12 +381,17 @@ namespace TacticFantasy.Domain.Combat
 
         // ── Stats-aware calculation methods ──────────────────────────────────
 
-        private int CalculateDamageWithStats(CharacterStats attackerStats, CharacterStats defenderStats, IUnit attacker, IUnit defender, IGameMap map, bool lunaActive = false)
+        private int CalculateDamageWithStats(CharacterStats attackerStats, CharacterStats defenderStats, IUnit attacker, IUnit defender, IGameMap map,
+            bool lunaActive = false, bool flareActive = false, bool coronaActive = false)
         {
             int attackPower = CalculateAttackPowerWithStats(attackerStats, attacker, defender, map);
             int defensePower = CalculateDefensePowerWithStats(defenderStats, attacker, defender, map);
             if (lunaActive)
-                defensePower /= 2; // Luna halves defender DEF/RES for this strike
+                defensePower /= 2;
+            if (coronaActive)
+                defensePower /= 2; // Corona halves DEF/RES
+            if (flareActive && attacker.EquippedWeapon.DamageType == DamageType.Magical)
+                defensePower /= 2; // Flare halves RES only (applied to magical attacks)
             return Math.Max(0, attackPower - defensePower);
         }
 

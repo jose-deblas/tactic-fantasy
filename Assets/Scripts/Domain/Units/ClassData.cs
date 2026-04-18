@@ -12,6 +12,8 @@ namespace TacticFantasy.Domain.Units
         WeaponType WeaponType { get; }
         IReadOnlyList<WeaponType> UsableWeaponTypes { get; }
         MoveType MoveType { get; }
+        /// <summary>Class tier: 1=Base, 2=Advanced, 3=Master.</summary>
+        int Tier { get; }
     }
 
     public class ClassData : IClassData
@@ -23,6 +25,7 @@ namespace TacticFantasy.Domain.Units
         public IReadOnlyList<WeaponType> UsableWeaponTypes { get; }
         public WeaponType WeaponType => UsableWeaponTypes[0];
         public MoveType MoveType { get; }
+        public int Tier { get; }
 
         public ClassData(
             string name,
@@ -30,8 +33,9 @@ namespace TacticFantasy.Domain.Units
             CharacterStats capStats,
             CharacterStats growthRates,
             WeaponType weaponType,
-            MoveType moveType)
-            : this(name, baseStats, capStats, growthRates, new[] { weaponType }, moveType)
+            MoveType moveType,
+            int tier = 1)
+            : this(name, baseStats, capStats, growthRates, new[] { weaponType }, moveType, tier)
         {
         }
 
@@ -41,7 +45,8 @@ namespace TacticFantasy.Domain.Units
             CharacterStats capStats,
             CharacterStats growthRates,
             IReadOnlyList<WeaponType> usableWeaponTypes,
-            MoveType moveType)
+            MoveType moveType,
+            int tier = 1)
         {
             Name = name;
             BaseStats = baseStats;
@@ -49,6 +54,7 @@ namespace TacticFantasy.Domain.Units
             GrowthRates = growthRates;
             UsableWeaponTypes = usableWeaponTypes;
             MoveType = moveType;
+            Tier = tier;
         }
     }
 
@@ -160,7 +166,8 @@ namespace TacticFantasy.Domain.Units
                 new CharacterStats(40, 26, 8, 30, 30, 25, 25, 14, 9),
                 new CharacterStats(65, 45, 5, 60, 65, 35, 25, 12, 0),
                 WeaponType.SWORD,
-                MoveType.Infantry
+                MoveType.Infantry,
+                tier: 2
             );
         }
 
@@ -172,7 +179,8 @@ namespace TacticFantasy.Domain.Units
                 new CharacterStats(42, 28, 5, 24, 22, 20, 30, 20, 7),
                 new CharacterStats(70, 50, 5, 40, 35, 25, 35, 20, 0),
                 new[] { WeaponType.LANCE, WeaponType.SWORD },
-                MoveType.Armored
+                MoveType.Armored,
+                tier: 2
             );
         }
 
@@ -184,7 +192,8 @@ namespace TacticFantasy.Domain.Units
                 new CharacterStats(46, 34, 5, 24, 26, 22, 28, 10, 9),
                 new CharacterStats(75, 65, 0, 35, 40, 28, 25, 8, 0),
                 new[] { WeaponType.AXE, WeaponType.BOW },
-                MoveType.Infantry
+                MoveType.Infantry,
+                tier: 2
             );
         }
 
@@ -196,7 +205,8 @@ namespace TacticFantasy.Domain.Units
                 new CharacterStats(36, 8, 30, 26, 26, 24, 18, 30, 9),
                 new CharacterStats(55, 5, 65, 40, 45, 35, 15, 40, 0),
                 new[] { WeaponType.FIRE, WeaponType.STAFF },
-                MoveType.Infantry
+                MoveType.Infantry,
+                tier: 2
             );
         }
 
@@ -208,7 +218,8 @@ namespace TacticFantasy.Domain.Units
                 new CharacterStats(38, 26, 5, 30, 27, 24, 24, 16, 9),
                 new CharacterStats(60, 45, 0, 60, 45, 35, 25, 14, 0),
                 WeaponType.BOW,
-                MoveType.Infantry
+                MoveType.Infantry,
+                tier: 2
             );
         }
 
@@ -220,7 +231,88 @@ namespace TacticFantasy.Domain.Units
                 new CharacterStats(34, 0, 28, 22, 22, 28, 16, 28, 9),
                 new CharacterStats(50, 0, 60, 35, 35, 45, 14, 45, 0),
                 new[] { WeaponType.STAFF, WeaponType.FIRE },
-                MoveType.Infantry
+                MoveType.Infantry,
+                tier: 2
+            );
+        }
+
+        // ── Third-tier (Master) classes ──────────────────────────────────────
+
+        public static IClassData CreateTrueblade()
+        {
+            return new ClassData(
+                "Trueblade",
+                new CharacterStats(32, 16, 2, 22, 24, 10, 12, 5, 7),
+                new CharacterStats(50, 34, 12, 38, 38, 30, 30, 18, 9),
+                new CharacterStats(70, 55, 10, 70, 70, 40, 30, 15, 0),
+                WeaponType.SWORD,
+                MoveType.Infantry,
+                tier: 3
+            );
+        }
+
+        public static IClassData CreateMarshall()
+        {
+            return new ClassData(
+                "Marshall",
+                new CharacterStats(34, 18, 2, 14, 12, 6, 20, 12, 5),
+                new CharacterStats(52, 36, 10, 30, 28, 24, 38, 26, 7),
+                new CharacterStats(75, 60, 10, 45, 40, 30, 40, 25, 0),
+                new[] { WeaponType.SWORD, WeaponType.LANCE, WeaponType.AXE },
+                MoveType.Armored,
+                tier: 3
+            );
+        }
+
+        public static IClassData CreateReaver()
+        {
+            return new ClassData(
+                "Reaver",
+                new CharacterStats(38, 20, 2, 12, 13, 7, 14, 4, 7),
+                new CharacterStats(56, 40, 8, 28, 30, 26, 32, 14, 9),
+                new CharacterStats(80, 70, 5, 40, 45, 32, 30, 12, 0),
+                new[] { WeaponType.AXE, WeaponType.BOW },
+                MoveType.Infantry,
+                tier: 3
+            );
+        }
+
+        public static IClassData CreateArchsage()
+        {
+            return new ClassData(
+                "Archsage",
+                new CharacterStats(28, 2, 18, 14, 14, 9, 8, 16, 7),
+                new CharacterStats(44, 12, 38, 32, 32, 28, 22, 36, 9),
+                new CharacterStats(60, 10, 75, 50, 50, 40, 20, 50, 0),
+                new[] { WeaponType.FIRE, WeaponType.STAFF },
+                MoveType.Infantry,
+                tier: 3
+            );
+        }
+
+        public static IClassData CreateMarksman()
+        {
+            return new ClassData(
+                "Marksman",
+                new CharacterStats(30, 14, 2, 22, 14, 9, 12, 6, 7),
+                new CharacterStats(46, 32, 8, 36, 32, 28, 28, 20, 9),
+                new CharacterStats(65, 55, 5, 70, 50, 40, 30, 18, 0),
+                WeaponType.BOW,
+                MoveType.Infantry,
+                tier: 3
+            );
+        }
+
+        public static IClassData CreateSaint()
+        {
+            return new ClassData(
+                "Saint",
+                new CharacterStats(26, 2, 16, 10, 10, 12, 7, 18, 7),
+                new CharacterStats(42, 5, 34, 26, 26, 32, 20, 34, 9),
+                new CharacterStats(55, 5, 70, 40, 40, 50, 18, 55, 0),
+                new[] { WeaponType.STAFF, WeaponType.FIRE },
+                MoveType.Infantry,
+                tier: 3
             );
         }
 
@@ -241,7 +333,13 @@ namespace TacticFantasy.Domain.Units
                 CreateWarrior(),
                 CreateSage(),
                 CreateSniper(),
-                CreateBishop()
+                CreateBishop(),
+                CreateTrueblade(),
+                CreateMarshall(),
+                CreateReaver(),
+                CreateArchsage(),
+                CreateMarksman(),
+                CreateSaint()
             };
         }
     }

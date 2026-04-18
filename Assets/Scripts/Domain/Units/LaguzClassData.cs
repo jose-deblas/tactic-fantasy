@@ -46,6 +46,8 @@ namespace TacticFantasy.Domain.Units
         /// <summary>MoveType when untransformed (always Infantry).</summary>
         public MoveType UntransformedMoveType { get; }
 
+        public int Tier { get; }
+
         public LaguzClassData(
             string name,
             LaguzRace race,
@@ -56,8 +58,10 @@ namespace TacticFantasy.Domain.Units
             MoveType untransformedMoveType,
             MoveType transformedMoveType,
             int gaugeFillRate,
-            int gaugeDrainRate)
+            int gaugeDrainRate,
+            int tier = 1)
         {
+            Tier = tier;
             Name = name;
             Race = race;
             TransformedStats = transformedStats;

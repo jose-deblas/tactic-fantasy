@@ -63,3 +63,5 @@ Small presentation improvement to make terrain properties scannable during play;
 Small, incremental helper useful for presentation layers or save adapters that need a read-only, serializable summary of a status effect without depending on Unity.
 
 **Testing:** New test at Tests/DomainTests/StatusEffectSummaryTests.cs
+
+- feat(ai): added threat-based targeting preference — AI now prefers higher-ATK targets when other heuristics are equal (tests added).

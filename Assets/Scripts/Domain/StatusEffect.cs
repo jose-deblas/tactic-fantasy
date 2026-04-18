@@ -1,14 +1,16 @@
+using System;
+
 namespace TacticFantasy.Domain
 {
     public interface IStatusEffect
     {
         string Name { get; }
         float Duration { get; }
-        void Tick(float deltaTime, IUnit target);
+        void Tick(float deltaTime, IStatusTarget target);
         bool IsExpired { get; }
     }
 
-    public interface IUnit
+    public interface IStatusTarget
     {
         float Health { get; set; }
         void TakeDamage(float amount);
@@ -27,7 +29,7 @@ namespace TacticFantasy.Domain
             DamagePerSecond = dps;
         }
 
-        public void Tick(float deltaTime, IUnit target)
+        public void Tick(float deltaTime, IStatusTarget target)
         {
             if (IsExpired) return;
 

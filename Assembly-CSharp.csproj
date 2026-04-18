@@ -53,6 +53,7 @@
     <Compile Include="Assets/Scripts/Domain/Units/ClassPromotionService.cs" />
     <Compile Include="Assets/Scripts/Domain/Turn/VictoryCondition.cs" />
     <Compile Include="Assets/Scripts/Domain/Units/ClassData.cs" />
+    <Compile Include="Assets/Scripts/Tests/ThirdTierPromotionTests.cs" />
     <Compile Include="Assets/Scripts/Adapters/Persistence/JsonFileGameRepository.cs" />
     <Compile Include="Assets/Scripts/Domain/Map/TerrainType.cs" />
     <Compile Include="Assets/Scripts/Domain/Items/StatBoosterFactory.cs" />
@@ -62,6 +63,7 @@
     <Compile Include="Assets/Scripts/Domain/Items/StatBooster.cs" />
     <Compile Include="Assets/Scripts/Tests/StatusEffectTests.cs" />
     <Compile Include="Assets/Scripts/Tests/CombatForecastTests.cs" />
+    <Compile Include="Assets/Scripts/Tests/TransformGaugeTests.cs" />
     <Compile Include="Assets/Scripts/Tests/CombatResolverTests.cs" />
     <Compile Include="Assets/Scripts/Domain/Turn/TurnManager.cs" />
     <Compile Include="Assets/Scripts/Tests/InventoryTests.cs" />
@@ -73,13 +75,18 @@
     <Compile Include="Assets/Scripts/Adapters/InputHandler.cs" />
     <Compile Include="Assets/Scripts/Domain/Units/UnitDisplayFormatter.cs" />
     <Compile Include="Assets/Scripts/Tests/ConsumableItemTests.cs" />
+    <Compile Include="Assets/Scripts/Domain/obj/Debug/net6.0/Domain.AssemblyInfo.cs" />
     <Compile Include="Assets/Scripts/Domain/Save/UnitSnapshot.cs" />
     <Compile Include="Assets/Scripts/Adapters/MapRenderer.cs" />
+    <Compile Include="Assets/Scripts/Domain/Units/LaguzClassData.cs" />
     <Compile Include="Assets/Scripts/Domain/Skills/SkillActivationPhase.cs" />
     <Compile Include="Assets/Scripts/Domain/Combat/CombatForecast.cs" />
+    <Compile Include="Assets/Scripts/Tests/LaguzStatSwapTests.cs" />
     <Compile Include="Assets/Scripts/Domain/Map/GameMap.cs" />
+    <Compile Include="Assets/Scripts/Tests/LaguzCombatTests.cs" />
     <Compile Include="Assets/Scripts/Domain/Items/ConsumableFactory.cs" />
     <Compile Include="Assets/Scripts/Domain/Weapons/DamageType.cs" />
+    <Compile Include="Assets/Scripts/Tests/ThirdTierStatCapTests.cs" />
     <Compile Include="Assets/Scripts/Tests/AIControllerTests.cs" />
     <Compile Include="Assets/Scripts/Domain/AI/AIController.cs" />
     <Compile Include="Assets/Scripts/Domain/Units/UnitFactory.cs" />
@@ -91,16 +98,22 @@
     <Compile Include="Assets/Scripts/Tests/ExperienceSystemTests.cs" />
     <Compile Include="Assets/Scripts/Tests/RefreshMechanicTests.cs" />
     <Compile Include="Assets/Scripts/Domain/Items/ConsumableItem.cs" />
+    <Compile Include="Assets/Scripts/Tests/MasterySkillTests.cs" />
+    <Compile Include="Assets/Scripts/Domain/Items/LaguzItemFactory.cs" />
+    <Compile Include="Assets/Scripts/Domain/Utils/FloatUtils.cs" />
     <Compile Include="Assets/Scripts/Tests/SolLunaTests.cs" />
     <Compile Include="Assets/Scripts/Domain/Items/IItem.cs" />
+    <Compile Include="Assets/Scripts/Domain/StatusEffectSummary.cs" />
     <Compile Include="Assets/Scripts/Domain/Save/InMemoryGameRepository.cs" />
     <Compile Include="Assets/Scripts/Domain/Save/IGameRepository.cs" />
     <Compile Include="Assets/Scripts/Domain/Utils/PositionUtils.cs" />
     <Compile Include="Assets/Scripts/Tests/PositionUtilsTests.cs" />
     <Compile Include="Assets/Scripts/Domain/Save/GameSaveService.cs" />
     <Compile Include="Assets/Scripts/Adapters/GamepadCursorController.cs" />
+    <Compile Include="Assets/Scripts/Domain/Weapons/LaguzWeaponFactory.cs" />
     <Compile Include="Assets/Scripts/Domain/Units/MoveType.cs" />
     <Compile Include="Assets/Scripts/Adapters/GameController.cs" />
+    <Compile Include="Assets/Scripts/Domain/Units/TransformGauge.cs" />
     <Compile Include="Assets/Scripts/Domain/Items/Inventory.cs" />
     <Compile Include="Assets/Scripts/Adapters/UIManager.cs" />
     <Compile Include="Assets/Scripts/Domain/Skills/SkillDatabase.cs" />
@@ -124,6 +137,9 @@
     <Compile Include="Assets/Scripts/Tests/PathFinderTests.cs" />
     <Compile Include="Assets/Scripts/Adapters/CursorRenderer.cs" />
     <Compile Include="Assets/Scripts/Tests/GameSaveServiceTests.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Assets/Scripts/Domain/obj/Debug/net6.0/Domain.csproj.FileListAbsolute.txt" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="UnityEngine">

@@ -23,6 +23,7 @@ namespace TacticFantasy.Domain
 
         public override string ToString()
         {
+            if (Remaining <= 0f) return $"{Name} (expired)";
             return $"{Name} ({Remaining:0.00}s)";
         }
     }

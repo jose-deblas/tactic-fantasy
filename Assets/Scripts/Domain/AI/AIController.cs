@@ -177,7 +177,7 @@ namespace TacticFantasy.Domain.AI
         {
             // Finisher heuristic: if the target can be killed by a single attack,
             // give it a very low score so it beats other considerations.
-            if (target.CurrentHP <= attacker.EquippedWeapon.Power)
+            if (target.CurrentHP <= attacker.EquippedWeapon.Might)
             {
                 return int.MinValue / 2; // very strong preference
             }
@@ -209,7 +209,7 @@ namespace TacticFantasy.Domain.AI
 
             // Prefer attacking higher-attack (threat) units when other factors are equal.
             // Higher target ATK reduces the score (more attractive to eliminate high-threat units).
-            score -= target.CurrentStats.ATK * AttackStatBias;
+            score -= target.CurrentStats.STR * AttackStatBias;
 
             return score;
         }

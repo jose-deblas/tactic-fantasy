@@ -3,7 +3,7 @@ using TacticFantasy.Domain;
 
 namespace DomainTests
 {
-    class FakeUnit : IUnit
+    class FakeUnit : IStatusTarget
     {
         public float Health { get; set; }
         public void TakeDamage(float amount) { Health -= amount; }

@@ -26,5 +26,18 @@ namespace DomainTests
             s = StatusEffectSummary.From(e);
             Assert.AreEqual("Dummy (3.77s)", s.ToString());
         }
+
+        [Test]
+        public void SummaryShowsExpiredWhenDurationZeroOrLess()
+        {
+            var e = new DummyEffect(1f);
+            e.Tick(1f);
+            var s = StatusEffectSummary.From(e);
+            Assert.AreEqual("Dummy (expired)", s.ToString());
+
+            e = new DummyEffect(0f);
+            s = StatusEffectSummary.From(e);
+            Assert.AreEqual("Dummy (expired)", s.ToString());
+        }
     }
 }

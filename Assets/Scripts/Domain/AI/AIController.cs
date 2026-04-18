@@ -168,6 +168,13 @@ namespace TacticFantasy.Domain.AI
         /// </summary>
         private int ScoreAttackOption(IUnit attacker, IUnit target)
         {
+            // Finisher heuristic: if the target can be killed by a single attack,
+            // give it a very low score so it beats other considerations.
+            if (target.CurrentHP <= attacker.EquippedWeapon.Power)
+            {
+                return int.MinValue / 2; // very strong preference
+            }
+
             int score = target.CurrentHP;
 
             var (dmgBonus, _) = WeaponTriangle.GetTriangleModifiers(attacker.EquippedWeapon, target.EquippedWeapon);

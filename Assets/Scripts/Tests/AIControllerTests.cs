@@ -338,6 +338,96 @@ namespace TacticFantasy.Tests
 
             Assert.IsNull(attackTarget, "Healer with broken staff must not select a heal target");
         }
+
+        // ---- self-preservation: retreat to Fort when low HP -----------------
+
+        /// <summary>
+        /// When an enemy has very low HP (≤ 30% of max) AND a Fort tile is
+        /// reachable within its movement range, the AI should retreat to the
+        /// Fort instead of attacking, to benefit from its healing effect.
+        /// </summary>
+        [Test]
+        public void DecideAction_LowHpUnit_RetreatsToFort_InsteadOfAttacking()
+        {
+            // Map: col0=Fort, col1=Plain(enemy, low HP), col2=Plain, col3=Plain(player)
+            var tiles = new ITile[5, 1];
+            tiles[0, 0] = new Tile(0, 0, TerrainType.Fort);   // healing retreat destination
+            tiles[1, 0] = new Tile(1, 0, TerrainType.Plain);  // enemy starts here
+            tiles[2, 0] = new Tile(2, 0, TerrainType.Plain);
+            tiles[3, 0] = new Tile(3, 0, TerrainType.Plain);  // player here
+            tiles[4, 0] = new Tile(4, 0, TerrainType.Plain);
+            var controlledMap = new GameMap(5, 1, tiles);
+
+            // Enemy at 5 HP out of 20 (25% — below 30% threshold)
+            var weapon = new Weapon("Sword", WeaponType.SWORD, DamageType.Physical, 5, 0, 80, 0, 1, 1);
+            var stats  = new CharacterStats(20, 5, 0, 5, 5, 5, 5, 0, 5);
+            IUnit enemy  = new Unit(10, "LowHpEnemy", Team.EnemyTeam,
+                ClassDataFactory.CreateMyrmidon(), stats, (1, 0), weapon);
+            enemy.TakeDamage(15); // leaves 5 HP (25%)
+
+            IUnit player = MakePlayer(1, WeaponType.LANCE, hp: 20, pos: (3, 0));
+            var allUnits = new List<IUnit> { enemy, player };
+
+            _ai.DecideAction(enemy, allUnits, controlledMap, _pathFinder,
+                out (int x, int y)? moveTarget, out IUnit attackTarget, out _);
+
+            Assert.IsNull(attackTarget, "Low-HP unit should NOT attack when a Fort is reachable");
+            Assert.IsNotNull(moveTarget, "Low-HP unit should move to the Fort tile");
+            Assert.AreEqual(0, moveTarget.Value.x,
+                "Low-HP unit should retreat to the Fort at col0");
+        }
+
+        /// <summary>
+        /// When an enemy has low HP but NO Fort is reachable, it should still
+        /// attack normally — retreat is only triggered when there's a safe tile.
+        /// </summary>
+        [Test]
+        public void DecideAction_LowHpUnit_AttacksNormally_WhenNoFortReachable()
+        {
+            // Map: all Plain tiles — no Fort within reach
+            IUnit enemy  = MakeEnemy(10, WeaponType.SWORD, hp: 20, pos: (3, 3));
+            enemy.TakeDamage(15); // 5 HP (25%)
+
+            IUnit player = MakePlayer(1, WeaponType.LANCE, hp: 20, pos: (4, 3));
+            var allUnits = new List<IUnit> { enemy, player };
+
+            _ai.DecideAction(enemy, allUnits, _map, _pathFinder,
+                out _, out IUnit attackTarget, out _);
+
+            Assert.IsNotNull(attackTarget,
+                "Low-HP unit with no Fort nearby should still attack");
+        }
+
+        /// <summary>
+        /// A unit at exactly 31% HP (above threshold) should NOT retreat — it
+        /// should fight normally.
+        /// </summary>
+        [Test]
+        public void DecideAction_UnitAboveLowHpThreshold_DoesNotRetreat()
+        {
+            var tiles = new ITile[5, 1];
+            tiles[0, 0] = new Tile(0, 0, TerrainType.Fort);
+            tiles[1, 0] = new Tile(1, 0, TerrainType.Plain);  // enemy starts here
+            tiles[2, 0] = new Tile(2, 0, TerrainType.Plain);
+            tiles[3, 0] = new Tile(3, 0, TerrainType.Plain);  // player here
+            tiles[4, 0] = new Tile(4, 0, TerrainType.Plain);
+            var controlledMap = new GameMap(5, 1, tiles);
+
+            var weapon = new Weapon("Sword", WeaponType.SWORD, DamageType.Physical, 5, 0, 80, 0, 1, 1);
+            var stats  = new CharacterStats(20, 5, 0, 5, 5, 5, 5, 0, 5);
+            IUnit enemy  = new Unit(10, "OkHpEnemy", Team.EnemyTeam,
+                ClassDataFactory.CreateMyrmidon(), stats, (1, 0), weapon);
+            enemy.TakeDamage(13); // leaves 7 HP (~35% — above 30% threshold)
+
+            IUnit player = MakePlayer(1, WeaponType.LANCE, hp: 20, pos: (3, 0));
+            var allUnits = new List<IUnit> { enemy, player };
+
+            _ai.DecideAction(enemy, allUnits, controlledMap, _pathFinder,
+                out _, out IUnit attackTarget, out _);
+
+            Assert.IsNotNull(attackTarget,
+                "Unit above the low-HP threshold should attack, not retreat");
+        }
     }
 }
 

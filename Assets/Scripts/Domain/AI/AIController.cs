@@ -37,6 +37,10 @@ namespace TacticFantasy.Domain.AI
                 return;
             }
 
+            // Self-preservation: if HP is critically low and a healing Fort is reachable, retreat.
+            if (TryRetreatToFort(unit, allUnits, map, pathFinder, out moveTarget))
+                return;
+
             if (unit.EquippedWeapon.Type == WeaponType.STAFF)
             {
                 DecideHealAction(unit, allUnits, map, pathFinder, out moveTarget, out attackTarget, out isHealAction);
@@ -239,5 +243,54 @@ namespace TacticFantasy.Domain.AI
         }
 
         private const int TerrainDefenseBiasPerPoint = 8;
+
+        /// <summary>
+        /// Returns true and sets <paramref name="moveTarget"/> when the unit is below
+        /// <see cref="LowHpThresholdPercent"/> of its max HP AND can reach a Fort tile.
+        /// The unit retreats to the nearest reachable Fort to benefit from its healing.
+        /// </summary>
+        private bool TryRetreatToFort(IUnit unit, List<IUnit> allUnits, IGameMap map,
+            IPathFinder pathFinder, out (int x, int y)? moveTarget)
+        {
+            moveTarget = null;
+
+            // Only trigger when HP is critically low
+            if (unit.CurrentHP > unit.MaxHP * LowHpThresholdPercent / 100)
+                return false;
+
+            var reachable = pathFinder.GetMovementRange(
+                unit.Position.x, unit.Position.y,
+                unit.CurrentStats.MOV, unit, map, allUnits);
+
+            // Find the closest reachable Fort tile (excluding current tile)
+            (int x, int y)? bestFort = null;
+            int bestDist = int.MaxValue;
+            foreach (var tile in reachable)
+            {
+                if (tile == (unit.Position.x, unit.Position.y))
+                    continue;
+                if (map.GetTile(tile.Item1, tile.Item2).Terrain == TerrainType.Fort)
+                {
+                    int dist = map.GetDistance(unit.Position.x, unit.Position.y, tile.Item1, tile.Item2);
+                    if (dist < bestDist)
+                    {
+                        bestDist = dist;
+                        bestFort = tile;
+                    }
+                }
+            }
+
+            if (!bestFort.HasValue)
+                return false;
+
+            moveTarget = bestFort;
+            return true;
+        }
+
+        /// <summary>
+        /// HP percentage threshold (inclusive) below which a unit will attempt
+        /// to retreat to a healing Fort if one is reachable.
+        /// </summary>
+        private const int LowHpThresholdPercent = 30;
     }
 }

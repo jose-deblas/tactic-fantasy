@@ -102,5 +102,70 @@ namespace TacticFantasy.Tests
             var result = UnitDisplayFormatter.FormatUnitInfo(unit);
             StringAssert.Contains("Weapon:", result);
         }
+
+        // --- Level & Experience in FormatUnitInfo ---
+
+        [Test]
+        public void FormatUnitInfo_ContainsLevelAndExp()
+        {
+            var unit = CreateUnit(); // starts at level 1, 0 XP
+            var result = UnitDisplayFormatter.FormatUnitInfo(unit);
+            StringAssert.Contains("Lv", result);
+            StringAssert.Contains("EXP", result);
+        }
+
+        [Test]
+        public void FormatUnitInfo_ShowsCorrectLevel()
+        {
+            var unit = CreateUnit();
+            var result = UnitDisplayFormatter.FormatUnitInfo(unit);
+            StringAssert.Contains("Lv:1", result);
+        }
+
+        [Test]
+        public void FormatUnitInfo_ShowsCorrectExp_AfterGainingXP()
+        {
+            var unit = CreateUnit();
+            unit.GainExperience(42);
+            var result = UnitDisplayFormatter.FormatUnitInfo(unit);
+            StringAssert.Contains("42", result);
+        }
+
+        [Test]
+        public void FormatUnitInfo_ShowsExpOutOf100()
+        {
+            var unit = CreateUnit();
+            unit.GainExperience(30);
+            var result = UnitDisplayFormatter.FormatUnitInfo(unit);
+            StringAssert.Contains("/100", result);
+        }
+
+        // --- FormatLevelInfo standalone ---
+
+        [Test]
+        public void FormatLevelInfo_NullUnit_ReturnsEmpty()
+        {
+            Assert.AreEqual("", UnitDisplayFormatter.FormatLevelInfo(null));
+        }
+
+        [Test]
+        public void FormatLevelInfo_ReturnsLvAndExp()
+        {
+            var unit = CreateUnit();
+            var result = UnitDisplayFormatter.FormatLevelInfo(unit);
+            StringAssert.Contains("Lv", result);
+            StringAssert.Contains("EXP", result);
+        }
+
+        [Test]
+        public void FormatLevelInfo_AtMaxLevel_ShowsMaxLabel()
+        {
+            // Create a unit at max level by leveling up
+            var stats = new CharacterStats(30, 5, 0, 8, 8, 3, 5, 0, 5);
+            var unit = new Unit(2, "Max", Team.PlayerTeam, ClassDataFactory.CreateMyrmidon(), stats, (0,0),
+                WeaponFactory.CreateIronSword(), levelOverride: Unit.MaxLevel);
+            var result = UnitDisplayFormatter.FormatLevelInfo(unit);
+            StringAssert.Contains("MAX", result);
+        }
     }
 }

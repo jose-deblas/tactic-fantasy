@@ -83,6 +83,7 @@
     <Compile Include="Assets/Scripts/Domain/Combat/CombatXp.cs" />
     <Compile Include="Assets/Scripts/Tests/ExperienceSystemTests.cs" />
     <Compile Include="Assets/Scripts/Tests/RefreshMechanicTests.cs" />
+    <Compile Include="Assets/Scripts/Tests/SolLunaTests.cs" />
     <Compile Include="Assets/Scripts/Domain/Save/InMemoryGameRepository.cs" />
     <Compile Include="Assets/Scripts/Domain/Save/IGameRepository.cs" />
     <Compile Include="Assets/Scripts/Domain/Save/GameSaveService.cs" />

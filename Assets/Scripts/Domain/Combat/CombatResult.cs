@@ -25,6 +25,9 @@ namespace TacticFantasy.Domain.Combat
         /// <summary>Status effect applied to the attacker via counter-hit, if any.</summary>
         public StatusEffectType? AttackerStatusApplied { get; }
 
+        /// <summary>HP healed by the attacker via Sol (0 if Sol did not fire).</summary>
+        public int AttackerHealedHP { get; }
+
         /// <summary>Names of skills that activated during this combat.</summary>
         public IReadOnlyList<string> ActivatedSkills { get; }
 
@@ -40,7 +43,8 @@ namespace TacticFantasy.Domain.Combat
             int defenderXpGained = 0,
             StatusEffectType? defenderStatusApplied = null,
             StatusEffectType? attackerStatusApplied = null,
-            IReadOnlyList<string> activatedSkills = null)
+            IReadOnlyList<string> activatedSkills = null,
+            int attackerHealedHP = 0)
         {
             Damage = damage;
             Hit = hit;
@@ -54,6 +58,7 @@ namespace TacticFantasy.Domain.Combat
             DefenderStatusApplied = defenderStatusApplied;
             AttackerStatusApplied = attackerStatusApplied;
             ActivatedSkills = activatedSkills ?? new List<string>();
+            AttackerHealedHP = attackerHealedHP;
         }
     }
 }

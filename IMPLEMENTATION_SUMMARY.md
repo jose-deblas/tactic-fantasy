@@ -150,4 +150,5 @@ For questions about architecture, code structure, or how specific systems work, 
 **Architecture**: Domain-Driven Design + Hexagonal Architecture
 **Code Quality**: SOLID Principles, Clean Code standards
 - feat(IA): AI prefers higher-defense terrain when choosing attack position. Added test to verify AIController selects Fort tiles when scores tie.
+- feat(IA): refine attack-position tie-breakers to prefer higher terrain defense and, when equal, the closer tile to the attacker. Added test DecideAction_PrefersCloserTile_WhenDefenseAndScoreEqual.
 + dev(extras): added run-tests.sh convenience script to run DomainTests from the terminal

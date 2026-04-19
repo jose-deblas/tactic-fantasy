@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using TacticFantasy.Domain.Map;
 using TacticFantasy.Domain.Units;
 using TacticFantasy.Domain.Turn;
 
@@ -12,11 +13,19 @@ namespace TacticFantasy.Adapters
     public class UnitRenderer : MonoBehaviour
     {
         private Dictionary<int, GameObject> _unitVisuals = new Dictionary<int, GameObject>();
+        private IFogOfWar _fogOfWar;
+        private Team _viewingTeam = Team.PlayerTeam;
 
         private const float UNIT_RADIUS  = 0.35f;
         private const float TILE_SIZE    = 1f;
         private const float HP_BAR_WIDTH = 0.8f;
         private const float HP_BAR_HEIGHT= 0.1f;
+
+        public void SetFogOfWar(IFogOfWar fog, Team viewingTeam)
+        {
+            _fogOfWar = fog;
+            _viewingTeam = viewingTeam;
+        }
 
         public void UpdateAllUnits(List<IUnit> units, ITurnManager turnManager = null)
         {
@@ -25,6 +34,15 @@ namespace TacticFantasy.Adapters
             foreach (var unit in units)
             {
                 seen.Add(unit.Id);
+
+                // Hide enemy units in fog
+                if (_fogOfWar != null && unit.Team != _viewingTeam &&
+                    !_fogOfWar.IsTileVisible(unit.Position.x, unit.Position.y, _viewingTeam))
+                {
+                    RemoveUnit(unit.Id);
+                    continue;
+                }
+
                 if (unit.IsAlive)
                     UpdateUnit(unit, turnManager);
                 else

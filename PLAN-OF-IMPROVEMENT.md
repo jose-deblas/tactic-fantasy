@@ -312,7 +312,9 @@ Objective bonus:   optional objectives add fixed amounts (defined per ChapterDat
 
 ---
 
-## Phase 6: Map Improvements
+## ~~Phase 6: Map Improvements~~ ✅ DONE (v2.9)
+
+> Implemented in v2.9. `MapDefinition` + `MapLoader` for designed maps, 3 hand-crafted chapters (Plains Skirmish, Castle Assault, Desert Holdout). `ReinforcementTrigger` + `ReinforcementService` for turn/tile/death-based spawns, wired into `TurnManager`. `FogOfWar` service with BFS vision (MOV+2 radius), Forest blocking, Torch extension, fog-aware AI with last-known positions. 5 new terrain types: Door, Chest, Throne, Desert, Bridge. `InteractableTile` for mutable Door/Chest state. `TerrainProperties` refactored from `bool isInfantry` to `MoveType` with mage Desert exception.
 
 **Why sixth**: The game needs designed maps, not random generation. Reinforcements and fog of war add tension. This phase makes every chapter feel unique.
 
@@ -586,7 +588,7 @@ Phase 10: Forging + Elevation + Polish (depends on Phase 2, 5, 6)
 | 4 | Laguz / Shapeshifters | ✅ Done (v2.7) — 1 gap |
 | 4b | Heron Cross-Pattern Refresh | ✅ Done (v2.7) |
 | 5 | Base / Shops + BEXP | ✅ Done (v2.8) |
-| 6 | Map Improvements | ❌ Not started |
+| 6 | Map Improvements | ✅ Done (v2.9) |
 | 7 | Support / Affinity + Biorhythm | ❌ Not started |
 | 8 | Shove / Guard / Steal / Trade / NPC | ❌ Not started |
 | 9 | Magic Triangle + Weather + Narrative | ❌ Not started |

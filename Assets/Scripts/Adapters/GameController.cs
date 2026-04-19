@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using TacticFantasy.Domain.AI;
+using TacticFantasy.Domain.Chapter;
 using TacticFantasy.Domain.Combat;
 using TacticFantasy.Domain.Map;
 using TacticFantasy.Domain.Turn;
@@ -32,6 +33,10 @@ namespace TacticFantasy.Adapters
         private bool _isExecutingEnemyTurn = false;
         private bool _isShowingAttackRange = false;
         private bool _unitHasMoved = false;
+
+        private IFogOfWar _fogOfWar;
+        private IReinforcementService _reinforcementService;
+        private ChapterData _chapterData;
 
         public void Awake()
         {

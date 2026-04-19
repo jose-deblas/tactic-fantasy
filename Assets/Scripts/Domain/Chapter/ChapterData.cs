@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using TacticFantasy.Domain.Map;
 using TacticFantasy.Domain.Turn;
 
 namespace TacticFantasy.Domain.Chapter
@@ -12,6 +13,7 @@ namespace TacticFantasy.Domain.Chapter
         public int ParTurns { get; }
         public IReadOnlyList<string> ShopItems { get; }
         public IVictoryCondition VictoryCondition { get; }
+        public MapDefinition MapDefinition { get; }
 
         public ChapterData(
             string name,
@@ -19,7 +21,8 @@ namespace TacticFantasy.Domain.Chapter
             int baseBexpReward,
             int parTurns,
             IReadOnlyList<string> shopItems = null,
-            IVictoryCondition victoryCondition = null)
+            IVictoryCondition victoryCondition = null,
+            MapDefinition mapDefinition = null)
         {
             Name = name;
             MapSeed = mapSeed;
@@ -27,6 +30,7 @@ namespace TacticFantasy.Domain.Chapter
             ParTurns = parTurns;
             ShopItems = shopItems ?? Array.Empty<string>();
             VictoryCondition = victoryCondition ?? VictoryConditionFactory.Rout();
+            MapDefinition = mapDefinition;
         }
 
         /// <summary>

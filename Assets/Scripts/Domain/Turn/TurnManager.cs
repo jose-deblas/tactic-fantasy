@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using TacticFantasy.Domain.Units;
@@ -54,6 +53,8 @@ namespace TacticFantasy.Domain.Turn
         private int _currentUnitIndex = 0;
         private HashSet<int> _unitsWhoActed = new HashSet<int>();
         private IGameMap _map;
+        private IReinforcementService _reinforcementService;
+        private List<ReinforcementTrigger> _reinforcementTriggers = new List<ReinforcementTrigger>();
 
         public Phase CurrentPhase { get; private set; } = Phase.PlayerPhase;
         public int TurnCount { get; private set; } = 0;
@@ -71,6 +72,12 @@ namespace TacticFantasy.Domain.Turn
 
         public void Initialize(List<IUnit> units, IVictoryCondition victoryCondition, IGameMap map = null)
         {
+            Initialize(units, victoryCondition, map, null, null);
+        }
+
+        public void Initialize(List<IUnit> units, IVictoryCondition victoryCondition, IGameMap map,
+            IReinforcementService reinforcementService, List<ReinforcementTrigger> triggers)
+        {
             _allUnits = new List<IUnit>(units);
             _currentUnitIndex = 0;
             _unitsWhoActed.Clear();
@@ -78,6 +85,8 @@ namespace TacticFantasy.Domain.Turn
             TurnCount = 1;
             VictoryCondition = victoryCondition ?? VictoryConditionFactory.Rout();
             _map = map;
+            _reinforcementService = reinforcementService;
+            _reinforcementTriggers = triggers ?? new List<ReinforcementTrigger>();
         }
 
         public void MarkCurrentUnitAsActed()
@@ -117,6 +126,9 @@ namespace TacticFantasy.Domain.Turn
                 _unitsWhoActed.Clear();
                 _currentUnitIndex = 0;
                 TurnCount++;
+
+                // Check reinforcements at the start of each new turn
+                CheckReinforcements();
             }
 
             if (GetGameState() != GameState.InProgress)
@@ -233,6 +245,15 @@ namespace TacticFantasy.Domain.Turn
             {
                 unit.TickTransformGauge();
             }
+        }
+
+        private void CheckReinforcements()
+        {
+            if (_reinforcementService == null || _reinforcementTriggers.Count == 0)
+                return;
+
+            var spawned = _reinforcementService.EvaluateTriggers(_reinforcementTriggers, TurnCount, _allUnits);
+            _allUnits.AddRange(spawned);
         }
 
         private List<IUnit> GetPhaseUnits()

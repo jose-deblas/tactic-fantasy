@@ -1,5 +1,7 @@
 using System.Collections.Generic;
+using System.Linq;
 using NUnit.Framework;
+using TacticFantasy.Domain.Map;
 using TacticFantasy.Domain.Turn;
 using TacticFantasy.Domain.Units;
 
@@ -176,6 +178,71 @@ namespace TacticFantasy.Tests
             _turnManager.AdvancePhase();
             Assert.Less(playerUnit.CurrentHP, hpBefore, "Poison should tick at end of enemy phase");
             Assert.AreEqual(1, playerUnit.ActiveStatus.RemainingTurns);
+        }
+
+        // ── Reinforcement tests ─────────────────────────────────────────────
+
+        [Test]
+        public void AdvancePhase_ReinforcementsAddedToAllUnits()
+        {
+            var turnManager = new TurnManager();
+            var units = new List<IUnit>
+            {
+                new Unit(1, "Player", Team.PlayerTeam, ClassDataFactory.CreateMyrmidon(),
+                    new CharacterStats(18, 6, 0, 11, 12, 5, 5, 0, 5), (0, 0), WeaponFactory.CreateIronSword()),
+                new Unit(2, "Enemy", Team.EnemyTeam, ClassDataFactory.CreateFighter(),
+                    new CharacterStats(22, 9, 0, 5, 7, 4, 6, 0, 5), (10, 10), WeaponFactory.CreateIronAxe())
+            };
+
+            var triggers = new List<ReinforcementTrigger>
+            {
+                ReinforcementTrigger.OnTurn(2, new List<UnitPlacement>
+                {
+                    new UnitPlacement("Reinforcement", "Soldier", "Iron Lance", Team.EnemyTeam, (8, 8))
+                })
+            };
+
+            var reinforcementService = new ReinforcementService(new MapLoader());
+            turnManager.Initialize(units, null, null, reinforcementService, triggers);
+
+            Assert.AreEqual(2, turnManager.AllUnits.Count);
+
+            // Turn 1 → Turn 2: Player→Enemy→Player (TurnCount becomes 2)
+            turnManager.AdvancePhase(); // Player → Enemy
+            turnManager.AdvancePhase(); // Enemy → Player (TurnCount = 2, reinforcements checked)
+
+            Assert.AreEqual(3, turnManager.AllUnits.Count);
+            Assert.AreEqual("Reinforcement", turnManager.AllUnits[2].Name);
+        }
+
+        [Test]
+        public void AdvancePhase_ReinforcementsDoNotFireBeforeTurn()
+        {
+            var turnManager = new TurnManager();
+            var units = new List<IUnit>
+            {
+                new Unit(1, "Player", Team.PlayerTeam, ClassDataFactory.CreateMyrmidon(),
+                    new CharacterStats(18, 6, 0, 11, 12, 5, 5, 0, 5), (0, 0), WeaponFactory.CreateIronSword()),
+                new Unit(2, "Enemy", Team.EnemyTeam, ClassDataFactory.CreateFighter(),
+                    new CharacterStats(22, 9, 0, 5, 7, 4, 6, 0, 5), (10, 10), WeaponFactory.CreateIronAxe())
+            };
+
+            var triggers = new List<ReinforcementTrigger>
+            {
+                ReinforcementTrigger.OnTurn(5, new List<UnitPlacement>
+                {
+                    new UnitPlacement("Late", "Soldier", "Iron Lance", Team.EnemyTeam, (8, 8))
+                })
+            };
+
+            var reinforcementService = new ReinforcementService(new MapLoader());
+            turnManager.Initialize(units, null, null, reinforcementService, triggers);
+
+            // Advance once (turn 1 → 2)
+            turnManager.AdvancePhase();
+            turnManager.AdvancePhase();
+
+            Assert.AreEqual(2, turnManager.AllUnits.Count, "Should not spawn on turn 2 when trigger is turn 5");
         }
     }
 }

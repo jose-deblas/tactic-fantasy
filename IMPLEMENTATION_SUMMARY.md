@@ -6,6 +6,9 @@
 
 ### v2.8 - Base / Shops + Bonus Experience (2026-04-19)
 - **ArmyGold.cs** (`Domain/Chapter/`) — Army-wide gold tracker: `Earn(amount)`, `Spend(amount)`, `CanAfford(cost)`. Throws on negative values or overspend
+
+### v2.8.1 - Gameplay: Regeneration status effect (2026-04-19)
+- **RegenerationEffect** (`Domain/`) — New status effect that heals a target over time (`duration`, `healPerSecond`). Implemented as domain class with full TDD coverage (RegenerationHealsAndExpires test)
 - **ShopService.cs** (`Domain/Chapter/`) — Domain service with item catalog (`RegisterItem`), `Buy(unit, itemName, gold)` (validates stock, affordability, inventory space), `Sell(unit, item, gold)` (50% of buy price). Uses factory functions for fresh item instances
 - **BexpDistributor.cs** (`Domain/Chapter/`) — BEXP allocation service: 50 BEXP per level-up, deducts from a shared pool, stops at max level. Delegates actual level-up to `Unit.GainLevelBexp()`
 - **ChapterData.cs** (`Domain/Chapter/`) — Value object defining a chapter: name, map seed, base BEXP reward, par turns, shop items, victory condition. `CalculateBexpReward(turnsTaken, alliesAlive, totalAllies)` computes total with turn bonus (+5 per under-par turn) and survival bonus (proportional to allies alive)

@@ -14,6 +14,8 @@ namespace TacticFantasy.Domain
     {
         float Health { get; set; }
         void TakeDamage(float amount);
+        // Whether the unit can perform actions (move/attack). Status effects like Stun may toggle this.
+        bool CanAct { get; set; }
     }
 
     public class PoisonEffect : IStatusEffect
@@ -40,6 +42,41 @@ namespace TacticFantasy.Domain
 
             // Decrease remaining duration
             Duration -= effective;
+        }
+
+        public bool IsExpired => Duration <= 0f;
+    }
+
+    public class StunEffect : IStatusEffect
+    {
+        public string Name => "Stun";
+        public float Duration { get; private set; }
+
+        public StunEffect(float duration)
+        {
+            Duration = duration;
+        }
+
+        public void Tick(float deltaTime, IStatusTarget target)
+        {
+            if (target == null) throw new ArgumentNullException(nameof(target));
+            if (IsExpired)
+            {
+                // Ensure the target can act again once expired
+                target.CanAct = true;
+                return;
+            }
+
+            // While stunned, target cannot act
+            target.CanAct = false;
+
+            var effective = Math.Min(deltaTime, Duration);
+            Duration -= effective;
+
+            if (IsExpired)
+            {
+                target.CanAct = true;
+            }
         }
 
         public bool IsExpired => Duration <= 0f;

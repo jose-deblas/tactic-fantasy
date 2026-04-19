@@ -5,7 +5,7 @@
 ## Changelog
 
 ### v2.8.2 - Presentation: Health formatter (2026-04-19)
-- **HealthFormatter** (`Presentation/`) — Pure utility to format health for HUD and world-space HP bars. `Format(current, max)` clamps values and returns a string like `HP: 30/50 (60%)`. Added `HealthFormatterTests.cs` with cases for normal values, clamping below zero, clamping above max, and invalid max (throws).
+- **HealthFormatter** (`Presentation/`) — Pure utility to format health for HUD and world-space HP bars. `Format(current, max)` clamps values and returns a string like `HP: 30/50 (60%)`. Added `HealthFormatterTests.cs` with cases for normal values, clamping below zero, clamping above max, invalid max (throws), and rounding behavior for percent calculation.
 
 ### v2.8.1 - Gameplay: Regeneration status effect (2026-04-19)
 - **RegenerationEffect** (`Domain/`) — New status effect that heals a target over time (`duration`, `healPerSecond`). Implemented as domain class with full TDD coverage (RegenerationHealsAndExpires test)

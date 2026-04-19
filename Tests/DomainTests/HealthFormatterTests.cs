@@ -32,5 +32,13 @@ namespace DomainTests
         {
             Assert.Throws<ArgumentException>(() => HealthFormatter.Format(10, 0));
         }
+
+        [Test]
+        public void Format_Rounding_ReturnsRoundedPercent()
+        {
+            // 1/6 = 16.666... -> 17%
+            var s = HealthFormatter.Format(1, 6);
+            Assert.AreEqual("HP: 1/6 (17%)", s);
+        }
     }
 }

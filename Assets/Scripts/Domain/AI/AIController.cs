@@ -243,8 +243,20 @@ namespace TacticFantasy.Domain.AI
             if (validTargets.Count == 0)
                 return null;
 
-            var selected = validTargets.OrderBy(t => t.score).First();
+            // Choose lowest score, tie-break by target.CurrentHP (prefer lower HP finishers)
+            var selected = validTargets
+                .OrderBy(t => t.score)
+                .ThenBy(t => t.target.CurrentHP)
+                .First();
             return ((selected.x, selected.y), selected.target);
+        }
+
+        // Public helper for tests and future AI policies: given a set of reachable tiles, pick the best
+        // attack position and target. This wraps the internal FindBestAttackPosition logic and is covered
+        // by unit tests.
+        public ((int x, int y) position, IUnit target)? GetBestAttackOptionForReachable(IUnit unit, List<IUnit> enemies, HashSet<(int, int)> reachable, IGameMap map)
+        {
+            return FindBestAttackPosition(unit, enemies, reachable, map);
         }
 
         /// <summary>

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using TacticFantasy.Domain.Items;
 using TacticFantasy.Domain.Units;
 

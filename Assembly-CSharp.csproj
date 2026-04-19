@@ -60,6 +60,7 @@
     <Compile Include="Assets/Scripts/Domain/Units/CharacterStats.cs" />
     <Compile Include="Assets/Scripts/Domain/Combat/CombatResult.cs" />
     <Compile Include="Assets/Scripts/Tests/UnitInventoryTests.cs" />
+    <Compile Include="Assets/Scripts/Domain/Map/MapDefinition.cs" />
     <Compile Include="Assets/Scripts/Domain/Items/StatBooster.cs" />
     <Compile Include="Assets/Scripts/Tests/StatusEffectTests.cs" />
     <Compile Include="Assets/Scripts/Tests/CombatForecastTests.cs" />
@@ -82,6 +83,7 @@
     <Compile Include="Assets/Scripts/Domain/Chapter/BasePhase.cs" />
     <Compile Include="Assets/Scripts/Domain/Units/LaguzClassData.cs" />
     <Compile Include="Assets/Scripts/Domain/Skills/SkillActivationPhase.cs" />
+    <Compile Include="Assets/Scripts/Domain/Chapter/MapDefinitions.cs" />
     <Compile Include="Assets/Scripts/Domain/Combat/CombatForecast.cs" />
     <Compile Include="Assets/Scripts/Tests/LaguzStatSwapTests.cs" />
     <Compile Include="Assets/Scripts/Domain/Map/GameMap.cs" />
@@ -100,6 +102,7 @@
     <Compile Include="Assets/Scripts/Tests/ExperienceSystemTests.cs" />
     <Compile Include="Assets/Scripts/Tests/RefreshMechanicTests.cs" />
     <Compile Include="Assets/Scripts/Tests/ShopServiceTests.cs" />
+    <Compile Include="Assets/Scripts/Domain/Map/MapLoader.cs" />
     <Compile Include="Assets/Scripts/Domain/Items/ConsumableItem.cs" />
     <Compile Include="Assets/Scripts/Tests/MasterySkillTests.cs" />
     <Compile Include="Assets/Scripts/Domain/Items/LaguzItemFactory.cs" />
@@ -146,6 +149,7 @@
     <Compile Include="Assets/Scripts/Domain/Chapter/ChapterData.cs" />
     <Compile Include="Assets/Scripts/Adapters/CursorRenderer.cs" />
     <Compile Include="Assets/Scripts/Tests/GameSaveServiceTests.cs" />
+    <Compile Include="Assets/Scripts/Tests/TerrainTypeTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="UnityEngine">

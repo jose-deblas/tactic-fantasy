@@ -223,7 +223,8 @@ namespace TacticFantasy.Domain.AI
 
         private ((int x, int y) position, IUnit target)? FindBestAttackPosition(IUnit unit, List<IUnit> enemies, HashSet<(int, int)> reachable, IGameMap map)
         {
-            var validTargets = new List<(int x, int y, IUnit target, int score)>();
+            // Include terrain defense and distance in the candidate tuple to allow richer tie-breaking.
+            var validTargets = new List<(int x, int y, IUnit target, int score, int terrainDef, int distance)>();
 
             foreach (var position in reachable)
             {
@@ -234,8 +235,9 @@ namespace TacticFantasy.Domain.AI
                     if (distance >= unit.EquippedWeapon.MinRange && distance <= unit.EquippedWeapon.MaxRange)
                     {
                         int score = ScoreAttackOption(unit, enemy);
+                        int terrainDef = TerrainProperties.GetDefenseBonus(map.GetTile(position.Item1, position.Item2).Terrain);
                         score -= ScoreTerrainBonus(position.Item1, position.Item2, map);
-                        validTargets.Add((position.Item1, position.Item2, enemy, score));
+                        validTargets.Add((position.Item1, position.Item2, enemy, score, terrainDef, distance));
                     }
                 }
             }
@@ -243,10 +245,15 @@ namespace TacticFantasy.Domain.AI
             if (validTargets.Count == 0)
                 return null;
 
-            // Choose lowest score, tie-break by target.CurrentHP (prefer lower HP finishers)
+            // Choose lowest score. Tie-breakers, in order:
+            // 1) lower target.CurrentHP (prefer finishers)
+            // 2) higher terrain defense (prefer defensive tiles)
+            // 3) shorter movement distance from current unit position (prefer closer tiles)
             var selected = validTargets
                 .OrderBy(t => t.score)
                 .ThenBy(t => t.target.CurrentHP)
+                .ThenByDescending(t => t.terrainDef)
+                .ThenBy(t => t.distance)
                 .First();
             return ((selected.x, selected.y), selected.target);
         }

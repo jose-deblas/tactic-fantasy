@@ -454,6 +454,33 @@ namespace TacticFantasy.Tests
             Assert.AreEqual(strongPlayer.Id, attackTarget.Id,
                 "AI should prefer the higher-ATK (more dangerous) target when other factors are equal");
         }
+
+        /// <summary>
+        /// When two reachable tiles give equal score and terrain defense, prefer
+        /// the tile closer to the attacker to avoid unnecessary movement.
+        /// </summary>
+        [Test]
+        public void DecideAction_PrefersCloserTile_WhenDefenseAndScoreEqual()
+        {
+            // Map: cols 0..4 plain, but we'll set col1 and col2 both Plain
+            var tiles = new ITile[5, 1];
+            for (int i = 0; i < 5; i++) tiles[i, 0] = new Tile(i, 0, TerrainType.Plain);
+            var controlledMap = new GameMap(5, 1, tiles);
+
+            // Enemy at col0, player at col4. Enemy can move to col1 or col2 to attack (both plain)
+            IUnit enemy  = MakeEnemy(10, WeaponType.SWORD, pos: (0, 0));
+            IUnit player = MakePlayer(1, WeaponType.LANCE,  hp: 20, pos: (4, 0));
+            var allUnits = new List<IUnit> { enemy, player };
+
+            _ai.DecideAction(enemy, allUnits, controlledMap, _pathFinder,
+                out (int x, int y)? moveTarget, out IUnit attackTarget, out _);
+
+            Assert.IsNotNull(attackTarget);
+            Assert.IsNotNull(moveTarget);
+            // Expect the AI to pick col1 (closer) over col2 when everything else equal
+            Assert.AreEqual(1, moveTarget.Value.x,
+                "AI should prefer the closer attack tile when defense and score are equal");
+        }
     }
 }
 

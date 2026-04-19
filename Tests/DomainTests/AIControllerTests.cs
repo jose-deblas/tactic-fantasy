@@ -100,5 +100,60 @@ namespace DomainTests
             Assert.IsNotNull(best);
             Assert.AreEqual(3, best.Value.target.Id, "AI should prefer the lower-HP target when scores tie.");
         }
+
+        [Test]
+        public void GetBestAttackOptionForReachable_PrefersHigherDefenseTileOnTie()
+        {
+            var ai = new AIController(null);
+
+            var attacker = new DummyUnit
+            {
+                Id = 1,
+                Team = Team.EnemyTeam,
+                Position = (0,0),
+                CurrentHP = 20,
+                MaxHP = 20,
+                EquippedWeapon = new SimpleWeapon { MinRange = 1, MaxRange = 1, Might = 5, Type = WeaponType.SWORD },
+                CurrentStats = new SimpleStats { MOV = 3, STR = 5 }
+            };
+
+            var target = new DummyUnit
+            {
+                Id = 2,
+                Team = Team.PlayerTeam,
+                Position = (2,0),
+                CurrentHP = 12,
+                MaxHP = 20,
+                EquippedWeapon = new SimpleWeapon { MinRange = 1, MaxRange = 1, Might = 5, Type = WeaponType.SWORD },
+                CurrentStats = new SimpleStats { MOV = 3, STR = 3 }
+            };
+
+            // Map with two candidate attack positions: (1,0) plain, (1,1) fort
+            var map = new DummyMapWithTerrain();
+
+            var reachable = new HashSet<(int, int)> { (1,0), (1,1) };
+            var enemies = new List<IUnit> { target };
+
+            var best = ai.GetBestAttackOptionForReachable(attacker, enemies, reachable, map);
+
+            Assert.IsNotNull(best);
+            // Expect the AI to pick the (1,1) tile because it's a Fort (higher defense bonus)
+            Assert.AreEqual((1,1), best.Value.position, "AI should prefer the tile with higher terrain defense when scores tie.");
+        }
+
+        // Additional DummyMap that returns different terrain per coordinate
+        private class DummyMapWithTerrain : IGameMap
+        {
+            public Tile GetTile(int x, int y)
+            {
+                if (x == 1 && y == 1)
+                    return new Tile(1,1, TerrainType.Fort);
+                return new Tile(x,y, TerrainType.Plain);
+            }
+            public int GetDistance(int x1, int y1, int x2, int y2) => System.Math.Abs(x1 - x2) + System.Math.Abs(y1 - y2);
+            public int Width => 10;
+            public int Height => 10;
+            public bool IsValidPosition(int x, int y) => x >= 0 && x < Width && y >=0 && y < Height;
+        }
     }
 }

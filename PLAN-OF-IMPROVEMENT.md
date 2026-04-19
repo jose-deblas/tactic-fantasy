@@ -4,7 +4,31 @@
 >
 > **Architecture Rule**: All gameplay logic lives in `Domain/`. Adapters stay thin. Every feature gets TDD with EditMode NUnit tests.
 >
-> **Current State (v2.2)**: 6 base + 6 promoted classes, weapon triangle (Sword>Axe>Lance), combat with True Hit/crits/doubles/counters, 3 status effects, A* pathfinding, heuristic AI, procedural 16x16 maps, save/load, gamepad support.
+> **Current State (v2.7)**: 6 base + 6 promoted + 6 master-tier classes, 8 Laguz shapeshifter races, full skill system (Adept, Vantage, Wrath, Resolve, Nihil, Paragon, Sol, Luna + 5 mastery skills), 7-slot inventory with consumables and stat boosters, weapon triangle (Sword>Axe>Lance), combat with True Hit/crits/doubles/counters, 3 status effects, A* pathfinding, terrain-aware heuristic AI, procedural 16x16 maps, save/load, gamepad support.
+
+---
+
+## ~~Phase 1: Skills System + Weapon Tiers~~ ✅ DONE (v2.0–v2.3)
+
+> Implemented across multiple releases. Adept, Vantage, Wrath, Resolve, Nihil, Paragon, Sol, Luna all live in `Domain/Skills/SkillDatabase.cs`. `CombatResolver` runs the full skill pipeline (PreCombat → OnAttack → OnDamageDealt). Weapon tiers (IsBrave, WeaponRank) added to `IWeapon`. `WeaponFactory` has Iron/Steel/Silver/Brave variants.
+
+---
+
+## ~~Phase 2: Inventory + Items + Multi-Weapon Classes~~ ✅ DONE (v2.5)
+
+> Implemented in v2.5. `IItem`, `Inventory` (7 slots), `ConsumableItem`, `StatBooster`, `IWeapon extends IItem`. All promoted classes have correct multi-weapon lists.
+
+---
+
+## ~~Phase 3: Third-Tier Classes + Mastery Skills~~ ✅ DONE (v2.6)
+
+> Implemented in v2.6. `ClassData.Tier` (1/2/3), 6 master classes (Trueblade, Marshall, Reaver, Archsage, Marksman, Saint), `ClassPromotionService` extended to Tier 2→3 with mastery auto-learn. All 5 mastery skills in `SkillDatabase`.
+
+---
+
+## ~~Phase 4: Laguz / Shapeshifters~~ ✅ DONE (v2.7)
+
+> Implemented in v2.7. `TransformGauge`, `LaguzClassData` for all 8 races, `LaguzWeaponFactory`, `LaguzItemFactory` (Laguz Stone, Olivi Grass), `Unit` Laguz methods, TurnManager gauge ticking, AI retreat for untransformed Laguz, Heron single-target refresh + cross-pattern refresh when transformed.
 
 ---
 
@@ -211,35 +235,80 @@
 
 ---
 
+## Phase 4 Follow-Up: Heron Cross-Pattern Refresh (small, self-contained)
+
+**Why now**: Heron's expanded refresh is the only missing piece from Phase 4. It's small but important for Heron's unique role.
+
+**Changes to existing:**
+- **`TurnManager.cs`** — Add `CanRefreshCross(refresher, targets)` and `RefreshCross(heronId, map)` methods. When Heron is transformed, `RefreshUnit` is upgraded to refresh all allied units in the 4 cardinal adjacent tiles instead of just one
+- **`IUnit` / `Unit.cs`** — No changes needed (IsTransformed already exists)
+
+**Implementation details:**
+- `RefreshCross(heronId, map)` — gets Heron position, checks each of the 4 cardinal neighbors (x±1 or y±1), collects allied units that have acted, calls `RefreshUnit()` on each. Requires `IGameMap` to read positions.
+- Keep existing single-target `RefreshUnit` for untransformed Heron — no behavior change there
+- Add `ITurnManager.RefreshCross(int heronId, IGameMap map)` to the interface
+
+**Tests:** Add to `RefreshMechanicTests.cs`:
+- `TransformedHeron_CanRefreshCross_UpToFourAdjacentAllies`
+- `UntransformedHeron_CannotRefreshCross`
+- `RefreshCross_SkipsEnemyUnits`
+- `RefreshCross_SkipsUnacedUnits`
+
+---
+
 ## Phase 5: Base / Shops + Bonus Experience (BEXP)
 
-**Why fifth**: Requires inventory (Phase 2) for shops. BEXP is RD's unique reward/catch-up system that enables strategic unit building.
+**Why next**: Requires inventory (Phase 2 ✅) for shops. BEXP is RD's unique reward/catch-up system that enables strategic unit building. All prerequisites are now done.
+
+**Status**: ✅ DONE (v2.8)
+
+### 5A. Domain Models
 
 | New File | Purpose |
 |----------|---------|
-| `Domain/Chapter/ChapterData.cs` | Defines a chapter: map layout, enemy roster, victory condition, BEXP reward, shop items |
-| `Domain/Chapter/BasePhase.cs` | Between-chapter state: BEXP pool, shop inventory, unit roster (deploy/bench), gold |
-| `Domain/Chapter/BexpDistributor.cs` | BEXP level-up service. Key RD mechanic: BEXP level-ups **always grant exactly +3 stats** (the 3 highest growth rates always proc) |
-| `Domain/Chapter/ShopService.cs` | Buy/sell items with gold tracking |
-| `Domain/Chapter/ArmyGold.cs` | Army-wide gold tracker |
+| `Domain/Chapter/ArmyGold.cs` | Army-wide gold tracker. Simple value object: `int Gold`, `bool CanAfford(int cost)`, `void Spend(int amount)`, `void Earn(int amount)`. Throws if spending below zero. |
+| `Domain/Chapter/ShopService.cs` | Domain service. `Buy(unit, item, gold)` — validates CanAfford, deducts gold, adds item to unit inventory. `Sell(unit, item, gold)` — removes item, earns gold. Sell price = 50% of buy price. |
+| `Domain/Chapter/BexpDistributor.cs` | BEXP level-up service (see rules below). Core RD mechanic: BEXP level-ups **always grant exactly +3 stats** (deterministic, not probabilistic). |
+| `Domain/Chapter/ChapterData.cs` | Value object defining a chapter: `MapSeed`, `EnemyRoster`, `VictoryCondition`, `BexpReward`, `ShopItems`, `ParTurns`. |
+| `Domain/Chapter/BasePhase.cs` | Between-chapter state: `BexpPool`, `ShopInventory`, `ArmyGold`, `AvailableUnits` (full roster), `DeployedUnits` (subset). Methods: `AllocateBexp(unit, amount)`, `OpenShop()`, `DeployUnit(unit)`, `BenchUnit(unit)`. |
 
-**Changes to existing:**
-- **`Unit.cs`** -- Add `bool GainExperienceBexp(int amount, Random rng)` with BEXP-specific level-up (guaranteed 3 stat points, chosen from highest growth rates that haven't capped)
-- **`GameController.cs` / new `BaseController.cs`** -- Adapter for base phase UI (shop, BEXP allocation, unit management, item trading)
+### 5B. Changes to Existing Files
 
-**BEXP distribution rules (RD-accurate):**
-- Level-up always grants exactly 3 stat increases
-- Stats are chosen in order of highest growth rate
-- If a stat is already capped, it's skipped and the next-highest growth gets the +1
-- If fewer than 3 stats can grow (all capped), you get fewer increases
+- **`Unit.cs` / `IUnit`** — Add `bool GainExperienceBexp(int amount, Random rng = null)` method. BEXP-specific level-up: always grants exactly 3 stat points, chosen from highest growth rates that haven't capped. If fewer than 3 stats can grow (all capped), grants fewer. Different from normal `GainExperience` (probabilistic).
 
-**BEXP rewards per chapter:**
-- Completion bonus (base amount)
-- Turn bonus (finish under par turns = extra BEXP)
-- Survival bonus (fewer ally deaths = more BEXP)
-- Objective bonus (optional objectives completed)
+### 5C. BEXP Distribution Rules (RD-accurate)
 
-**Tests:** `BexpDistributorTests.cs`, `ShopServiceTests.cs`, `BasePhaseTests.cs`, `ChapterFlowTests.cs`
+```
+1. Sort stats by growth rate descending: HP, STR, MAG, SKL, SPD, LCK, DEF, RES (MOV excluded)
+2. For each level-up triggered by BEXP:
+   a. Grant +1 to the 3 stats with highest growth rates that are NOT yet at cap
+   b. Skip any stat already at CapStats value
+   c. If fewer than 3 uncapped stats exist, grant as many as possible
+3. Always costs 50 BEXP per level-up (same as RD)
+4. Does NOT use RNG — result is fully deterministic
+```
+
+### 5D. BEXP Rewards Per Chapter
+
+```
+Completion bonus:  base amount defined in ChapterData (e.g. 200)
+Turn bonus:        max(0, (ParTurns - TurnsTaken) * 5) — reward for finishing early
+Survival bonus:    (AlliesAlive / TotalAllies) * 50 — reward for no casualties
+Objective bonus:   optional objectives add fixed amounts (defined per ChapterData)
+```
+
+### 5E. Adapter-Layer (BaseController — out of scope for domain TDD)
+
+> The adapter `BaseController.cs` is not part of Phase 5 domain work. It will be a MonoBehaviour wrapping `BasePhase` for Unity UI. Implement after all domain tests pass.
+
+### 5F. Tests
+
+| File | Tests |
+|------|-------|
+| `BexpDistributorTests.cs` | Top-3 growth stats chosen, capped stats skipped, fewer than 3 uncapped, XP cost is 50/level, level cap respected, deterministic (no RNG needed), BEXP pool deducted correctly |
+| `ShopServiceTests.cs` | Buy succeeds when affordable, buy fails when broke, sell returns 50% price, sell removes item from inventory, buy adds item to inventory, item not in stock cannot be bought |
+| `ArmyGoldTests.cs` | Earn adds gold, spend deducts gold, spend below zero throws, CanAfford correct boundary |
+| `BasePhaseTests.cs` | AllocateBexp triggers level-up correctly, DeployUnit / BenchUnit roster management, BEXP pool tracks correctly across multiple allocations |
 
 ---
 
@@ -503,6 +572,22 @@ Phase 10: Forging + Elevation + Polish (depends on Phase 2, 5, 6)
 
 ---
 
-**Last Updated**: 2026-04-15
+**Last Updated**: 2026-04-19
 **Target**: Fire Emblem: Radiant Dawn parity
 **Approach**: TDD, incremental phases, playable at each milestone
+
+## Phase Completion Status
+
+| Phase | Title | Status |
+|-------|-------|--------|
+| 1 | Skills + Weapon Tiers | ✅ Done (v2.0–v2.3) |
+| 2 | Inventory + Items + Multi-Weapon | ✅ Done (v2.5) |
+| 3 | Third-Tier Classes + Mastery Skills | ✅ Done (v2.6) |
+| 4 | Laguz / Shapeshifters | ✅ Done (v2.7) — 1 gap |
+| 4b | Heron Cross-Pattern Refresh | ✅ Done (v2.7) |
+| 5 | Base / Shops + BEXP | ✅ Done (v2.8) |
+| 6 | Map Improvements | ❌ Not started |
+| 7 | Support / Affinity + Biorhythm | ❌ Not started |
+| 8 | Shove / Guard / Steal / Trade / NPC | ❌ Not started |
+| 9 | Magic Triangle + Weather + Narrative | ❌ Not started |
+| 10 | Weapon Forging + Elevation + Polish | ❌ Not started |

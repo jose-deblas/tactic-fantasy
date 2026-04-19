@@ -187,8 +187,7 @@ namespace TacticFantasy.Tests
         [Test]
         public void OnConfirm_EventCanBeSubscribedAndFired()
         {
-            bool eventFired = false;
-            _gamepadCursorController.OnConfirm += () => eventFired = true;
+            _gamepadCursorController.OnConfirm += () => { };
 
             // Verificamos que la suscripción no lanza excepción (compilación OK = suscripción válida)
             Assert.Pass("Event subscription succeeded without exception");
@@ -197,8 +196,7 @@ namespace TacticFantasy.Tests
         [Test]
         public void OnCancel_EventCanBeSubscribed()
         {
-            bool eventFired = false;
-            _gamepadCursorController.OnCancel += () => eventFired = true;
+            _gamepadCursorController.OnCancel += () => { };
 
             Assert.Pass("Event subscription succeeded without exception");
         }
@@ -206,8 +204,7 @@ namespace TacticFantasy.Tests
         [Test]
         public void OnEndTurn_EventCanBeSubscribed()
         {
-            bool eventFired = false;
-            _gamepadCursorController.OnEndTurn += () => eventFired = true;
+            _gamepadCursorController.OnEndTurn += () => { };
 
             Assert.Pass("Event subscription succeeded without exception");
         }
@@ -215,8 +212,7 @@ namespace TacticFantasy.Tests
         [Test]
         public void OnToggleAttackRange_EventCanBeSubscribed()
         {
-            bool eventFired = false;
-            _gamepadCursorController.OnToggleAttackRange += () => eventFired = true;
+            _gamepadCursorController.OnToggleAttackRange += () => { };
 
             Assert.Pass("Event subscription succeeded without exception");
         }

@@ -36,6 +36,7 @@ namespace TacticFantasy.Domain
 
         public void Tick(float deltaTime, IStatusTarget target)
         {
+            if (target == null) throw new ArgumentNullException(nameof(target));
             if (IsExpired) return;
 
             // Only apply up to the remaining duration
@@ -85,4 +86,37 @@ namespace TacticFantasy.Domain
 
         public bool IsExpired => Duration <= 0f;
     }
+
+    public class RegenerationEffect : IStatusEffect
+    {
+        public string Name => "Regeneration";
+        public float Duration { get; private set; }
+        public float HealPerSecond { get; }
+
+        public RegenerationEffect(float duration, float hps)
+        {
+            if (duration < 0f) throw new ArgumentOutOfRangeException(nameof(duration), "Duration must be non-negative");
+            if (hps < 0f) throw new ArgumentOutOfRangeException(nameof(hps), "Heal per second must be non-negative");
+
+            Duration = duration;
+            HealPerSecond = hps;
+        }
+
+        public void Tick(float deltaTime, IStatusTarget target)
+        {
+            if (target == null) throw new ArgumentNullException(nameof(target));
+            if (IsExpired) return;
+
+            var effective = Math.Min(deltaTime, Duration);
+            var heal = HealPerSecond * effective;
+
+            // Healing implemented as negative damage for simplicity
+            target.TakeDamage(-heal);
+
+            Duration -= effective;
+        }
+
+        public bool IsExpired => Duration <= 0f;
+    }
 }
+

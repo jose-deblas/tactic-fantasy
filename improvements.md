@@ -1,0 +1,5 @@
+Look, I want to update the IMPLEMENTATION_SUMMARY.md Changelog adding the last changes we made. From
+  now on, it's important to keep this file updated without losing previous information. So, I need    
+  you to read the last point we built, v2.5 - Inventory System, Items & Multi-Weapon Classes 
+  (2026-04-18) and then look at the PLAN-OF-IMPROVEMENT.md because yesterday I asked for the 
+  implementation of the phases 3, 4 and 5, which I don't know if you have already implemented or not. If you have, please add the all the needed new points to the changelog. Inform me what tasks were done, which are still pending and which are partially done. Make a list and a plan to complete the pending and partially done tasks. You can change the PLAN-OF-IMPROVEMENT.md to complete it, but please, don't execute the plan, just make one if needed.

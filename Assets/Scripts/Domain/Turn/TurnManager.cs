@@ -33,6 +33,12 @@ namespace TacticFantasy.Domain.Turn
         bool HaveAllPlayerUnitsActed();
         bool CanRefreshTarget(IUnit refresher, IUnit target);
         void RefreshUnit(int targetUnitId);
+
+        /// <summary>
+        /// Refreshes all allied units adjacent (4 cardinal directions) to a transformed Heron.
+        /// Returns the number of units refreshed. Returns 0 if the Heron is not transformed.
+        /// </summary>
+        int RefreshCross(IUnit heron, IGameMap map);
     }
 
     public enum GameState
@@ -188,6 +194,36 @@ namespace TacticFantasy.Domain.Turn
         public void RefreshUnit(int targetUnitId)
         {
             _unitsWhoActed.Remove(targetUnitId);
+        }
+
+        public int RefreshCross(IUnit heron, IGameMap map)
+        {
+            if (!heron.IsTransformed)
+                return 0;
+
+            var (hx, hy) = heron.Position;
+            var cardinalOffsets = new[] { (0, 1), (0, -1), (1, 0), (-1, 0) };
+            int refreshed = 0;
+
+            foreach (var (dx, dy) in cardinalOffsets)
+            {
+                int nx = hx + dx;
+                int ny = hy + dy;
+                if (nx < 0 || ny < 0 || nx >= map.Width || ny >= map.Height)
+                    continue;
+
+                var adjacent = _allUnits.FirstOrDefault(u =>
+                    u.IsAlive && u.Position == (nx, ny) && u.Team == heron.Team
+                    && u.Id != heron.Id && _unitsWhoActed.Contains(u.Id));
+
+                if (adjacent != null)
+                {
+                    RefreshUnit(adjacent.Id);
+                    refreshed++;
+                }
+            }
+
+            return refreshed;
         }
 
         /// <summary>Ticks transform gauges for all alive Laguz units on the given team.</summary>

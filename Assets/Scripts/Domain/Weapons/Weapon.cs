@@ -5,7 +5,6 @@ namespace TacticFantasy.Domain.Weapons
 {
     public interface IWeapon : IItem
     {
-        string Name { get; }
         WeaponType Type { get; }
         DamageType DamageType { get; }
         int Might { get; }
@@ -26,16 +25,7 @@ namespace TacticFantasy.Domain.Weapons
         /// </summary>
         int OnHitStatusDuration { get; }
 
-        /// <summary>
-        /// Maximum number of uses for this weapon. -1 means unlimited.
-        /// </summary>
-        int MaxUses { get; }
-
-        /// <summary>
-        /// Current remaining uses. When it reaches 0 the weapon is broken.
-        /// Unlimited weapons always return -1.
-        /// </summary>
-        int CurrentUses { get; }
+        // Name, MaxUses, and CurrentUses are inherited from IItem
 
         /// <summary>True when CurrentUses == 0 (and MaxUses != -1).</summary>
         bool IsBroken { get; }

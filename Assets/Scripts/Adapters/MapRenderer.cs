@@ -112,6 +112,11 @@ namespace TacticFantasy.Adapters
             TerrainType.Fort     => new Color(0.85f, 0.75f, 0.2f),
             TerrainType.Mountain => new Color(0.55f, 0.55f, 0.55f),
             TerrainType.Wall     => new Color(0.2f,  0.2f,  0.2f),
+            TerrainType.Door     => new Color(0.45f, 0.25f, 0.1f),
+            TerrainType.Chest    => new Color(0.9f,  0.75f, 0.1f),
+            TerrainType.Throne   => new Color(0.55f, 0.2f,  0.6f),
+            TerrainType.Desert   => new Color(0.85f, 0.75f, 0.5f),
+            TerrainType.Bridge   => new Color(0.6f,  0.45f, 0.25f),
             _                    => Color.white
         };
 

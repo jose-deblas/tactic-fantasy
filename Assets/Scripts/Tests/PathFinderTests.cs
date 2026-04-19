@@ -58,7 +58,7 @@ namespace TacticFantasy.Tests
                 for (int i = 1; i < path.Count; i++)
                 {
                     var tile = _map.GetTile(path[i].Item1, path[i].Item2);
-                    totalMovement += TerrainProperties.GetMovementCost(tile.Terrain, true);
+                    totalMovement += TerrainProperties.GetMovementCost(tile.Terrain, MoveType.Infantry);
                 }
                 Assert.LessOrEqual(totalMovement, 1);
             }
@@ -230,5 +230,113 @@ namespace TacticFantasy.Tests
 
             Assert.IsTrue(reachable.Contains((3, 2)), "Without allUnits, no occupancy check");
         }
+
+        // ── New terrain type tests ──────────────────────────────────────────
+
+        [Test]
+        public void FindPath_ClosedDoor_BlocksPath()
+        {
+            var tiles = new ITile[5, 1];
+            for (int x = 0; x < 5; x++)
+                tiles[x, 0] = new Tile(x, 0, TerrainType.Plain);
+            tiles[2, 0] = new InteractableTile(2, 0, TerrainType.Door);
+            var map = new GameMap(5, 1, tiles);
+
+            var mover = CreateUnit(1, Team.PlayerTeam, (0, 0));
+            var path = _pathFinder.FindPath(0, 0, 4, 0, 10, mover, map);
+
+            Assert.AreEqual(0, path.Count, "Closed door should block pathfinding");
+        }
+
+        [Test]
+        public void FindPath_OpenedDoor_AllowsPath()
+        {
+            var tiles = new ITile[5, 1];
+            for (int x = 0; x < 5; x++)
+                tiles[x, 0] = new Tile(x, 0, TerrainType.Plain);
+            var door = new InteractableTile(2, 0, TerrainType.Door);
+            door.Open();
+            tiles[2, 0] = door;
+            var map = new GameMap(5, 1, tiles);
+
+            var mover = CreateUnit(1, Team.PlayerTeam, (0, 0));
+            var path = _pathFinder.FindPath(0, 0, 4, 0, 10, mover, map);
+
+            Assert.Greater(path.Count, 0, "Opened door should allow pathfinding");
+            Assert.AreEqual((4, 0), path[path.Count - 1]);
+        }
+
+        [Test]
+        public void GetMovementRange_Desert_InfantryCost3()
+        {
+            var tiles = new ITile[5, 1];
+            tiles[0, 0] = new Tile(0, 0, TerrainType.Plain);
+            for (int x = 1; x < 5; x++)
+                tiles[x, 0] = new Tile(x, 0, TerrainType.Desert);
+            var map = new GameMap(5, 1, tiles);
+
+            var mover = CreateUnit(1, Team.PlayerTeam, (0, 0));
+            // MOV=5 infantry: 1 desert tile costs 3, so with 5 MOV can reach (0,0) and (1,0) only
+            var reachable = _pathFinder.GetMovementRange(0, 0, 5, mover, map);
+
+            Assert.IsTrue(reachable.Contains((0, 0)));
+            Assert.IsTrue(reachable.Contains((1, 0)), "Should reach first desert tile (cost 3)");
+        }
+
+        [Test]
+        public void GetMovementRange_Desert_MageCost1()
+        {
+            var tiles = new ITile[5, 1];
+            tiles[0, 0] = new Tile(0, 0, TerrainType.Plain);
+            for (int x = 1; x < 5; x++)
+                tiles[x, 0] = new Tile(x, 0, TerrainType.Desert);
+            var map = new GameMap(5, 1, tiles);
+
+            // Create a mage unit
+            var mage = new Unit(
+                1, "Mage", Team.PlayerTeam,
+                ClassDataFactory.CreateMage(),
+                new CharacterStats(16, 0, 8, 7, 7, 5, 3, 7, 5),
+                (0, 0),
+                WeaponFactory.CreateFireTome()
+            );
+
+            // MOV=5 mage: desert costs 1, so can reach all 5 tiles
+            var reachable = _pathFinder.GetMovementRange(0, 0, 5, mage, map);
+
+            Assert.IsTrue(reachable.Contains((4, 0)), "Mage should cross desert at cost 1");
+        }
+
+        [Test]
+        public void GetMovementRange_Bridge_Cost1()
+        {
+            var tiles = new ITile[3, 1];
+            tiles[0, 0] = new Tile(0, 0, TerrainType.Plain);
+            tiles[1, 0] = new Tile(1, 0, TerrainType.Bridge);
+            tiles[2, 0] = new Tile(2, 0, TerrainType.Plain);
+            var map = new GameMap(3, 1, tiles);
+
+            var mover = CreateUnit(1, Team.PlayerTeam, (0, 0));
+            var reachable = _pathFinder.GetMovementRange(0, 0, 2, mover, map);
+
+            Assert.IsTrue(reachable.Contains((2, 0)), "Should cross bridge at cost 1");
+        }
+
+        [Test]
+        public void GetMovementRange_Throne_Cost1()
+        {
+            var tiles = new ITile[3, 1];
+            tiles[0, 0] = new Tile(0, 0, TerrainType.Plain);
+            tiles[1, 0] = new Tile(1, 0, TerrainType.Throne);
+            tiles[2, 0] = new Tile(2, 0, TerrainType.Plain);
+            var map = new GameMap(3, 1, tiles);
+
+            var mover = CreateUnit(1, Team.PlayerTeam, (0, 0));
+            var reachable = _pathFinder.GetMovementRange(0, 0, 2, mover, map);
+
+            Assert.IsTrue(reachable.Contains((1, 0)), "Should stop on throne at cost 1");
+            Assert.IsTrue(reachable.Contains((2, 0)));
+        }
     }
 }
+

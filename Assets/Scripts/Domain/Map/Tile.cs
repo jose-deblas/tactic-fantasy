@@ -1,3 +1,5 @@
+using TacticFantasy.Domain.Items;
+
 namespace TacticFantasy.Domain.Map
 {
     public interface ITile
@@ -33,6 +35,44 @@ namespace TacticFantasy.Domain.Map
         public override string ToString()
         {
             return $"Tile({X}, {Y}, {Terrain})";
+        }
+    }
+
+    public class InteractableTile : ITile
+    {
+        public int X { get; }
+        public int Y { get; }
+        public TerrainType Terrain { get; }
+        public bool IsOpened { get; private set; }
+        public IItem ContainedItem { get; }
+
+        public InteractableTile(int x, int y, TerrainType terrain, IItem containedItem = null)
+        {
+            X = x;
+            Y = y;
+            Terrain = terrain;
+            IsOpened = false;
+            ContainedItem = containedItem;
+        }
+
+        public void Open()
+        {
+            IsOpened = true;
+        }
+
+        public override int GetHashCode()
+        {
+            return (X, Y).GetHashCode();
+        }
+
+        public override bool Equals(object obj)
+        {
+            return obj is InteractableTile tile && tile.X == X && tile.Y == Y;
+        }
+
+        public override string ToString()
+        {
+            return $"InteractableTile({X}, {Y}, {Terrain}, Opened={IsOpened})";
         }
     }
 }

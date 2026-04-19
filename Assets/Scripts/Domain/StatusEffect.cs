@@ -118,5 +118,57 @@ namespace TacticFantasy.Domain
 
         public bool IsExpired => Duration <= 0f;
     }
+
+    public class ShieldEffect : IStatusEffect
+    {
+        public string Name => "Shield";
+        public float Duration { get; private set; }
+        public float Amount { get; }
+
+        // Tracks how much shield remains; applied to target.Health when activated
+        private float remainingShield = 0f;
+        private bool applied = false;
+
+        public ShieldEffect(float duration, float amount)
+        {
+            if (duration < 0f) throw new ArgumentOutOfRangeException(nameof(duration), "Duration must be non-negative");
+            if (amount < 0f) throw new ArgumentOutOfRangeException(nameof(amount), "Shield amount must be non-negative");
+
+            Duration = duration;
+            Amount = amount;
+        }
+
+        public void Tick(float deltaTime, IStatusTarget target)
+        {
+            if (target == null) throw new ArgumentNullException(nameof(target));
+
+            if (!applied)
+            {
+                // Apply shield as temporary extra health
+                target.TakeDamage(-Amount);
+                remainingShield = Amount;
+                applied = true;
+            }
+
+            if (IsExpired)
+            {
+                // Remove any remaining shield from the target's health
+                if (remainingShield > 0f)
+                {
+                    // When removing the shield, don't reduce health below 0
+                    var reduction = Math.Min(remainingShield, target.Health);
+                    target.TakeDamage(reduction);
+                    remainingShield = 0f;
+                }
+                return;
+            }
+
+            var effective = Math.Min(deltaTime, Duration);
+            Duration -= effective;
+        }
+
+        public bool IsExpired => Duration <= 0f;
+    }
 }
+
 

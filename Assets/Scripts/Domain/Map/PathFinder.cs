@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using TacticFantasy.Domain.Units;
+using TacticFantasy.Domain.Weapons;
 
 namespace TacticFantasy.Domain.Map
 {
@@ -155,6 +156,8 @@ namespace TacticFantasy.Domain.Map
                 new int[] { -1, 1 }, new int[] { -1, -1 }
             };
 
+            bool isMage = IsMagicUser(unit);
+
             foreach (var dir in directions)
             {
                 int nx = x + dir[0];
@@ -163,9 +166,16 @@ namespace TacticFantasy.Domain.Map
                 if (map.IsValidPosition(nx, ny))
                 {
                     var tile = map.GetTile(nx, ny);
-                    bool isInfantry = unit.Class.MoveType == Units.MoveType.Infantry;
-                    if (TerrainProperties.IsPassable(tile.Terrain, isInfantry))
+
+                    // Closed doors are impassable
+                    if (tile is InteractableTile it && !it.IsOpened && tile.Terrain == TerrainType.Door)
                     {
+                        continue;
+                    }
+
+                    if (TerrainProperties.IsPassable(tile.Terrain, unit.Class.MoveType, isMage))
+                    {
+                        // Opened doors use plain movement cost
                         if (allUnits != null && IsOccupiedByEnemy(nx, ny, unit, allUnits))
                             continue;
 
@@ -175,6 +185,11 @@ namespace TacticFantasy.Domain.Map
             }
 
             return neighbors;
+        }
+
+        private static bool IsMagicUser(IUnit unit)
+        {
+            return unit.Class.UsableWeaponTypes.Contains(WeaponType.FIRE);
         }
 
         private static bool IsOccupiedByEnemy(int x, int y, IUnit mover, IReadOnlyList<IUnit> allUnits)
@@ -200,8 +215,15 @@ namespace TacticFantasy.Domain.Map
         private int GetMovementCost(int fromX, int fromY, int toX, int toY, IGameMap map, IUnit unit)
         {
             var tile = map.GetTile(toX, toY);
-            bool isInfantry = unit.Class.MoveType == Units.MoveType.Infantry;
-            return TerrainProperties.GetMovementCost(tile.Terrain, isInfantry);
+
+            // Opened doors use plain movement cost (1)
+            if (tile is InteractableTile it && it.IsOpened &&
+                (tile.Terrain == TerrainType.Door || tile.Terrain == TerrainType.Chest))
+            {
+                return 1;
+            }
+
+            return TerrainProperties.GetMovementCost(tile.Terrain, unit.Class.MoveType, IsMagicUser(unit));
         }
 
         private int Heuristic(int x1, int y1, int x2, int y2)

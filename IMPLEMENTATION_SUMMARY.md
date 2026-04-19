@@ -4,6 +4,36 @@
 
 ## Changelog
 
+### v2.7 - Laguz / Shapeshifters (2026-04-19)
+- **TransformGauge.cs** (`Domain/Units/`) — MaxGauge=30. `Tick(isTransformed)` fills by fillRate when untransformed, drains by drainRate when transformed; auto-returns true when state-change threshold is crossed. `FillToMax()` (Laguz Stone) and `AddPoints(n)` (Olivi Grass) for consumable interactions
+- **LaguzClassData.cs** (`Domain/Units/`) — Extends `IClassData`. Stores separate `TransformedStats` / `UntransformedStats`, `GaugeFillRate`, `GaugeDrainRate`, `Race` (enum `LaguzRace`), and dual MoveType (untransformed vs transformed)
+- **LaguzClassDataFactory** — 8 Laguz races with RD-accurate stats: Cat (+8/turn, infantry), Tiger (+5/turn, infantry), Lion (+3/turn, infantry), Hawk (+5/turn, infantry→flying on transform), Raven (+7/turn, infantry→flying), Red Dragon (+2/turn, infantry), White Dragon (+1/turn, infantry), Heron (+4/turn, infantry→flying). All drain 2/turn while transformed
+- **LaguzWeaponFactory.cs** (`Domain/Weapons/`) — Race-specific natural weapons (Strike, Claw, Fang, Talon, Beak, Breath) all as `WeaponType.STRIKE`. Breath is Magical; the rest are Physical. `CreateForRace(race)` picks the correct weapon automatically
+- **LaguzItemFactory.cs** (`Domain/Items/`) — Laguz Stone (1 use, fills gauge to 30), Olivi Grass (3 uses, +15 gauge points)
+- **Unit.cs** — Added `InitLaguzGauge(fillRate, drainRate, initial)`, `LaguzGauge`, `IsLaguz`, `IsTransformed`, `Transform()` (swaps to transformed stats and MoveType), `Revert()` (swaps back), `TickTransformGauge()` (ticks gauge and auto-transforms/reverts when full/empty)
+- **TurnManager.cs** — `TickLaguzGauges(team)` called at each phase transition; `CanRefreshTarget(refresher, target)` + `RefreshUnit(unitId)` for Heron dance mechanic (single-target refresh)
+- **AIController.cs** — Untransformed Laguz retreat toward safety (halved stats = vulnerability); transformed Laguz attack normally through existing heuristics
+- 4 new test files: `TransformGaugeTests.cs`, `LaguzCombatTests.cs`, `LaguzStatSwapTests.cs`, `RefreshMechanicTests.cs` (9 tests for Heron dance)
+- **Known gap**: Heron's expanded 4-unit cross-pattern refresh when transformed is not yet implemented (planned for Phase 5 follow-up)
+
+### v2.6 - Third-Tier Classes + Mastery Skills (2026-04-19)
+- **ClassData.cs / IClassData** — Added `int Tier` property (1=Base, 2=Advanced, 3=Master) to interface and all implementations including `LaguzClassData`
+- **ClassDataFactory** — 6 new Tier-3 (Master) classes with RD-accurate stats and caps:
+  - **Trueblade** (Sword, Infantry) — Highest SPD/SKL, tier 3 Myrmidon line; learns Astra
+  - **Marshall** (Sword+Lance+Axe, Armored) — Triple weapon type; tier 3 Soldier line; learns Sol
+  - **Reaver** (Axe+Bow, Infantry) — Heavy hitter; tier 3 Fighter line; learns Colossus
+  - **Archsage** (Fire+Staff, Infantry) — Magical powerhouse; tier 3 Mage line; learns Flare (note: WIND/THUNDER weapons are Phase 9)
+  - **Marksman** (Bow, Infantry) — Highest SKL in game; tier 3 Archer line; learns Deadeye
+  - **Saint** (Staff+Fire, Infantry) — Healer + caster; tier 3 Cleric line; learns Corona
+- **ClassPromotionService.cs** — Extended with Tier 2→3 promotion paths (Swordmaster→Trueblade, General→Marshall, Warrior→Reaver, Sage→Archsage, Sniper→Marksman, Bishop→Saint) and `_masterySkillMap`: mastery skill auto-learned on Tier 3 promotion via `unit.LearnSkill()`
+- **SkillDatabase** — 5 new mastery skill implementations:
+  - **Astra** (OnAttack, SKL/2% chance): flags `AstraActive`; CombatResolver executes 5 consecutive hits at 50% damage each
+  - **Colossus** (OnAttack, STR% chance): flags `ColossusActive`; adds attacker STR to damage for the strike
+  - **Flare** (OnAttack, SKL% chance): flags `FlareActive`; halves enemy RES for the strike
+  - **Deadeye** (OnAttack, SKL/2% chance): flags `DeadeyeActive`; 2× damage + applies Sleep status on hit
+  - **Corona** (OnAttack, SKL% chance): flags `CoronaActive`; halves enemy RES **and** DEF for the strike
+- 3 new test files: `ThirdTierPromotionTests.cs`, `MasterySkillTests.cs`, `ThirdTierStatCapTests.cs`
+
 ### v2.5 - Inventory System, Items & Multi-Weapon Classes (2026-04-18)
 - **IItem interface** (`Domain/Items/IItem.cs`) — Base interface for all items (weapons, consumables, key items). `IWeapon` now extends `IItem`
 - **Inventory** (`Domain/Items/Inventory.cs`) — 7-slot item container with Add, Remove, Swap, GetWeapons, GetFirstUsableWeapon

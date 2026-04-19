@@ -102,5 +102,30 @@ namespace DomainTests
             Assert.AreEqual(3, snap1.Level);
             Assert.AreEqual(42, snap1.Experience);
         }
+
+        [Test]
+        public void SaveIncludesActiveStatusOnUnit()
+        {
+            var repo = new InMemoryGameRepository();
+            var svc = new GameSaveService(repo);
+
+            var u = new FakeUnitForSave { Id = 7, Name = "StunGuy", Team = Team.EnemyTeam, CurrentHP = 6, Position = (1,1), Level = 1, Experience = 0 };
+
+            // Use a domain status effect implementation to exercise capture logic
+            var stun = new TacticFantasy.Domain.StunEffect(duration: 2f);
+            u.ActiveStatus = stun;
+
+            var tm = new FakeTurnManager(new List<IUnit> { u });
+            svc.Save(tm);
+
+            var loaded = svc.Load();
+            Assert.IsNotNull(loaded);
+            Assert.AreEqual(1, loaded.Units.Count);
+
+            var snap = loaded.Units[0];
+            // Snapshot should record a non-none status and a positive remaining turns value
+            Assert.AreNotEqual(TacticFantasy.Domain.StatusEffectType.None, snap.StatusType);
+            Assert.Greater(snap.StatusRemainingTurns, 0);
+        }
     }
 }

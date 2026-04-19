@@ -26,11 +26,9 @@
 
 ---
 
-## ~~Phase 4: Laguz / Shapeshifters~~ ✅ DONE (v2.7) — one gap
+## ~~Phase 4: Laguz / Shapeshifters~~ ✅ DONE (v2.7)
 
-> Implemented in v2.7. `TransformGauge`, `LaguzClassData` for all 8 races, `LaguzWeaponFactory`, `LaguzItemFactory` (Laguz Stone, Olivi Grass), `Unit` Laguz methods, TurnManager gauge ticking, AI retreat for untransformed Laguz, Heron single-target refresh.
->
-> **Remaining gap**: Heron's expanded 4-unit cross-pattern refresh when transformed. Currently only single-target refresh is implemented. See Phase 4 follow-up below.
+> Implemented in v2.7. `TransformGauge`, `LaguzClassData` for all 8 races, `LaguzWeaponFactory`, `LaguzItemFactory` (Laguz Stone, Olivi Grass), `Unit` Laguz methods, TurnManager gauge ticking, AI retreat for untransformed Laguz, Heron single-target refresh + cross-pattern refresh when transformed.
 
 ---
 
@@ -262,7 +260,7 @@
 
 **Why next**: Requires inventory (Phase 2 ✅) for shops. BEXP is RD's unique reward/catch-up system that enables strategic unit building. All prerequisites are now done.
 
-**Status**: ❌ NOT IMPLEMENTED — no files exist yet.
+**Status**: ✅ DONE (v2.8)
 
 ### 5A. Domain Models
 
@@ -586,8 +584,8 @@ Phase 10: Forging + Elevation + Polish (depends on Phase 2, 5, 6)
 | 2 | Inventory + Items + Multi-Weapon | ✅ Done (v2.5) |
 | 3 | Third-Tier Classes + Mastery Skills | ✅ Done (v2.6) |
 | 4 | Laguz / Shapeshifters | ✅ Done (v2.7) — 1 gap |
-| 4b | Heron Cross-Pattern Refresh | ⚠️ Pending (small, no new files) |
-| 5 | Base / Shops + BEXP | ❌ Not started |
+| 4b | Heron Cross-Pattern Refresh | ✅ Done (v2.7) |
+| 5 | Base / Shops + BEXP | ✅ Done (v2.8) |
 | 6 | Map Improvements | ❌ Not started |
 | 7 | Support / Affinity + Biorhythm | ❌ Not started |
 | 8 | Shove / Guard / Steal / Trade / NPC | ❌ Not started |

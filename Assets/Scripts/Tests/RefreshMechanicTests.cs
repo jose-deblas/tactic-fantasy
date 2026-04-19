@@ -1,7 +1,9 @@
 using System.Collections.Generic;
 using NUnit.Framework;
+using TacticFantasy.Domain.Map;
 using TacticFantasy.Domain.Turn;
 using TacticFantasy.Domain.Units;
+using TacticFantasy.Domain.Weapons;
 
 namespace TacticFantasy.Tests
 {
@@ -173,6 +175,123 @@ namespace TacticFantasy.Tests
             // Heron can now be refreshed again by heron2 (but this is just state removal)
             bool canRefresh = turnManager.CanRefreshTarget(heron2, _heron);
             Assert.IsTrue(canRefresh);
+        }
+
+        // ── Cross-pattern refresh (transformed Heron) ──────────────────────
+
+        private Unit CreateLaguzHeron(int id, (int, int) pos, bool transformed)
+        {
+            var classData = LaguzClassDataFactory.CreateHeron();
+            var weapon = LaguzWeaponFactory.CreateForRace(LaguzRace.Heron);
+            var heron = new Unit(id, $"LaguzHeron{id}", Team.PlayerTeam,
+                classData, classData.UntransformedStats, pos, weapon);
+            heron.InitLaguzGauge(classData.GaugeFillRate, classData.GaugeDrainRate);
+            if (transformed)
+                heron.Transform();
+            return heron;
+        }
+
+        [Test]
+        public void RefreshCross_TransformedHeron_RefreshesUpToFourAdjacentAllies()
+        {
+            var map = new GameMap(8, 8, 0);
+            var heron = CreateLaguzHeron(10, (3, 3), transformed: true);
+
+            // Place 4 allies in cardinal directions
+            var north = new Unit(11, "North", Team.PlayerTeam,
+                ClassDataFactory.CreateMyrmidon(), ClassDataFactory.CreateMyrmidon().BaseStats,
+                (3, 4), WeaponFactory.CreateIronSword());
+            var south = new Unit(12, "South", Team.PlayerTeam,
+                ClassDataFactory.CreateMyrmidon(), ClassDataFactory.CreateMyrmidon().BaseStats,
+                (3, 2), WeaponFactory.CreateIronSword());
+            var east = new Unit(13, "East", Team.PlayerTeam,
+                ClassDataFactory.CreateMyrmidon(), ClassDataFactory.CreateMyrmidon().BaseStats,
+                (4, 3), WeaponFactory.CreateIronSword());
+            var west = new Unit(14, "West", Team.PlayerTeam,
+                ClassDataFactory.CreateMyrmidon(), ClassDataFactory.CreateMyrmidon().BaseStats,
+                (2, 3), WeaponFactory.CreateIronSword());
+
+            var tm = new TurnManager();
+            tm.Initialize(new List<IUnit> { heron, north, south, east, west });
+
+            // Mark all allies as acted
+            tm.MarkUnitAsActed(north.Id);
+            tm.MarkUnitAsActed(south.Id);
+            tm.MarkUnitAsActed(east.Id);
+            tm.MarkUnitAsActed(west.Id);
+
+            int count = tm.RefreshCross(heron, map);
+
+            Assert.AreEqual(4, count);
+            Assert.IsFalse(tm.HasUnitActed(north.Id));
+            Assert.IsFalse(tm.HasUnitActed(south.Id));
+            Assert.IsFalse(tm.HasUnitActed(east.Id));
+            Assert.IsFalse(tm.HasUnitActed(west.Id));
+        }
+
+        [Test]
+        public void RefreshCross_UntransformedHeron_ReturnsZero()
+        {
+            var map = new GameMap(8, 8, 0);
+            var heron = CreateLaguzHeron(10, (3, 3), transformed: false);
+
+            var ally = new Unit(11, "Ally", Team.PlayerTeam,
+                ClassDataFactory.CreateMyrmidon(), ClassDataFactory.CreateMyrmidon().BaseStats,
+                (3, 4), WeaponFactory.CreateIronSword());
+
+            var tm = new TurnManager();
+            tm.Initialize(new List<IUnit> { heron, ally });
+            tm.MarkUnitAsActed(ally.Id);
+
+            int count = tm.RefreshCross(heron, map);
+
+            Assert.AreEqual(0, count);
+            Assert.IsTrue(tm.HasUnitActed(ally.Id));
+        }
+
+        [Test]
+        public void RefreshCross_SkipsEnemyUnits()
+        {
+            var map = new GameMap(8, 8, 0);
+            var heron = CreateLaguzHeron(10, (3, 3), transformed: true);
+
+            var enemy = new Unit(11, "Enemy", Team.EnemyTeam,
+                ClassDataFactory.CreateFighter(), ClassDataFactory.CreateFighter().BaseStats,
+                (3, 4), WeaponFactory.CreateIronAxe());
+
+            var tm = new TurnManager();
+            tm.Initialize(new List<IUnit> { heron, enemy });
+            tm.MarkUnitAsActed(enemy.Id);
+
+            int count = tm.RefreshCross(heron, map);
+
+            Assert.AreEqual(0, count);
+            Assert.IsTrue(tm.HasUnitActed(enemy.Id));
+        }
+
+        [Test]
+        public void RefreshCross_SkipsUnactedUnits()
+        {
+            var map = new GameMap(8, 8, 0);
+            var heron = CreateLaguzHeron(10, (3, 3), transformed: true);
+
+            var actedAlly = new Unit(11, "Acted", Team.PlayerTeam,
+                ClassDataFactory.CreateMyrmidon(), ClassDataFactory.CreateMyrmidon().BaseStats,
+                (3, 4), WeaponFactory.CreateIronSword());
+            var freshAlly = new Unit(12, "Fresh", Team.PlayerTeam,
+                ClassDataFactory.CreateMyrmidon(), ClassDataFactory.CreateMyrmidon().BaseStats,
+                (4, 3), WeaponFactory.CreateIronSword());
+
+            var tm = new TurnManager();
+            tm.Initialize(new List<IUnit> { heron, actedAlly, freshAlly });
+            tm.MarkUnitAsActed(actedAlly.Id);
+            // freshAlly has NOT acted
+
+            int count = tm.RefreshCross(heron, map);
+
+            Assert.AreEqual(1, count);
+            Assert.IsFalse(tm.HasUnitActed(actedAlly.Id));
+            Assert.IsFalse(tm.HasUnitActed(freshAlly.Id));
         }
     }
 }

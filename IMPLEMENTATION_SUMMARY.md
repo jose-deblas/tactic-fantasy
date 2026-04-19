@@ -4,6 +4,15 @@
 
 ## Changelog
 
+### v2.8 - Base / Shops + Bonus Experience (2026-04-19)
+- **ArmyGold.cs** (`Domain/Chapter/`) — Army-wide gold tracker: `Earn(amount)`, `Spend(amount)`, `CanAfford(cost)`. Throws on negative values or overspend
+- **ShopService.cs** (`Domain/Chapter/`) — Domain service with item catalog (`RegisterItem`), `Buy(unit, itemName, gold)` (validates stock, affordability, inventory space), `Sell(unit, item, gold)` (50% of buy price). Uses factory functions for fresh item instances
+- **BexpDistributor.cs** (`Domain/Chapter/`) — BEXP allocation service: 50 BEXP per level-up, deducts from a shared pool, stops at max level. Delegates actual level-up to `Unit.GainLevelBexp()`
+- **ChapterData.cs** (`Domain/Chapter/`) — Value object defining a chapter: name, map seed, base BEXP reward, par turns, shop items, victory condition. `CalculateBexpReward(turnsTaken, alliesAlive, totalAllies)` computes total with turn bonus (+5 per under-par turn) and survival bonus (proportional to allies alive)
+- **BasePhase.cs** (`Domain/Chapter/`) — Between-chapter state: BEXP pool, army gold, shop, available/deployed/benched unit roster. `AllocateBexp(unit, amount)` deducts from pool and levels unit. `DeployUnit`/`BenchUnit` manage roster with max deploy cap
+- **Unit.cs / IUnit** — New `GainLevelBexp()` method: deterministic BEXP level-up that always grants exactly 3 stat points, chosen from the highest growth rates not yet at cap (MOV excluded). Skips capped stats; grants fewer than 3 if fewer are uncapped. No RNG involved
+- 4 new test files: `ArmyGoldTests.cs` (11 tests), `ShopServiceTests.cs` (11 tests), `BexpDistributorTests.cs` (13 tests), `BasePhaseTests.cs` (13 tests)
+
 ### v2.7 - Laguz / Shapeshifters (2026-04-19)
 - **TransformGauge.cs** (`Domain/Units/`) — MaxGauge=30. `Tick(isTransformed)` fills by fillRate when untransformed, drains by drainRate when transformed; auto-returns true when state-change threshold is crossed. `FillToMax()` (Laguz Stone) and `AddPoints(n)` (Olivi Grass) for consumable interactions
 - **LaguzClassData.cs** (`Domain/Units/`) — Extends `IClassData`. Stores separate `TransformedStats` / `UntransformedStats`, `GaugeFillRate`, `GaugeDrainRate`, `Race` (enum `LaguzRace`), and dual MoveType (untransformed vs transformed)
@@ -11,10 +20,11 @@
 - **LaguzWeaponFactory.cs** (`Domain/Weapons/`) — Race-specific natural weapons (Strike, Claw, Fang, Talon, Beak, Breath) all as `WeaponType.STRIKE`. Breath is Magical; the rest are Physical. `CreateForRace(race)` picks the correct weapon automatically
 - **LaguzItemFactory.cs** (`Domain/Items/`) — Laguz Stone (1 use, fills gauge to 30), Olivi Grass (3 uses, +15 gauge points)
 - **Unit.cs** — Added `InitLaguzGauge(fillRate, drainRate, initial)`, `LaguzGauge`, `IsLaguz`, `IsTransformed`, `Transform()` (swaps to transformed stats and MoveType), `Revert()` (swaps back), `TickTransformGauge()` (ticks gauge and auto-transforms/reverts when full/empty)
-- **TurnManager.cs** — `TickLaguzGauges(team)` called at each phase transition; `CanRefreshTarget(refresher, target)` + `RefreshUnit(unitId)` for Heron dance mechanic (single-target refresh)
+- **TurnManager.cs** — `TickLaguzGauges(team)` called at each phase transition; `CanRefreshTarget(refresher, target)` + `RefreshUnit(unitId)` for Heron single-target refresh; `RefreshCross(heron, map)` for transformed Heron cross-pattern refresh (refreshes up to 4 allied units in cardinal directions, returns count refreshed; skips enemies, unacted units, and self)
 - **AIController.cs** — Untransformed Laguz retreat toward safety (halved stats = vulnerability); transformed Laguz attack normally through existing heuristics
-- 4 new test files: `TransformGaugeTests.cs`, `LaguzCombatTests.cs`, `LaguzStatSwapTests.cs`, `RefreshMechanicTests.cs` (9 tests for Heron dance)
-- **Known gap**: Heron's expanded 4-unit cross-pattern refresh when transformed is not yet implemented (planned for Phase 5 follow-up)
+- 4 new test files: `TransformGaugeTests.cs`, `LaguzCombatTests.cs`, `LaguzStatSwapTests.cs`, `RefreshMechanicTests.cs` (13 tests: 9 single-target refresh + 4 cross-pattern refresh)
+
+- **Tests:** added GameSaveService test to assert active status is captured in GameSnapshot (technical TDD enhancement)
 
 ### v2.6 - Third-Tier Classes + Mastery Skills (2026-04-19)
 - **ClassData.cs / IClassData** — Added `int Tier` property (1=Base, 2=Advanced, 3=Master) to interface and all implementations including `LaguzClassData`

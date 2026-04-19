@@ -40,6 +40,12 @@ namespace TacticFantasy.Domain.Units
         /// <summary>Adds <paramref name="amount"/> XP; returns true if a level-up occurred.</summary>
         bool GainExperience(int amount, Random rng = null);
 
+        /// <summary>
+        /// BEXP level-up: deterministic growth that always grants exactly 3 stat points,
+        /// chosen from the highest growth rates not yet at cap. Returns true if level-up occurred.
+        /// </summary>
+        bool GainLevelBexp();
+
         /// <summary>Changes the unit's class to <paramref name="newClass"/> and resets level/XP.</summary>
         void ChangeClass(IClassData newClass);
 
@@ -234,6 +240,16 @@ namespace TacticFantasy.Domain.Units
             return leveledUp;
         }
 
+        public bool GainLevelBexp()
+        {
+            if (Level >= MaxLevel)
+                return false;
+
+            Level++;
+            ApplyBexpStatGrowth();
+            return true;
+        }
+
         /// <summary>
         /// Promotes this unit to <paramref name="newClass"/>.
         /// Stats are bumped by the difference between new class base stats and current stats
@@ -386,6 +402,61 @@ namespace TacticFantasy.Domain.Units
             if (current >= cap) return current;
             int roll = rng.Next(100);
             return roll < growthPercent ? current + 1 : current;
+        }
+
+        private const int BexpStatsPerLevel = 3;
+
+        /// <summary>
+        /// Deterministic BEXP stat growth: grants +1 to the 3 stats with the highest
+        /// growth rates that have not yet reached their cap. MOV is excluded.
+        /// </summary>
+        private void ApplyBexpStatGrowth()
+        {
+            var stats = CurrentStats;
+            var caps = Class.CapStats;
+            var growths = Class.GrowthRates;
+
+            int[] statValues   = { stats.HP, stats.STR, stats.MAG, stats.SKL, stats.SPD, stats.LCK, stats.DEF, stats.RES };
+            int[] capValues    = { caps.HP,  caps.STR,  caps.MAG,  caps.SKL,  caps.SPD,  caps.LCK,  caps.DEF,  caps.RES };
+            int[] growthValues = { growths.HP, growths.STR, growths.MAG, growths.SKL, growths.SPD, growths.LCK, growths.DEF, growths.RES };
+
+            // Build candidates: uncapped stats sorted by growth rate desc, then index for tie-breaking
+            var candidates = new List<(int index, int growth)>();
+            for (int i = 0; i < statValues.Length; i++)
+            {
+                if (statValues[i] < capValues[i])
+                    candidates.Add((i, growthValues[i]));
+            }
+
+            candidates.Sort((a, b) =>
+            {
+                int cmp = b.growth.CompareTo(a.growth);
+                return cmp != 0 ? cmp : a.index.CompareTo(b.index);
+            });
+
+            int[] boosts = new int[8];
+            int count = Math.Min(BexpStatsPerLevel, candidates.Count);
+            for (int i = 0; i < count; i++)
+                boosts[candidates[i].index] = 1;
+
+            int hpGain = boosts[0];
+            CurrentStats = new CharacterStats(
+                stats.HP  + boosts[0],
+                stats.STR + boosts[1],
+                stats.MAG + boosts[2],
+                stats.SKL + boosts[3],
+                stats.SPD + boosts[4],
+                stats.LCK + boosts[5],
+                stats.DEF + boosts[6],
+                stats.RES + boosts[7],
+                stats.MOV
+            );
+
+            if (hpGain > 0)
+            {
+                MaxHP    += hpGain;
+                CurrentHP = Math.Min(CurrentHP + hpGain, MaxHP);
+            }
         }
     }
 }

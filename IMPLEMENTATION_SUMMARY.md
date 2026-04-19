@@ -152,4 +152,5 @@ For questions about architecture, code structure, or how specific systems work, 
 - feat(IA): AI prefers higher-defense terrain when choosing attack position. Added test to verify AIController selects Fort tiles when scores tie.
 - feat(IA): refine attack-position tie-breakers to prefer higher terrain defense and, when equal, the closer tile to the attacker. Added test DecideAction_PrefersCloserTile_WhenDefenseAndScoreEqual.
 - test(technical): added GameSaveService load-null test to assert Load() returns null when repository has no save
-+ dev(extras): added run-tests.sh convenience script to run DomainTests from the terminal
+- dev(extras): added run-tests.sh convenience script to run DomainTests from the terminal
+- chore(extras): improved run-tests.sh to detect missing build artifacts, run dotnet build automatically, provide a helpful error message when the dotnet CLI is not present, and accept an optional filter argument to run a subset of tests

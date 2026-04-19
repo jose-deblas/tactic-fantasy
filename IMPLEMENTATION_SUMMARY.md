@@ -735,3 +735,7 @@ For questions about architecture, code structure, or how specific systems work, 
 **Architecture**: Domain-Driven Design + Hexagonal Architecture
 **Code Quality**: SOLID Principles, Clean Code standards
 - feat(IA): AI prefers higher-defense terrain when choosing attack position. Added test to verify AIController selects Fort tiles when scores tie.
+
+### v2.8.2 - Presentation: Health formatter (2026-04-19)
+- **HealthFormatter** (`Presentation/`) — Pure utility to format health for HUD and world-space HP bars. `Format(current, max)` clamps values and returns a string like `HP: 30/50 (60%)`. Added `HealthFormatterTests.cs` with cases for normal values, clamping below zero, clamping above max, and invalid max (throws).
+

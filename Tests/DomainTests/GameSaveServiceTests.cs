@@ -139,5 +139,28 @@ namespace DomainTests
 
             Assert.IsNull(loaded, "Load should return null when repository has no save data");
         }
+
+        [Test]
+        public void SaveOverwritesPreviousSave()
+        {
+            var repo = new InMemoryGameRepository();
+            var svc = new GameSaveService(repo);
+
+            var u1 = new FakeUnitForSave { Id = 1, Name = "First", Team = Team.PlayerTeam, CurrentHP = 10, Position = (0,0), Level = 1, Experience = 0 };
+            var tm1 = new FakeTurnManager(new System.Collections.Generic.List<IUnit> { u1 });
+            // First save
+            svc.Save(tm1);
+
+            var u2 = new FakeUnitForSave { Id = 2, Name = "Second", Team = Team.PlayerTeam, CurrentHP = 5, Position = (1,1), Level = 2, Experience = 10 };
+            var tm2 = new FakeTurnManager(new System.Collections.Generic.List<IUnit> { u2 });
+            // Second save should overwrite the first
+            svc.Save(tm2);
+
+            var loaded = svc.Load();
+            Assert.IsNotNull(loaded);
+            Assert.AreEqual(1, loaded.Units.Count);
+            Assert.AreEqual(2, loaded.Units[0].Id);
+            Assert.AreEqual("Second", loaded.Units[0].Name);
+        }
     }
 }

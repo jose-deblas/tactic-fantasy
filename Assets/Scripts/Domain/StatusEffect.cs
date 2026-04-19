@@ -27,6 +27,9 @@ namespace TacticFantasy.Domain
 
         public PoisonEffect(float duration, float dps)
         {
+            if (duration < 0f) throw new ArgumentOutOfRangeException(nameof(duration), "Duration must be non-negative");
+            if (dps < 0f) throw new ArgumentOutOfRangeException(nameof(dps), "Damage per second must be non-negative");
+
             Duration = duration;
             DamagePerSecond = dps;
         }
@@ -54,6 +57,7 @@ namespace TacticFantasy.Domain
 
         public StunEffect(float duration)
         {
+            if (duration < 0f) throw new ArgumentOutOfRangeException(nameof(duration), "Duration must be non-negative");
             Duration = duration;
         }
 

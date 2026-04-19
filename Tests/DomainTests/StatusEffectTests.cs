@@ -51,5 +51,18 @@ namespace DomainTests
             stun.Tick(1f, unit);
             Assert.IsTrue(unit.CanAct);
         }
+
+        [Test]
+        public void PoisonConstructor_RejectsNegativeParams()
+        {
+            Assert.Throws<System.ArgumentOutOfRangeException>(() => new PoisonEffect(-1f, 1f));
+            Assert.Throws<System.ArgumentOutOfRangeException>(() => new PoisonEffect(1f, -0.5f));
+        }
+
+        [Test]
+        public void StunConstructor_RejectsNegativeDuration()
+        {
+            Assert.Throws<System.ArgumentOutOfRangeException>(() => new StunEffect(-0.1f));
+        }
     }
 }

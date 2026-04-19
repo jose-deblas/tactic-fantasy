@@ -56,6 +56,7 @@ namespace TacticFantasy.Domain.Units
         bool IsTransformed { get; }
         void Transform();
         void Revert();
+        bool TickTransformGauge();
     }
 
     public class Unit : IUnit

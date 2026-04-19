@@ -442,8 +442,8 @@ namespace TacticFantasy.Tests
             IUnit weakPlayer  = MakePlayer(1, WeaponType.SWORD, hp: 20, pos: (2, 3));
             IUnit strongPlayer = MakePlayer(2, WeaponType.SWORD, hp: 20, pos: (4, 3));
 
-            // Bump the ATK stat of the strong player to make it higher threat
-            strongPlayer.CurrentStats.ATK = weakPlayer.CurrentStats.ATK + 5;
+            // Bump the STR stat of the strong player to make it higher threat
+            strongPlayer.ApplyStatBoost(0, 5, 0, 0, 0, 0, 0, 0, 0);
 
             var allUnits = new List<IUnit> { enemy, weakPlayer, strongPlayer };
 

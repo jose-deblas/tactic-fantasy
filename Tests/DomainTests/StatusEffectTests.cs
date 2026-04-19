@@ -64,5 +64,19 @@ namespace DomainTests
         {
             Assert.Throws<System.ArgumentOutOfRangeException>(() => new StunEffect(-0.1f));
         }
+
+        [Test]
+        public void PoisonTick_ThrowsOnNullTarget()
+        {
+            var poison = new PoisonEffect(duration: 1f, dps: 1f);
+            Assert.Throws<System.ArgumentNullException>(() => poison.Tick(1f, null));
+        }
+
+        [Test]
+        public void StunTick_ThrowsOnNullTarget()
+        {
+            var stun = new StunEffect(duration: 1f);
+            Assert.Throws<System.ArgumentNullException>(() => stun.Tick(1f, null));
+        }
     }
 }

@@ -36,6 +36,7 @@ namespace TacticFantasy.Domain
 
         public void Tick(float deltaTime, IStatusTarget target)
         {
+            if (target == null) throw new ArgumentNullException(nameof(target));
             if (IsExpired) return;
 
             // Only apply up to the remaining duration

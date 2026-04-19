@@ -16,11 +16,11 @@ namespace TacticFantasy.Tests
             _distributor = new BexpDistributor();
         }
 
-        private Unit CreateUnit(CharacterStats stats = default, int level = 1)
+        private Unit CreateUnit(CharacterStats? stats = null, int level = 1)
         {
             var unit = new Unit(1, "TestUnit", Team.PlayerTeam,
                 ClassDataFactory.CreateMyrmidon(),
-                stats == default ? ClassDataFactory.CreateMyrmidon().BaseStats : stats,
+                stats ?? ClassDataFactory.CreateMyrmidon().BaseStats,
                 (0, 0), WeaponFactory.CreateIronSword(),
                 levelOverride: level);
             return unit;

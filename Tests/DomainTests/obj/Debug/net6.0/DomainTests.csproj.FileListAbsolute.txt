@@ -1,0 +1,6 @@
+/Users/r2d2/Projects/fire-emblem/tactic-fantasy/Tests/DomainTests/obj/Debug/net6.0/DomainTests.csproj.AssemblyReference.cache
+/Users/r2d2/Projects/fire-emblem/tactic-fantasy/Tests/DomainTests/obj/Debug/net6.0/DomainTests.GeneratedMSBuildEditorConfig.editorconfig
+/Users/r2d2/Projects/fire-emblem/tactic-fantasy/Tests/DomainTests/obj/Debug/net6.0/DomainTests.AssemblyInfoInputs.cache
+/Users/r2d2/Projects/fire-emblem/tactic-fantasy/Tests/DomainTests/obj/Debug/net6.0/DomainTests.AssemblyInfo.cs
+/Users/r2d2/Projects/fire-emblem/tactic-fantasy/Tests/DomainTests/obj/Debug/net6.0/DomainTests.csproj.CoreCompileInputs.cache
+/Users/r2d2/Projects/fire-emblem/tactic-fantasy/Tests/DomainTests/obj/Debug/net6.0/DomainTests.sourcelink.json

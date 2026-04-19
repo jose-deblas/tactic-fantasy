@@ -1,1 +1,2 @@
 - feat(gameplay): add StunEffect to disable actions while active; updated tests and IStatusTarget to include CanAct flag. This keeps domain logic pure and adds a basic control-status effect for gameplay.
+- fix(domain): validate StatusEffect constructors (PoisonEffect and StunEffect) to throw ArgumentOutOfRangeException on negative parameters; keeps invariants and ensures tests enforce correct usage.

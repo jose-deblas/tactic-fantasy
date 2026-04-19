@@ -4,31 +4,7 @@
 >
 > **Architecture Rule**: All gameplay logic lives in `Domain/`. Adapters stay thin. Every feature gets TDD with EditMode NUnit tests.
 >
-> **Current State (v2.7)**: 6 base + 6 promoted + 6 master-tier classes, 8 Laguz shapeshifter races, full skill system (Adept, Vantage, Wrath, Resolve, Nihil, Paragon, Sol, Luna + 5 mastery skills), 7-slot inventory with consumables and stat boosters, weapon triangle (Sword>Axe>Lance), combat with True Hit/crits/doubles/counters, 3 status effects, A* pathfinding, terrain-aware heuristic AI, procedural 16x16 maps, save/load, gamepad support.
-
----
-
-## ~~Phase 1: Skills System + Weapon Tiers~~ ✅ DONE (v2.0–v2.3)
-
-> Implemented across multiple releases. Adept, Vantage, Wrath, Resolve, Nihil, Paragon, Sol, Luna all live in `Domain/Skills/SkillDatabase.cs`. `CombatResolver` runs the full skill pipeline (PreCombat → OnAttack → OnDamageDealt). Weapon tiers (IsBrave, WeaponRank) added to `IWeapon`. `WeaponFactory` has Iron/Steel/Silver/Brave variants.
-
----
-
-## ~~Phase 2: Inventory + Items + Multi-Weapon Classes~~ ✅ DONE (v2.5)
-
-> Implemented in v2.5. `IItem`, `Inventory` (7 slots), `ConsumableItem`, `StatBooster`, `IWeapon extends IItem`. All promoted classes have correct multi-weapon lists.
-
----
-
-## ~~Phase 3: Third-Tier Classes + Mastery Skills~~ ✅ DONE (v2.6)
-
-> Implemented in v2.6. `ClassData.Tier` (1/2/3), 6 master classes (Trueblade, Marshall, Reaver, Archsage, Marksman, Saint), `ClassPromotionService` extended to Tier 2→3 with mastery auto-learn. All 5 mastery skills in `SkillDatabase`.
-
----
-
-## ~~Phase 4: Laguz / Shapeshifters~~ ✅ DONE (v2.7)
-
-> Implemented in v2.7. `TransformGauge`, `LaguzClassData` for all 8 races, `LaguzWeaponFactory`, `LaguzItemFactory` (Laguz Stone, Olivi Grass), `Unit` Laguz methods, TurnManager gauge ticking, AI retreat for untransformed Laguz, Heron single-target refresh + cross-pattern refresh when transformed.
+> **Current State (v2.9)**: Map Improvements - Designed Maps, Reinforcements, Fog of War, New Terrain (2026-04-19)
 
 ---
 

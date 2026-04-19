@@ -51,6 +51,7 @@
   <ItemGroup>
     <Compile Include="Assets/Scripts/Domain/Save/GameSnapshot.cs" />
     <Compile Include="Assets/Scripts/Domain/Units/ClassPromotionService.cs" />
+    <Compile Include="Assets/Scripts/Domain/Map/FogOfWar.cs" />
     <Compile Include="Assets/Scripts/Domain/Turn/VictoryCondition.cs" />
     <Compile Include="Assets/Scripts/Domain/Units/ClassData.cs" />
     <Compile Include="Assets/Scripts/Tests/ThirdTierPromotionTests.cs" />
@@ -61,7 +62,9 @@
     <Compile Include="Assets/Scripts/Domain/Combat/CombatResult.cs" />
     <Compile Include="Assets/Scripts/Tests/UnitInventoryTests.cs" />
     <Compile Include="Assets/Scripts/Domain/Map/MapDefinition.cs" />
+    <Compile Include="Assets/Scripts/Domain/Map/ReinforcementTrigger.cs" />
     <Compile Include="Assets/Scripts/Domain/Items/StatBooster.cs" />
+    <Compile Include="Assets/Scripts/Tests/ReinforcementServiceTests.cs" />
     <Compile Include="Assets/Scripts/Tests/StatusEffectTests.cs" />
     <Compile Include="Assets/Scripts/Tests/CombatForecastTests.cs" />
     <Compile Include="Assets/Scripts/Tests/TransformGaugeTests.cs" />
@@ -80,6 +83,7 @@
     <Compile Include="Assets/Scripts/Tests/ConsumableItemTests.cs" />
     <Compile Include="Assets/Scripts/Domain/Save/UnitSnapshot.cs" />
     <Compile Include="Assets/Scripts/Adapters/MapRenderer.cs" />
+    <Compile Include="Assets/Scripts/Domain/Map/ReinforcementService.cs" />
     <Compile Include="Assets/Scripts/Domain/Chapter/BasePhase.cs" />
     <Compile Include="Assets/Scripts/Domain/Units/LaguzClassData.cs" />
     <Compile Include="Assets/Scripts/Domain/Skills/SkillActivationPhase.cs" />
@@ -93,6 +97,7 @@
     <Compile Include="Assets/Scripts/Tests/ThirdTierStatCapTests.cs" />
     <Compile Include="Assets/Scripts/Tests/AIControllerTests.cs" />
     <Compile Include="Assets/Scripts/Domain/AI/AIController.cs" />
+    <Compile Include="Assets/Scripts/Tests/FogOfWarTests.cs" />
     <Compile Include="Assets/Scripts/Domain/Units/UnitFactory.cs" />
     <Compile Include="Assets/Scripts/Adapters/UnitRenderer.cs" />
     <Compile Include="Assets/Scripts/Domain/Weapons/WeaponType.cs" />
@@ -111,6 +116,7 @@
     <Compile Include="Assets/Scripts/Tests/SolLunaTests.cs" />
     <Compile Include="Assets/Scripts/Domain/Items/IItem.cs" />
     <Compile Include="Assets/Scripts/Domain/StatusEffectSummary.cs" />
+    <Compile Include="Assets/Scripts/Tests/MapLoaderTests.cs" />
     <Compile Include="Assets/Scripts/Domain/Save/InMemoryGameRepository.cs" />
     <Compile Include="Assets/Scripts/Domain/Save/IGameRepository.cs" />
     <Compile Include="Assets/Scripts/Domain/Utils/PositionUtils.cs" />

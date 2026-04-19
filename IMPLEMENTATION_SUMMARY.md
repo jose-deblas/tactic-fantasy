@@ -4,6 +4,46 @@
 
 ## Changelog
 
+### v2.9 - Map Improvements: Designed Maps, Reinforcements, Fog of War, New Terrain (2026-04-19)
+
+**New terrain types (6D)**
+- `TerrainType` enum extended with `Door`, `Chest`, `Throne`, `Desert`, `Bridge`
+- `TerrainProperties` refactored from `bool isInfantry` → `MoveType moveType, bool isMage = false` to support Desert's mage/cavalry/flying distinctions
+  - Desert: Infantry=3, Cavalry=4, Flying=1, Mage=1. Throne: DEF+3, AVO+30, Heal 30%. Bridge: cost 1
+- `InteractableTile : ITile` — mutable tile for Doors (impassable until opened) and Chests (hold an `IItem`). `Open()` transitions them to passable
+- `PathFinder` updated for new `MoveType` API, mage detection via `UsableWeaponTypes.Contains(FIRE)`, and closed-door blocking
+- `MapRenderer` — new terrain colors for all 5 types
+- **TerrainTypeTests.cs** — 18 tests (movement costs per MoveType, Desert mage exception, Throne/Desert bonuses, InteractableTile open/close/item)
+- **PathFinderTests.cs** — 5 new tests (closed door blocks, opened door allows, Desert infantry/mage costs, Bridge and Throne traversal)
+
+**Fixed map designs (6A)**
+- `MapDefinition` — data class: terrain grid, `UnitPlacement` list (name/class/weapon/team/position/level), `ChestPlacement` list, `IVictoryCondition`
+- `MapLoader` (`IMapLoader`) — creates `IGameMap` and `List<IUnit>` from a `MapDefinition`; resolves class/weapon names via factory lookup; levels units above 1 via `GainExperience`
+- `MapDefinitions` — 3 hand-crafted chapters:
+  - **Plains Skirmish** (12×10): open field with forests, forts, mountain ridge. Rout condition
+  - **Castle Assault** (14×14): castle walls, two doors, throne (Seize target), two chests with items, approach forests and forts. Seize condition
+  - **Desert Holdout** (16×12): desert terrain, cliff wall with two bridges, player oasis with forts. Survive 8 turns condition
+- `ChapterData` — new optional `MapDefinition` property; when set, takes precedence over `MapSeed` for map generation
+- **MapLoaderTests.cs** — 10 tests (dimensions, terrain placement, InteractableTile at door/chest positions, chest item content, unit team/position/class/weapon, level-up, all 3 hand-crafted maps)
+
+**Reinforcements (6B)**
+- `ReinforcementTrigger` — one-shot trigger with condition (`OnTurn`, `OnTileSteppedOn`, `OnUnitDeath`), typed factory methods, `HasFired` guard
+- `ReinforcementService` (`IReinforcementService`) — evaluates all unfired triggers each call; spawns units from `UnitPlacement` descriptors using auto-incrementing IDs
+- `TurnManager` — extended `Initialize` overload accepts `IReinforcementService` + `List<ReinforcementTrigger>`; `CheckReinforcements()` called at end of each enemy phase (start of new turn), appending spawned units to `AllUnits`
+- **ReinforcementServiceTests.cs** — 8 tests (OnTurn fires/blocks correctly, one-shot, OnTileSteppedOn, OnUnitDeath, multiple triggers, unique IDs)
+- **TurnManagerTests.cs** — 2 new tests (reinforcements added to AllUnits on correct turn, not before)
+
+**Fog of War (6C)**
+- `FogOfWar` (`IFogOfWar`) — BFS flood-fill vision per team: radius = `MOV + 2`. Forest tiles visible but block propagation for non-flying units. Flying units see past forest. Torch item in inventory adds +5 radius. `RecalculateVision` unions all alive unit visions per team. `GetVisibleTiles(team)` and `IsTileVisible(x, y, team)` for queries
+- `ConsumableFactory.CreateTorch()` — new consumable item, identified by name `"Torch"` for fog radius bonus
+- `AIController` — fog-aware: new optional `IFogOfWar fogOfWar = null` parameter on `DecideAction`/`IAIController`. When active: updates `_lastKnownPositions` for visible opponents, targets only visible enemies, advances toward last-known positions when no target is visible. All existing callers unaffected (default `null`)
+- `MapRenderer.SetFogOfWar(fog, viewingTeam)` — non-visible tiles darkened (color × 0.3)
+- `UnitRenderer.SetFogOfWar(fog, viewingTeam)` — enemy units on non-visible tiles hidden from renderer
+- **FogOfWarTests.cs** — 9 tests (vision radius, out-of-radius invisible, Forest blocks for infantry, Forest transparent for flyers, Torch bonus, multi-unit union, per-team separation, GetVisibleTiles, dead units don't contribute)
+- **AIControllerTests.cs** — 2 new fog tests (only visible targets attacked, null fog is identical to no-fog baseline)
+
+---
+
 ### v2.8.2 - Presentation: Health formatter (2026-04-19)
 - **HealthFormatter** (`Presentation/`) — Pure utility to format health for HUD and world-space HP bars. `Format(current, max)` clamps values and returns a string like `HP: 30/50 (60%)`. Added `HealthFormatterTests.cs` with cases for normal values, clamping below zero, clamping above max, invalid max (throws), and rounding behavior for percent calculation.
 

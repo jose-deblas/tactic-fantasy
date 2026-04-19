@@ -24,6 +24,14 @@ namespace TacticFantasy.Domain
         public override string ToString()
         {
             if (Remaining <= 0f) return $"{Name} (expired)";
+            // For sub-second durations, show milliseconds to improve readability in UI (presentation)
+            if (Remaining < 1f)
+            {
+                int ms = (int)Math.Round(Remaining * 1000f);
+                // Clamp 0ms to 1ms for very small positive values
+                if (ms <= 0) ms = 1;
+                return $"{Name} ({ms}ms)";
+            }
             return $"{Name} ({Remaining:0.00}s)";
         }
     }

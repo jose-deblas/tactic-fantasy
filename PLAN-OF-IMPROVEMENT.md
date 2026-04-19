@@ -8,7 +8,9 @@
 
 ---
 
-## Phase 1: Skills System + Weapon Tiers
+## ~~Phase 1: Skills System + Weapon Tiers~~ ✅ DONE (v2.0–v2.3)
+
+> Implemented across multiple releases. Adept, Vantage, Wrath, Resolve, Nihil, Paragon, Sol, Luna all live in `Domain/Skills/SkillDatabase.cs`. `CombatResolver` runs the full skill pipeline (PreCombat → OnAttack → OnDamageDealt). Weapon tiers (IsBrave, WeaponRank) added to `IWeapon`. `WeaponFactory` has Iron/Steel/Silver/Brave variants.
 
 **Why first**: Skills are THE defining feature of Radiant Dawn. Without Adept, Vantage, Wrath, Sol, and Luna, combat is generic. This phase transforms every battle into a moment of tension.
 
@@ -86,7 +88,9 @@
 
 ---
 
-## Phase 2: Inventory + Items + Multi-Weapon Classes
+## ~~Phase 2: Inventory + Items + Multi-Weapon Classes~~ ✅ DONE (v2.5)
+
+> Implemented in v2.5. `IItem`, `Inventory` (7 slots), `ConsumableItem`, `StatBooster`, `IWeapon extends IItem`. All promoted classes have correct multi-weapon lists.
 
 **Why second**: RD units carry up to 7 items (weapons + consumables). Promoted classes wield multiple weapon types. Both require an inventory system.
 
@@ -131,7 +135,9 @@
 
 ---
 
-## Phase 3: Third-Tier Classes + Mastery Skills
+## ~~Phase 3: Third-Tier Classes + Mastery Skills~~ ✅ DONE (v2.6)
+
+> Implemented in v2.6. `ClassData.Tier` (1/2/3), 6 master classes (Trueblade, Marshall, Reaver, Archsage, Marksman, Saint), `ClassPromotionService` extended to Tier 2→3 with mastery auto-learn. All 5 mastery skills in `SkillDatabase`.
 
 **Why third**: Depends on Phase 1 (skills) and Phase 2 (multi-weapon). Three-tier class progression is RD's signature feature -- Base -> Advanced -> Master.
 
@@ -172,7 +178,9 @@
 
 ---
 
-## Phase 4: Laguz / Shapeshifters
+## ~~Phase 4: Laguz / Shapeshifters~~ ✅ DONE (v2.7)
+
+> Implemented in v2.7. `TransformGauge`, `LaguzClassData` for all 8 races, `LaguzWeaponFactory`, `LaguzItemFactory` (Laguz Stone, Olivi Grass), `Unit` Laguz methods, TurnManager gauge ticking, AI retreat for untransformed Laguz, Heron single-target refresh + cross-pattern refresh when transformed.
 
 **Why fourth**: Laguz are RD's most unique gameplay mechanic -- a parallel unit system with transformation. Requires skills (Phase 1) and possibly items (Phase 2 for Laguz Stones/Olivi Grass).
 
@@ -232,11 +240,9 @@
 
 ---
 
-## Phase 5: Base / Shops + Bonus Experience (BEXP)
+## ~~Phase 5: Base / Shops + Bonus Experience (BEXP)~~  ✅ DONE (v2.8)
 
 **Why next**: Requires inventory (Phase 2 ✅) for shops. BEXP is RD's unique reward/catch-up system that enables strategic unit building. All prerequisites are now done.
-
-**Status**: ✅ DONE (v2.8)
 
 ### 5A. Domain Models
 

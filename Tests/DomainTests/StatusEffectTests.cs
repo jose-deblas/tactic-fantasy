@@ -97,5 +97,29 @@ namespace DomainTests
             regen.Tick(1f, unit);
             Assert.AreEqual(70f, unit.Health, 1e-4);
         }
+
+        [Test]
+        public void ShieldAbsorbsDamageAndExpires()
+        {
+            var unit = new FakeUnit { Health = 100f };
+            var shield = new ShieldEffect(duration: 2f, amount: 10f);
+
+            // First tick applies the shield as temporary health
+            shield.Tick(0.1f, unit);
+            Assert.AreEqual(110f, unit.Health, 1e-4);
+            Assert.IsFalse(shield.IsExpired);
+
+            // Simulate incoming damage that should be absorbed by shield
+            unit.TakeDamage(6f);
+            Assert.AreEqual(104f, unit.Health, 1e-4); // 110 - 6
+
+            // Advance time to expire shield
+            shield.Tick(2f, unit);
+            Assert.IsTrue(shield.IsExpired);
+
+            // When shield expires, remaining shield is removed (if any)
+            // Remaining shield after 6 damage was 4, so health reduces by 4 back to 100
+            Assert.AreEqual(100f, unit.Health, 1e-4);
+        }
     }
 }

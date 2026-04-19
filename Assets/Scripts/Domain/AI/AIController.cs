@@ -10,13 +10,14 @@ namespace TacticFantasy.Domain.AI
 {
     public interface IAIController
     {
-        void DecideAction(IUnit unit, List<IUnit> allUnits, IGameMap map, IPathFinder pathFinder, out (int x, int y)? moveTarget, out IUnit attackTarget, out bool isHealAction);
+        void DecideAction(IUnit unit, List<IUnit> allUnits, IGameMap map, IPathFinder pathFinder, out (int x, int y)? moveTarget, out IUnit attackTarget, out bool isHealAction, IFogOfWar fogOfWar = null);
     }
 
     public class AIController : IAIController
     {
         private readonly ICombatResolver _combatResolver;
         private readonly Random _rng = new Random();
+        private readonly Dictionary<int, (int x, int y)> _lastKnownPositions = new Dictionary<int, (int, int)>();
 
         public AIController(ICombatResolver combatResolver)
         {
@@ -24,16 +25,22 @@ namespace TacticFantasy.Domain.AI
         }
 
         public void DecideAction(IUnit unit, List<IUnit> allUnits, IGameMap map, IPathFinder pathFinder,
-            out (int x, int y)? moveTarget, out IUnit attackTarget, out bool isHealAction)
+            out (int x, int y)? moveTarget, out IUnit attackTarget, out bool isHealAction, IFogOfWar fogOfWar = null)
         {
             moveTarget = null;
             attackTarget = null;
             isHealAction = false;
 
+            // Update last-known positions for visible opponents
+            if (fogOfWar != null)
+            {
+                UpdateLastKnownPositions(unit, allUnits, fogOfWar);
+            }
+
             // A unit with a broken weapon cannot attack or heal — just advance.
             if (unit.HasBrokenWeapon)
             {
-                AdvanceTowardNearestEnemy(unit, allUnits, map, pathFinder, out moveTarget);
+                AdvanceTowardNearestEnemy(unit, allUnits, map, pathFinder, out moveTarget, fogOfWar);
                 return;
             }
 
@@ -54,7 +61,7 @@ namespace TacticFantasy.Domain.AI
             }
             else
             {
-                DecideAttackAction(unit, allUnits, map, pathFinder, out moveTarget, out attackTarget);
+                DecideAttackAction(unit, allUnits, map, pathFinder, out moveTarget, out attackTarget, fogOfWar);
             }
         }
 
@@ -63,22 +70,50 @@ namespace TacticFantasy.Domain.AI
         /// when the unit cannot attack (e.g., broken weapon).
         /// </summary>
         private void AdvanceTowardNearestEnemy(IUnit unit, List<IUnit> allUnits, IGameMap map, IPathFinder pathFinder,
-            out (int x, int y)? moveTarget)
+            out (int x, int y)? moveTarget, IFogOfWar fogOfWar = null)
         {
             moveTarget = null;
+
+            // If fog is active, try to use last-known positions for non-visible opponents
+            (int x, int y)? targetPos = null;
             var opponents = allUnits
                 .Where(u => u.Team != unit.Team && u.IsAlive)
-                .OrderBy(e => map.GetDistance(unit.Position.x, unit.Position.y, e.Position.x, e.Position.y))
                 .ToList();
 
-            if (opponents.Count == 0)
+            if (fogOfWar != null)
+            {
+                // Only consider visible opponents for direct targeting
+                var visibleOpponents = opponents
+                    .Where(u => fogOfWar.IsTileVisible(u.Position.x, u.Position.y, unit.Team))
+                    .OrderBy(e => map.GetDistance(unit.Position.x, unit.Position.y, e.Position.x, e.Position.y))
+                    .ToList();
+
+                if (visibleOpponents.Count > 0)
+                {
+                    targetPos = visibleOpponents.First().Position;
+                }
+                else
+                {
+                    // Move toward last-known position
+                    targetPos = GetClosestLastKnownPosition(unit, map);
+                }
+            }
+            else
+            {
+                var sorted = opponents
+                    .OrderBy(e => map.GetDistance(unit.Position.x, unit.Position.y, e.Position.x, e.Position.y))
+                    .ToList();
+                if (sorted.Count > 0)
+                    targetPos = sorted.First().Position;
+            }
+
+            if (!targetPos.HasValue)
                 return;
 
-            var closest = opponents.First();
             var reachable = pathFinder.GetMovementRange(unit.Position.x, unit.Position.y, unit.CurrentStats.MOV, unit, map, allUnits);
 
             var bestTile = reachable
-                .OrderBy(t => map.GetDistance(t.Item1, t.Item2, closest.Position.x, closest.Position.y))
+                .OrderBy(t => map.GetDistance(t.Item1, t.Item2, targetPos.Value.x, targetPos.Value.y))
                 .First();
 
             if (bestTile != (unit.Position.x, unit.Position.y))
@@ -86,7 +121,7 @@ namespace TacticFantasy.Domain.AI
         }
 
         private void DecideAttackAction(IUnit unit, List<IUnit> allUnits, IGameMap map, IPathFinder pathFinder,
-            out (int x, int y)? moveTarget, out IUnit attackTarget)
+            out (int x, int y)? moveTarget, out IUnit attackTarget, IFogOfWar fogOfWar = null)
         {
             moveTarget = null;
             attackTarget = null;
@@ -96,31 +131,57 @@ namespace TacticFantasy.Domain.AI
             if (playerUnits.Count == 0)
                 return;
 
+            // When fog is active, only attack visible targets
+            var targetableUnits = fogOfWar != null
+                ? playerUnits.Where(u => fogOfWar.IsTileVisible(u.Position.x, u.Position.y, unit.Team)).ToList()
+                : playerUnits;
+
             var reachable = pathFinder.GetMovementRange(unit.Position.x, unit.Position.y, unit.CurrentStats.MOV, unit, map, allUnits);
 
-            var bestAttackOption = FindBestAttackPosition(unit, playerUnits, reachable, map);
-
-            if (bestAttackOption.HasValue)
+            if (targetableUnits.Count > 0)
             {
-                var option = bestAttackOption.Value;
-                moveTarget = option.position;
-                attackTarget = option.target;
+                var bestAttackOption = FindBestAttackPosition(unit, targetableUnits, reachable, map);
+
+                if (bestAttackOption.HasValue)
+                {
+                    var option = bestAttackOption.Value;
+                    moveTarget = option.position;
+                    attackTarget = option.target;
+                    return;
+                }
+            }
+
+            // No attack possible — move toward closest known enemy
+            (int x, int y)? advanceTarget = null;
+            if (fogOfWar != null)
+            {
+                var visibleEnemies = playerUnits
+                    .Where(u => fogOfWar.IsTileVisible(u.Position.x, u.Position.y, unit.Team))
+                    .OrderBy(e => map.GetDistance(unit.Position.x, unit.Position.y, e.Position.x, e.Position.y))
+                    .ToList();
+
+                advanceTarget = visibleEnemies.Count > 0
+                    ? visibleEnemies.First().Position
+                    : GetClosestLastKnownPosition(unit, map);
             }
             else
             {
-                // Move toward closest enemy using the closest reachable tile
                 var closestEnemy = playerUnits
                     .OrderBy(e => map.GetDistance(unit.Position.x, unit.Position.y, e.Position.x, e.Position.y))
                     .First();
+                advanceTarget = closestEnemy.Position;
+            }
 
-                var bestTile = reachable
-                    .OrderBy(t => map.GetDistance(t.Item1, t.Item2, closestEnemy.Position.x, closestEnemy.Position.y))
-                    .First();
+            if (!advanceTarget.HasValue)
+                return;
 
-                if (bestTile != (unit.Position.x, unit.Position.y))
-                {
-                    moveTarget = bestTile;
-                }
+            var bestTile = reachable
+                .OrderBy(t => map.GetDistance(t.Item1, t.Item2, advanceTarget.Value.x, advanceTarget.Value.y))
+                .First();
+
+            if (bestTile != (unit.Position.x, unit.Position.y))
+            {
+                moveTarget = bestTile;
             }
         }
 
@@ -223,7 +284,8 @@ namespace TacticFantasy.Domain.AI
 
         private ((int x, int y) position, IUnit target)? FindBestAttackPosition(IUnit unit, List<IUnit> enemies, HashSet<(int, int)> reachable, IGameMap map)
         {
-            var validTargets = new List<(int x, int y, IUnit target, int score)>();
+            // Include terrain defense and distance in the candidate tuple to allow richer tie-breaking.
+            var validTargets = new List<(int x, int y, IUnit target, int score, int terrainDef, int distance)>();
 
             foreach (var position in reachable)
             {
@@ -234,8 +296,9 @@ namespace TacticFantasy.Domain.AI
                     if (distance >= unit.EquippedWeapon.MinRange && distance <= unit.EquippedWeapon.MaxRange)
                     {
                         int score = ScoreAttackOption(unit, enemy);
+                        int terrainDef = TerrainProperties.GetDefenseBonus(map.GetTile(position.Item1, position.Item2).Terrain);
                         score -= ScoreTerrainBonus(position.Item1, position.Item2, map);
-                        validTargets.Add((position.Item1, position.Item2, enemy, score));
+                        validTargets.Add((position.Item1, position.Item2, enemy, score, terrainDef, distance));
                     }
                 }
             }
@@ -243,10 +306,15 @@ namespace TacticFantasy.Domain.AI
             if (validTargets.Count == 0)
                 return null;
 
-            // Choose lowest score, tie-break by target.CurrentHP (prefer lower HP finishers)
+            // Choose lowest score. Tie-breakers, in order:
+            // 1) lower target.CurrentHP (prefer finishers)
+            // 2) higher terrain defense (prefer defensive tiles)
+            // 3) shorter movement distance from current unit position (prefer closer tiles)
             var selected = validTargets
                 .OrderBy(t => t.score)
                 .ThenBy(t => t.target.CurrentHP)
+                .ThenByDescending(t => t.terrainDef)
+                .ThenBy(t => t.distance)
                 .First();
             return ((selected.x, selected.y), selected.target);
         }
@@ -365,6 +433,28 @@ namespace TacticFantasy.Domain.AI
 
             if (best.HasValue && best.Value != (unit.Position.x, unit.Position.y))
                 moveTarget = best;
+        }
+
+        private void UpdateLastKnownPositions(IUnit unit, List<IUnit> allUnits, IFogOfWar fogOfWar)
+        {
+            foreach (var opponent in allUnits.Where(u => u.Team != unit.Team && u.IsAlive))
+            {
+                if (fogOfWar.IsTileVisible(opponent.Position.x, opponent.Position.y, unit.Team))
+                {
+                    _lastKnownPositions[opponent.Id] = opponent.Position;
+                }
+            }
+        }
+
+        private (int x, int y)? GetClosestLastKnownPosition(IUnit unit, IGameMap map)
+        {
+            if (_lastKnownPositions.Count == 0)
+                return null;
+
+            return _lastKnownPositions.Values
+                .OrderBy(pos => map.GetDistance(unit.Position.x, unit.Position.y, pos.x, pos.y))
+                .Cast<(int x, int y)?>()
+                .FirstOrDefault();
         }
     }
 }

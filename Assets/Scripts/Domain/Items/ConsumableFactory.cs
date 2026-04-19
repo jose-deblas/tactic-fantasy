@@ -30,5 +30,10 @@ namespace TacticFantasy.Domain.Items
                 u.ApplyStatBoost(0, 0, 0, 0, 0, 0, 0, 7, 0);
             });
         }
+
+        public static ConsumableItem CreateTorch()
+        {
+            return new ConsumableItem("Torch", 1, u => { });
+        }
     }
 }

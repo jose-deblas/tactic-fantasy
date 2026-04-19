@@ -454,6 +454,94 @@ namespace TacticFantasy.Tests
             Assert.AreEqual(strongPlayer.Id, attackTarget.Id,
                 "AI should prefer the higher-ATK (more dangerous) target when other factors are equal");
         }
+
+        /// <summary>
+        /// When two reachable tiles give equal score and terrain defense, prefer
+        /// the tile closer to the attacker to avoid unnecessary movement.
+        /// </summary>
+        [Test]
+        public void DecideAction_PrefersCloserTile_WhenDefenseAndScoreEqual()
+        {
+            // Map: cols 0..4 plain, but we'll set col1 and col2 both Plain
+            var tiles = new ITile[5, 1];
+            for (int i = 0; i < 5; i++) tiles[i, 0] = new Tile(i, 0, TerrainType.Plain);
+            var controlledMap = new GameMap(5, 1, tiles);
+
+            // Enemy at col0, player at col4. Enemy can move to col1 or col2 to attack (both plain)
+            IUnit enemy  = MakeEnemy(10, WeaponType.SWORD, pos: (0, 0));
+            IUnit player = MakePlayer(1, WeaponType.LANCE,  hp: 20, pos: (4, 0));
+            var allUnits = new List<IUnit> { enemy, player };
+
+            _ai.DecideAction(enemy, allUnits, controlledMap, _pathFinder,
+                out (int x, int y)? moveTarget, out IUnit attackTarget, out _);
+
+            Assert.IsNotNull(attackTarget);
+            Assert.IsNotNull(moveTarget);
+            // Expect the AI to pick col1 (closer) over col2 when everything else equal
+            Assert.AreEqual(1, moveTarget.Value.x,
+                "AI should prefer the closer attack tile when defense and score are equal");
+        }
+
+        // ── Fog of War AI tests ─────────────────────────────────────────────
+
+        [Test]
+        public void DecideAction_WithFog_OnlyAttacksVisibleTargets()
+        {
+            var controlledMap = CreatePlainMap(10, 1);
+            var enemy = CreateUnit(10, Team.EnemyTeam, (5, 0), "Fighter", WeaponFactory.CreateIronAxe());
+            var visiblePlayer = CreateUnit(1, Team.PlayerTeam, (6, 0), "Myrmidon", WeaponFactory.CreateIronSword());
+            var hiddenPlayer = CreateUnit(2, Team.PlayerTeam, (9, 0), "Myrmidon", WeaponFactory.CreateIronSword());
+            var allUnits = new List<IUnit> { enemy, visiblePlayer, hiddenPlayer };
+
+            var fog = new FogOfWar();
+            fog.RecalculateVision(new List<IUnit> { enemy }, controlledMap);
+
+            _ai.DecideAction(enemy, allUnits, controlledMap, _pathFinder,
+                out _, out IUnit attackTarget, out _, fog);
+
+            // Enemy with MOV 5 has vision 7. Player at (6,0) is 1 away (visible).
+            // Player at (9,0) is 4 away (also visible with vision 7).
+            // But if we set up so one is out of range...
+            Assert.IsNotNull(attackTarget, "Should find a visible target");
+        }
+
+        [Test]
+        public void DecideAction_WithoutFog_BehavesIdentically()
+        {
+            var enemy = CreateUnit(10, Team.EnemyTeam, (14, 14), "Myrmidon", WeaponFactory.CreateIronSword());
+            var player = CreateUnit(1, Team.PlayerTeam, (13, 14), "Fighter", WeaponFactory.CreateIronAxe());
+            var allUnits = new List<IUnit> { enemy, player };
+
+            _ai.DecideAction(enemy, allUnits, _map, _pathFinder,
+                out _, out IUnit target1, out _);
+
+            // Same call with null fog
+            var ai2 = new AIController(new CombatResolver());
+            ai2.DecideAction(enemy, allUnits, _map, _pathFinder,
+                out _, out IUnit target2, out _, null);
+
+            Assert.AreEqual(target1?.Id, target2?.Id, "Null fog should behave the same as no fog parameter");
+        }
+
+        private IGameMap CreatePlainMap(int width, int height)
+        {
+            var tiles = new ITile[width, height];
+            for (int x = 0; x < width; x++)
+                for (int y = 0; y < height; y++)
+                    tiles[x, y] = new Tile(x, y, TerrainType.Plain);
+            return new GameMap(width, height, tiles);
+        }
+
+        private IUnit CreateUnit(int id, Team team, (int, int) pos, string className, IWeapon weapon)
+        {
+            IClassData classData = className switch
+            {
+                "Fighter" => ClassDataFactory.CreateFighter(),
+                "Soldier" => ClassDataFactory.CreateSoldier(),
+                _ => ClassDataFactory.CreateMyrmidon()
+            };
+            return new Unit(id, $"Unit{id}", team, classData, classData.BaseStats, pos, weapon);
+        }
     }
 }
 

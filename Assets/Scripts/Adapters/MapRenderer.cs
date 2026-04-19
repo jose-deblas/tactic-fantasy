@@ -16,6 +16,8 @@ namespace TacticFantasy.Adapters
         private IUnit _selectedUnit;
         private HashSet<(int, int)> _movementRange = new HashSet<(int, int)>();
         private HashSet<(int, int)> _attackRange  = new HashSet<(int, int)>();
+        private IFogOfWar _fogOfWar;
+        private Team _viewingTeam = Team.PlayerTeam;
 
         private const float TILE_SIZE = 1f;
 
@@ -81,6 +83,13 @@ namespace TacticFantasy.Adapters
             UpdateHighlights();
         }
 
+        public void SetFogOfWar(IFogOfWar fog, Team viewingTeam)
+        {
+            _fogOfWar = fog;
+            _viewingTeam = viewingTeam;
+            UpdateHighlights();
+        }
+
         private void UpdateHighlights()
         {
             if (_tileObjects == null) return;
@@ -100,7 +109,12 @@ namespace TacticFantasy.Adapters
                     else if (_attackRange.Contains((x, y)))
                         sr.color = new Color(1f, 0.3f, 0.3f, 0.85f);
                     else
-                        sr.color = GetTerrainColor(tile.Terrain);
+                    {
+                        var baseColor = GetTerrainColor(tile.Terrain);
+                        if (_fogOfWar != null && !_fogOfWar.IsTileVisible(x, y, _viewingTeam))
+                            baseColor *= 0.3f;
+                        sr.color = baseColor;
+                    }
                 }
             }
         }
@@ -112,6 +126,11 @@ namespace TacticFantasy.Adapters
             TerrainType.Fort     => new Color(0.85f, 0.75f, 0.2f),
             TerrainType.Mountain => new Color(0.55f, 0.55f, 0.55f),
             TerrainType.Wall     => new Color(0.2f,  0.2f,  0.2f),
+            TerrainType.Door     => new Color(0.45f, 0.25f, 0.1f),
+            TerrainType.Chest    => new Color(0.9f,  0.75f, 0.1f),
+            TerrainType.Throne   => new Color(0.55f, 0.2f,  0.6f),
+            TerrainType.Desert   => new Color(0.85f, 0.75f, 0.5f),
+            TerrainType.Bridge   => new Color(0.6f,  0.45f, 0.25f),
             _                    => Color.white
         };
 

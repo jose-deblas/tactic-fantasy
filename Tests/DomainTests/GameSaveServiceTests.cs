@@ -127,5 +127,17 @@ namespace DomainTests
             Assert.AreNotEqual(TacticFantasy.Domain.StatusEffectType.None, snap.StatusType);
             Assert.Greater(snap.StatusRemainingTurns, 0);
         }
+
+        [Test]
+        public void LoadReturnsNullWhenNoSaveExists()
+        {
+            var repo = new InMemoryGameRepository();
+            var svc = new GameSaveService(repo);
+
+            // No save has been performed on the repository
+            var loaded = svc.Load();
+
+            Assert.IsNull(loaded, "Load should return null when repository has no save data");
+        }
     }
 }

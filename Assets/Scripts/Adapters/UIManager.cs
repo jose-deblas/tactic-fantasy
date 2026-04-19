@@ -304,7 +304,7 @@ namespace TacticFantasy.Adapters
             if (_terrainInfoText == null) return;
 
             string terrainName = $"<color={GetTerrainColor(terrain)}>{terrain.ToString()}</color>";
-            int moveCost = TerrainProperties.GetMovementCost(terrain, true);  // true = infantry
+            int moveCost = TerrainProperties.GetMovementCost(terrain, MoveType.Infantry);
             int defensBonus = TerrainProperties.GetDefenseBonus(terrain);
             int avoidBonus = TerrainProperties.GetAvoidBonus(terrain);
             int healPercent = TerrainProperties.GetHealPercent(terrain);

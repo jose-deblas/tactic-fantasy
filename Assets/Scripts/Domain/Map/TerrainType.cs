@@ -1,3 +1,5 @@
+using TacticFantasy.Domain.Units;
+
 namespace TacticFantasy.Domain.Map
 {
     public enum TerrainType
@@ -6,27 +8,47 @@ namespace TacticFantasy.Domain.Map
         Forest,
         Fort,
         Mountain,
-        Wall
+        Wall,
+        Door,
+        Chest,
+        Throne,
+        Desert,
+        Bridge
     }
 
     public static class TerrainProperties
     {
-        public static int GetMovementCost(TerrainType terrain, bool isInfantry)
+        public static int GetMovementCost(TerrainType terrain, MoveType moveType, bool isMage = false)
         {
+            if (moveType == MoveType.Flying)
+            {
+                return terrain switch
+                {
+                    TerrainType.Wall => int.MaxValue,
+                    TerrainType.Door => int.MaxValue,
+                    _ => 1
+                };
+            }
+
             return terrain switch
             {
                 TerrainType.Plain => 1,
                 TerrainType.Forest => 2,
                 TerrainType.Fort => 1,
-                TerrainType.Mountain => isInfantry ? 3 : int.MaxValue, // Cavalry can't pass
-                TerrainType.Wall => int.MaxValue, // Impassable
+                TerrainType.Mountain => moveType == MoveType.Infantry || moveType == MoveType.Armored ? 3 : int.MaxValue,
+                TerrainType.Wall => int.MaxValue,
+                TerrainType.Door => int.MaxValue,
+                TerrainType.Chest => 1,
+                TerrainType.Throne => 1,
+                TerrainType.Desert => isMage ? 1 : (moveType == MoveType.Cavalry ? 4 : 3),
+                TerrainType.Bridge => 1,
                 _ => int.MaxValue
             };
         }
 
-        public static bool IsPassable(TerrainType terrain, bool isInfantry)
+        public static bool IsPassable(TerrainType terrain, MoveType moveType, bool isMage = false)
         {
-            int cost = GetMovementCost(terrain, isInfantry);
+            int cost = GetMovementCost(terrain, moveType, isMage);
             return cost != int.MaxValue;
         }
 
@@ -38,7 +60,7 @@ namespace TacticFantasy.Domain.Map
                 TerrainType.Forest => 1,
                 TerrainType.Fort => 2,
                 TerrainType.Mountain => 1,
-                TerrainType.Wall => 0,
+                TerrainType.Throne => 3,
                 _ => 0
             };
         }
@@ -51,7 +73,8 @@ namespace TacticFantasy.Domain.Map
                 TerrainType.Forest => 15,
                 TerrainType.Fort => 20,
                 TerrainType.Mountain => 20,
-                TerrainType.Wall => 0,
+                TerrainType.Throne => 30,
+                TerrainType.Desert => 5,
                 _ => 0
             };
         }
@@ -61,6 +84,7 @@ namespace TacticFantasy.Domain.Map
             return terrain switch
             {
                 TerrainType.Fort => 20,
+                TerrainType.Throne => 30,
                 _ => 0
             };
         }

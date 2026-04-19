@@ -31,6 +31,10 @@ Assets/Audio/
 Assets/Art/
 *.asset.bak
 
+# .NET build artifacts inside Assets (must not be imported by Unity)
+Assets/Scripts/Domain/bin/
+Assets/Scripts/Domain/obj/
+
 # Build outputs
 *.apk
 *.ipa

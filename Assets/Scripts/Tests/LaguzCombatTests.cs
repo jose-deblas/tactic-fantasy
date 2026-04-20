@@ -82,7 +82,7 @@ namespace TacticFantasy.Tests
 
             Assert.AreEqual(0, laguz.LaguzGauge.Current);
 
-            // Advance from Player → Enemy phase should tick player Laguz gauges
+            // Advance from Player → Ally phase should tick player Laguz gauges
             tm.AdvancePhase();
 
             Assert.AreEqual(catClass.GaugeFillRate, laguz.LaguzGauge.Current);
@@ -101,7 +101,11 @@ namespace TacticFantasy.Tests
             var tm = new TurnManager();
             tm.Initialize(new List<IUnit> { player, laguzEnemy });
 
-            // Player phase → Enemy phase
+            // Player phase → Ally phase (player gauges tick, not enemy)
+            tm.AdvancePhase();
+            Assert.AreEqual(0, laguzEnemy.LaguzGauge.Current);
+
+            // Ally phase → Enemy phase (ally gauges tick, not enemy)
             tm.AdvancePhase();
             Assert.AreEqual(0, laguzEnemy.LaguzGauge.Current);
 
@@ -126,7 +130,7 @@ namespace TacticFantasy.Tests
 
             Assert.IsFalse(laguz.IsTransformed);
 
-            tm.AdvancePhase(); // Player → Enemy (ticks player gauges)
+            tm.AdvancePhase(); // Player → Ally (ticks player gauges)
 
             Assert.IsTrue(laguz.IsTransformed);
             Assert.AreEqual(catClass.TransformedStats.STR, laguz.CurrentStats.STR);
@@ -155,7 +159,7 @@ namespace TacticFantasy.Tests
             Assert.IsTrue(laguz.IsTransformed);
             Assert.AreEqual(2, laguz.LaguzGauge.Current);
 
-            tm.AdvancePhase(); // Player → Enemy (ticks player gauges, gauge hits 0)
+            tm.AdvancePhase(); // Player → Ally (ticks player gauges, gauge hits 0)
 
             Assert.IsFalse(laguz.IsTransformed);
             Assert.AreEqual(catClass.UntransformedStats.STR, laguz.CurrentStats.STR);

@@ -351,9 +351,19 @@ private void ClearTerrainInfo()
 
         public void UpdatePhaseDisplay(Phase phase, int turnCount)
         {
-            string phaseName = phase == Phase.PlayerPhase ? "Player Phase" : "Enemy Phase";
+            string phaseName = phase switch
+            {
+                Phase.PlayerPhase => "Player Phase",
+                Phase.AllyPhase   => "Ally Phase",
+                _                 => "Enemy Phase"
+            };
             _turnPhaseText.text = $"Turn: {turnCount}, {phaseName}";
-            _turnPhaseText.color = phase == Phase.PlayerPhase ? Color.white : new Color(1f, 0.6f, 0.6f);
+            _turnPhaseText.color = phase switch
+            {
+                Phase.PlayerPhase => Color.white,
+                Phase.AllyPhase   => new Color(0.6f, 1f, 0.6f),
+                _                 => new Color(1f, 0.6f, 0.6f)
+            };
         }
 
         private void CreateEndTurnPrompt()

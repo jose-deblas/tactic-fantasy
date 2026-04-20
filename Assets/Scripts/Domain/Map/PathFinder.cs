@@ -196,7 +196,8 @@ namespace TacticFantasy.Domain.Map
         {
             foreach (var other in allUnits)
             {
-                if (other.Id != mover.Id && other.IsAlive && other.Position.x == x && other.Position.y == y && other.Team != mover.Team)
+                if (other.Id != mover.Id && other.IsAlive && other.Position.x == x && other.Position.y == y
+                    && TeamRelations.AreHostile(mover.Team, other.Team))
                     return true;
             }
             return false;

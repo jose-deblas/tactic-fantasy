@@ -24,6 +24,12 @@ namespace TacticFantasy.Domain.AI
             _combatResolver = combatResolver;
         }
 
+        /// <summary>Returns true if the two teams are hostile to each other.</summary>
+        public static bool AreHostile(Team a, Team b) => TeamRelations.AreHostile(a, b);
+
+        /// <summary>Returns true if the two teams are allied (same side).</summary>
+        public static bool AreAllied(Team a, Team b) => TeamRelations.AreAllied(a, b);
+
         public void DecideAction(IUnit unit, List<IUnit> allUnits, IGameMap map, IPathFinder pathFinder,
             out (int x, int y)? moveTarget, out IUnit attackTarget, out bool isHealAction, IFogOfWar fogOfWar = null)
         {
@@ -77,7 +83,7 @@ namespace TacticFantasy.Domain.AI
             // If fog is active, try to use last-known positions for non-visible opponents
             (int x, int y)? targetPos = null;
             var opponents = allUnits
-                .Where(u => u.Team != unit.Team && u.IsAlive)
+                .Where(u => AreHostile(unit.Team, u.Team) && u.IsAlive)
                 .ToList();
 
             if (fogOfWar != null)
@@ -126,15 +132,15 @@ namespace TacticFantasy.Domain.AI
             moveTarget = null;
             attackTarget = null;
 
-            var playerUnits = allUnits.Where(u => u.Team == Team.PlayerTeam && u.IsAlive).ToList();
+            var hostileUnits = allUnits.Where(u => AreHostile(unit.Team, u.Team) && u.IsAlive).ToList();
 
-            if (playerUnits.Count == 0)
+            if (hostileUnits.Count == 0)
                 return;
 
             // When fog is active, only attack visible targets
             var targetableUnits = fogOfWar != null
-                ? playerUnits.Where(u => fogOfWar.IsTileVisible(u.Position.x, u.Position.y, unit.Team)).ToList()
-                : playerUnits;
+                ? hostileUnits.Where(u => fogOfWar.IsTileVisible(u.Position.x, u.Position.y, unit.Team)).ToList()
+                : hostileUnits;
 
             var reachable = pathFinder.GetMovementRange(unit.Position.x, unit.Position.y, unit.CurrentStats.MOV, unit, map, allUnits);
 
@@ -155,7 +161,7 @@ namespace TacticFantasy.Domain.AI
             (int x, int y)? advanceTarget = null;
             if (fogOfWar != null)
             {
-                var visibleEnemies = playerUnits
+                var visibleEnemies = hostileUnits
                     .Where(u => fogOfWar.IsTileVisible(u.Position.x, u.Position.y, unit.Team))
                     .OrderBy(e => map.GetDistance(unit.Position.x, unit.Position.y, e.Position.x, e.Position.y))
                     .ToList();
@@ -166,7 +172,7 @@ namespace TacticFantasy.Domain.AI
             }
             else
             {
-                var closestEnemy = playerUnits
+                var closestEnemy = hostileUnits
                     .OrderBy(e => map.GetDistance(unit.Position.x, unit.Position.y, e.Position.x, e.Position.y))
                     .First();
                 advanceTarget = closestEnemy.Position;
@@ -192,7 +198,7 @@ namespace TacticFantasy.Domain.AI
             attackTarget = null;
             isHealAction = false;
 
-            var allyUnits = allUnits.Where(u => u.Team == Team.EnemyTeam && u.IsAlive && u.Id != unit.Id).ToList();
+            var allyUnits = allUnits.Where(u => AreAllied(unit.Team, u.Team) && u.IsAlive && u.Id != unit.Id).ToList();
             var injuredAllies = allyUnits.Where(u => u.CurrentHP < u.MaxHP).OrderBy(u => u.CurrentHP).ToList();
 
             if (injuredAllies.Count == 0)
@@ -401,7 +407,7 @@ namespace TacticFantasy.Domain.AI
         {
             moveTarget = null;
             var opponents = allUnits
-                .Where(u => u.Team != unit.Team && u.IsAlive)
+                .Where(u => AreHostile(unit.Team, u.Team) && u.IsAlive)
                 .ToList();
 
             if (opponents.Count == 0)
@@ -437,7 +443,7 @@ namespace TacticFantasy.Domain.AI
 
         private void UpdateLastKnownPositions(IUnit unit, List<IUnit> allUnits, IFogOfWar fogOfWar)
         {
-            foreach (var opponent in allUnits.Where(u => u.Team != unit.Team && u.IsAlive))
+            foreach (var opponent in allUnits.Where(u => AreHostile(unit.Team, u.Team) && u.IsAlive))
             {
                 if (fogOfWar.IsTileVisible(opponent.Position.x, opponent.Position.y, unit.Team))
                 {

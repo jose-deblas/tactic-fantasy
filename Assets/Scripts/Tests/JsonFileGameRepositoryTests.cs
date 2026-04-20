@@ -55,7 +55,7 @@ namespace TacticFantasy.Tests
             };
             var tm = new TurnManager();
             tm.Initialize(units);
-            if (targetPhase == Phase.EnemyPhase) tm.AdvancePhase();
+            if (targetPhase == Phase.EnemyPhase) { tm.AdvancePhase(); tm.AdvancePhase(); }
             return GameSnapshot.Capture(tm);
         }
 

@@ -56,6 +56,14 @@ namespace TacticFantasy.Domain.Units
 
         void ApplyStatBoost(int hp, int str, int mag, int skl, int spd, int lck, int def, int res, int mov);
 
+        // ── Guard stance ────────────────────────────────────────────────────
+        bool IsGuarding { get; }
+        void SetGuarding(bool guarding);
+
+        // ── Recruitment ─────────────────────────────────────────────────────
+        /// <summary>Recruits an AllyNPC unit to the player's team.</summary>
+        void Recruit();
+
         // ── Laguz transformation ────────────────────────────────────────────
         TransformGauge LaguzGauge { get; }
         bool IsLaguz { get; }
@@ -72,7 +80,7 @@ namespace TacticFantasy.Domain.Units
 
         public int Id { get; }
         public string Name { get; }
-        public Team Team { get; }
+        public Team Team { get; private set; }
         private IClassData _class;
         public IClassData Class => _class;
 
@@ -97,6 +105,22 @@ namespace TacticFantasy.Domain.Units
 
         private readonly List<ISkill> _equippedSkills = new List<ISkill>();
         public IReadOnlyList<ISkill> EquippedSkills => _equippedSkills.AsReadOnly();
+
+        // ── Guard stance ────────────────────────────────────────────────────
+        public bool IsGuarding { get; private set; }
+
+        public void SetGuarding(bool guarding)
+        {
+            IsGuarding = guarding;
+        }
+
+        // ── Recruitment ─────────────────────────────────────────────────────
+        public void Recruit()
+        {
+            if (Team != Team.AllyNPC)
+                throw new InvalidOperationException("Only AllyNPC units can be recruited.");
+            Team = Team.PlayerTeam;
+        }
 
         // ── Laguz transformation fields ─────────────────────────────────────
         public TransformGauge LaguzGauge { get; private set; }

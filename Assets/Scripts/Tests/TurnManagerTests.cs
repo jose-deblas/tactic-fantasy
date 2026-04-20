@@ -95,19 +95,28 @@ namespace TacticFantasy.Tests
         }
 
         [Test]
-        public void AdvancePhase_FromPlayerToEnemy_ChangesPhase()
+        public void AdvancePhase_FromPlayerToAlly_ChangesPhase()
         {
             Assert.AreEqual(Phase.PlayerPhase, _turnManager.CurrentPhase);
             _turnManager.AdvancePhase();
+            Assert.AreEqual(Phase.AllyPhase, _turnManager.CurrentPhase);
+        }
+
+        [Test]
+        public void AdvancePhase_FromAllyToEnemy_ChangesPhase()
+        {
+            _turnManager.AdvancePhase(); // Player → Ally
+            _turnManager.AdvancePhase(); // Ally → Enemy
             Assert.AreEqual(Phase.EnemyPhase, _turnManager.CurrentPhase);
         }
 
         [Test]
         public void AdvancePhase_FromEnemyToPlayer_IncreasesTurnCount()
         {
-            _turnManager.AdvancePhase();
+            _turnManager.AdvancePhase(); // Player → Ally
+            _turnManager.AdvancePhase(); // Ally → Enemy
             int turnBefore = _turnManager.TurnCount;
-            _turnManager.AdvancePhase();
+            _turnManager.AdvancePhase(); // Enemy → Player
             int turnAfter = _turnManager.TurnCount;
 
             Assert.AreEqual(turnBefore + 1, turnAfter);
@@ -170,9 +179,13 @@ namespace TacticFantasy.Tests
             playerUnit.ApplyStatus(new StatusEffect(StatusEffectType.Poison, 2));
             int hpBefore = playerUnit.CurrentHP;
 
-            // Advance from PlayerPhase → EnemyPhase (no tick yet)
+            // Advance from PlayerPhase → AllyPhase (no tick yet)
             _turnManager.AdvancePhase();
-            Assert.AreEqual(hpBefore, playerUnit.CurrentHP, "No tick should happen on Player→Enemy");
+            Assert.AreEqual(hpBefore, playerUnit.CurrentHP, "No tick should happen on Player→Ally");
+
+            // Advance from AllyPhase → EnemyPhase (no tick yet)
+            _turnManager.AdvancePhase();
+            Assert.AreEqual(hpBefore, playerUnit.CurrentHP, "No tick should happen on Ally→Enemy");
 
             // Advance from EnemyPhase → PlayerPhase (tick happens here)
             _turnManager.AdvancePhase();
@@ -207,8 +220,9 @@ namespace TacticFantasy.Tests
 
             Assert.AreEqual(2, turnManager.AllUnits.Count);
 
-            // Turn 1 → Turn 2: Player→Enemy→Player (TurnCount becomes 2)
-            turnManager.AdvancePhase(); // Player → Enemy
+            // Turn 1 → Turn 2: Player→Ally→Enemy→Player (TurnCount becomes 2)
+            turnManager.AdvancePhase(); // Player → Ally
+            turnManager.AdvancePhase(); // Ally → Enemy
             turnManager.AdvancePhase(); // Enemy → Player (TurnCount = 2, reinforcements checked)
 
             Assert.AreEqual(3, turnManager.AllUnits.Count);
@@ -238,7 +252,8 @@ namespace TacticFantasy.Tests
             var reinforcementService = new ReinforcementService(new MapLoader());
             turnManager.Initialize(units, null, null, reinforcementService, triggers);
 
-            // Advance once (turn 1 → 2)
+            // Advance once (turn 1 → 2): Player → Ally → Enemy → Player
+            turnManager.AdvancePhase();
             turnManager.AdvancePhase();
             turnManager.AdvancePhase();
 

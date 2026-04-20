@@ -30,6 +30,7 @@ namespace TacticFantasy.Adapters
         private HashSet<(int, int)> _currentMovementRange;
         private HashSet<(int, int)> _currentAttackRange;
 
+        private bool _isExecutingAllyTurn = false;
         private bool _isExecutingEnemyTurn = false;
         private bool _isShowingAttackRange = false;
         private bool _unitHasMoved = false;
@@ -53,6 +54,12 @@ namespace TacticFantasy.Adapters
         {
             if (_uiManager.IsTurnInterstitialOpen())
                 return;
+
+            if (_turnManager.CurrentPhase == Phase.AllyPhase && !_isExecutingAllyTurn)
+            {
+                _isExecutingAllyTurn = true;
+                StartCoroutine(ExecuteAllyPhase());
+            }
 
             if (_turnManager.CurrentPhase == Phase.EnemyPhase && !_isExecutingEnemyTurn)
             {
@@ -501,6 +508,54 @@ namespace TacticFantasy.Adapters
             {
                 _uiManager.ShowModalMenu();
             }
+        }
+
+        private System.Collections.IEnumerator ExecuteAllyPhase()
+        {
+            yield return new WaitForSeconds(0.3f);
+
+            var allyUnits = _allUnits.Where(u => u.Team == Team.AllyNPC && u.IsAlive).ToList();
+
+            foreach (var allyUnit in allyUnits)
+            {
+                _aiController.DecideAction(allyUnit, _allUnits, _gameMap, _pathFinder,
+                    out var moveTarget, out var attackTarget, out var isHealAction);
+
+                if (moveTarget.HasValue)
+                {
+                    var path = _pathFinder.FindPath(allyUnit.Position.x, allyUnit.Position.y,
+                        moveTarget.Value.Item1, moveTarget.Value.Item2, allyUnit.CurrentStats.MOV, allyUnit, _gameMap, _allUnits);
+
+                    if (path.Count > 0)
+                    {
+                        allyUnit.SetPosition(path[path.Count - 1].Item1, path[path.Count - 1].Item2);
+                    }
+                }
+
+                if (attackTarget != null)
+                {
+                    if (isHealAction && allyUnit.EquippedWeapon.Type == WeaponType.STAFF)
+                    {
+                        int healAmount = allyUnit.CurrentStats.MAG + 10;
+                        attackTarget.Heal(healAmount);
+                    }
+                    else
+                    {
+                        var result = _combatResolver.ResolveCombat(allyUnit, attackTarget, _gameMap);
+                        if (result.Hit)
+                        {
+                            attackTarget.TakeDamage(result.Damage);
+                        }
+                    }
+                }
+
+                _unitRenderer.UpdateAllUnits(_allUnits, _turnManager);
+                yield return new WaitForSeconds(0.3f);
+            }
+
+            _isExecutingAllyTurn = false;
+            _turnManager.AdvancePhase();
+            _uiManager.UpdatePhaseDisplay(_turnManager.CurrentPhase, _turnManager.TurnCount);
         }
 
         private System.Collections.IEnumerator ExecuteEnemyPhase()

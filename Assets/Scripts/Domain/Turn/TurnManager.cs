@@ -109,6 +109,21 @@ namespace TacticFantasy.Domain.Turn
                 // Tick Laguz gauges for player units at end of player phase
                 TickLaguzGauges(Team.PlayerTeam);
 
+                // Clear guard flags for ally NPC units (their phase is about to start)
+                ClearGuardFlags(Team.AllyNPC);
+
+                CurrentPhase = Phase.AllyPhase;
+                _unitsWhoActed.Clear();
+                _currentUnitIndex = 0;
+            }
+            else if (CurrentPhase == Phase.AllyPhase)
+            {
+                // Tick Laguz gauges for ally NPC units at end of ally phase
+                TickLaguzGauges(Team.AllyNPC);
+
+                // Clear guard flags for enemy units (their phase is about to start)
+                ClearGuardFlags(Team.EnemyTeam);
+
                 CurrentPhase = Phase.EnemyPhase;
                 _unitsWhoActed.Clear();
                 _currentUnitIndex = 0;
@@ -121,6 +136,9 @@ namespace TacticFantasy.Domain.Turn
                 // Tick status effects at end of enemy phase (= end of full turn)
                 foreach (var unit in _allUnits.Where(u => u.IsAlive))
                     unit.TickStatus();
+
+                // Clear guard flags for player units (their phase is about to start)
+                ClearGuardFlags(Team.PlayerTeam);
 
                 CurrentPhase = Phase.PlayerPhase;
                 _unitsWhoActed.Clear();
@@ -175,6 +193,12 @@ namespace TacticFantasy.Domain.Turn
         {
             var alivePlayerUnits = _allUnits.Where(u => u.Team == Team.PlayerTeam && u.IsAlive && u.CanAct);
             return alivePlayerUnits.All(u => _unitsWhoActed.Contains(u.Id));
+        }
+
+        public bool HaveAllAllyUnitsActed()
+        {
+            var aliveAllyUnits = _allUnits.Where(u => u.Team == Team.AllyNPC && u.IsAlive && u.CanAct);
+            return aliveAllyUnits.All(u => _unitsWhoActed.Contains(u.Id));
         }
 
         public bool CanRefreshTarget(IUnit refresher, IUnit target)
@@ -238,6 +262,15 @@ namespace TacticFantasy.Domain.Turn
             return refreshed;
         }
 
+        /// <summary>Clears guard flags for all alive units on the given team.</summary>
+        private void ClearGuardFlags(Team team)
+        {
+            foreach (var unit in _allUnits.Where(u => u.IsAlive && u.Team == team))
+            {
+                unit.SetGuarding(false);
+            }
+        }
+
         /// <summary>Ticks transform gauges for all alive Laguz units on the given team.</summary>
         private void TickLaguzGauges(Team team)
         {
@@ -258,7 +291,13 @@ namespace TacticFantasy.Domain.Turn
 
         private List<IUnit> GetPhaseUnits()
         {
-            return _allUnits.Where(u => u.Team == (CurrentPhase == Phase.PlayerPhase ? Team.PlayerTeam : Team.EnemyTeam) && u.IsAlive)
+            var team = CurrentPhase switch
+            {
+                Phase.PlayerPhase => Team.PlayerTeam,
+                Phase.AllyPhase => Team.AllyNPC,
+                _ => Team.EnemyTeam
+            };
+            return _allUnits.Where(u => u.Team == team && u.IsAlive)
                 .ToList();
         }
     }

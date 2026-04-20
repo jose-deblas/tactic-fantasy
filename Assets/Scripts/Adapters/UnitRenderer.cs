@@ -156,9 +156,12 @@ namespace TacticFantasy.Adapters
         private Color GetUnitColor(IUnit unit, ITurnManager turnManager)
         {
             // Tinte base por equipo
-            Color baseColor = unit.Team == Team.PlayerTeam
-                ? new Color(0.2f, 0.4f, 1f)   // azul
-                : new Color(1f,   0.2f, 0.2f); // rojo
+            Color baseColor = unit.Team switch
+            {
+                Team.PlayerTeam => new Color(0.2f, 0.4f, 1f),   // azul
+                Team.AllyNPC    => new Color(0.2f, 0.8f, 0.2f), // verde
+                _               => new Color(1f,   0.2f, 0.2f)  // rojo
+            };
 
             // Greyout si la unidad ya actuó
             if (turnManager != null && turnManager.HasUnitActed(unit.Id))

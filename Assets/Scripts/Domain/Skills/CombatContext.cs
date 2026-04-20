@@ -77,10 +77,12 @@ namespace TacticFantasy.Domain.Skills
                 atkStats.RES + attackerSupportBonus.Defense, atkStats.MOV);
 
             var defStats = defender.CurrentStats;
+            int guardDef = defender.IsGuarding ? 2 : 0;
+            int guardRes = defender.IsGuarding ? 2 : 0;
             DefenderEffectiveStats = new CharacterStats(
                 defStats.HP, defStats.STR + defenderSupportBonus.Attack, defStats.MAG + defenderSupportBonus.Attack,
-                defStats.SKL, defStats.SPD, defStats.LCK, defStats.DEF + defenderSupportBonus.Defense,
-                defStats.RES + defenderSupportBonus.Defense, defStats.MOV);
+                defStats.SKL, defStats.SPD, defStats.LCK, defStats.DEF + defenderSupportBonus.Defense + guardDef,
+                defStats.RES + defenderSupportBonus.Defense + guardRes, defStats.MOV);
         }
     }
 }

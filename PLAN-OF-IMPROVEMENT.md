@@ -4,7 +4,7 @@
 >
 > **Architecture Rule**: All gameplay logic lives in `Domain/`. Adapters stay thin. Every feature gets TDD with EditMode NUnit tests.
 >
-> **Current State (v3.0)**: Support / Affinity System + Biorhythm (2026-04-20)
+> **Current State (v3.1)**: Shove / Guard / Steal / Trade / NPC Units (2026-04-20)
 
 ---
 
@@ -397,6 +397,8 @@ Bonuses are summed per support rank (C=1x, B=2x, A=3x) and per adjacent ally.
 
 ## Phase 8: Shove/Smite, Guard, Stealing, Trading, NPC Units
 
+> Implemented in v3.1 (2026-04-20). `ShoveService` (shove 1 tile, smite 2 tiles for Fighter/Warrior/Reaver). `Guard` stance (+2 DEF/+2 RES, cleared at phase start). `StealService` for Thief/Rogue classes. `TradeService` for adjacent allied item swaps. `Team.AllyNPC` + `Phase.AllyPhase` for three-phase cycle (Player→Ally→Enemy). `TeamRelations` for alliance checking. `RecruitmentCondition` for NPC recruitment. AI generalized with hostile/allied targeting.
+
 Smaller mechanics that can be batched together.
 
 ### 8A. Shove and Smite
@@ -561,6 +563,7 @@ Phase 10: Forging + Elevation + Polish (depends on Phase 2, 5, 6)
 **Last Updated**: 2026-04-20
 **Target**: Fire Emblem: Radiant Dawn parity
 **Approach**: TDD, incremental phases, playable at each milestone
+**Latest**: Phase 8 complete — Shove/Smite, Guard, Stealing, Trading, NPC Units
 
 ## Phase Completion Status
 
@@ -574,6 +577,6 @@ Phase 10: Forging + Elevation + Polish (depends on Phase 2, 5, 6)
 | 5 | Base / Shops + BEXP | ✅ Done (v2.8) |
 | 6 | Map Improvements | ✅ Done (v2.9) |
 | 7 | Support / Affinity + Biorhythm | ✅ Done (v3.0) |
-| 8 | Shove / Guard / Steal / Trade / NPC | ❌ Not started |
+| 8 | Shove / Guard / Steal / Trade / NPC | ✅ Done (v3.1) |
 | 9 | Magic Triangle + Weather + Narrative | ❌ Not started |
 | 10 | Weapon Forging + Elevation + Polish | ❌ Not started |

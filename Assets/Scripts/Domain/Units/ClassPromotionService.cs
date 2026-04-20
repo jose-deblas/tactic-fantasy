@@ -21,6 +21,7 @@ namespace TacticFantasy.Domain.Units
                 { "Mage",        ClassDataFactory.CreateSage        },
                 { "Archer",      ClassDataFactory.CreateSniper      },
                 { "Cleric",      ClassDataFactory.CreateBishop      },
+                { "Thief",       ClassDataFactory.CreateRogue       },
                 // Tier 2 → Tier 3
                 { "Swordmaster", ClassDataFactory.CreateTrueblade   },
                 { "General",     ClassDataFactory.CreateMarshall    },

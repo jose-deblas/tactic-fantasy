@@ -316,6 +316,31 @@ namespace TacticFantasy.Domain.Units
             );
         }
 
+        public static IClassData CreateThief()
+        {
+            return new ClassData(
+                "Thief",
+                new CharacterStats(17, 5, 0, 9, 13, 6, 4, 1, 7),
+                new CharacterStats(28, 16, 5, 26, 28, 22, 14, 10, 9),
+                new CharacterStats(40, 25, 0, 50, 60, 35, 15, 10, 0),
+                WeaponType.SWORD,
+                MoveType.Infantry
+            );
+        }
+
+        public static IClassData CreateRogue()
+        {
+            return new ClassData(
+                "Rogue",
+                new CharacterStats(20, 8, 0, 14, 17, 8, 6, 3, 7),
+                new CharacterStats(34, 22, 5, 30, 34, 28, 18, 14, 9),
+                new CharacterStats(45, 30, 0, 55, 65, 40, 18, 15, 0),
+                WeaponType.SWORD,
+                MoveType.Infantry,
+                tier: 2
+            );
+        }
+
         public static IClassData[] GetAllClasses()
         {
             return new IClassData[]
@@ -328,12 +353,14 @@ namespace TacticFantasy.Domain.Units
                 CreateCleric(),
                 CreateHeron(),
                 CreateDancer(),
+                CreateThief(),
                 CreateSwordmaster(),
                 CreateGeneral(),
                 CreateWarrior(),
                 CreateSage(),
                 CreateSniper(),
                 CreateBishop(),
+                CreateRogue(),
                 CreateTrueblade(),
                 CreateMarshall(),
                 CreateReaver(),

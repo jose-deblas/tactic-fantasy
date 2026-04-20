@@ -122,7 +122,8 @@ namespace TacticFantasy.Tests
                 MakeUnit(2, "Enemy", Team.EnemyTeam)
             };
             var tm = MakeTurnManager(units);
-            tm.AdvancePhase(); // now EnemyPhase
+            tm.AdvancePhase(); // Player → Ally
+            tm.AdvancePhase(); // Ally → Enemy (now EnemyPhase)
 
             svc.Save(tm);
             var loaded = svc.Load();

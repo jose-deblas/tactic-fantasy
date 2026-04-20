@@ -71,6 +71,8 @@
     <Compile Include="Assets/Scripts/Tests/CombatResolverTests.cs" />
     <Compile Include="Assets/Scripts/Tests/BexpDistributorTests.cs" />
     <Compile Include="Assets/Scripts/Domain/Turn/TurnManager.cs" />
+    <Compile Include="Assets/Scripts/Domain/Support/SupportTracker.cs" />
+    <Compile Include="Assets/Scripts/Domain/Support/Biorhythm.cs" />
     <Compile Include="Assets/Scripts/Tests/InventoryTests.cs" />
     <Compile Include="Assets/Scripts/Tests/ClassPromotionTests.cs" />
     <Compile Include="Assets/Scripts/Domain/Combat/CombatResolver.cs" />
@@ -144,11 +146,13 @@
     <Compile Include="Assets/Scripts/Tests/VictoryConditionTests.cs" />
     <Compile Include="Assets/Scripts/Domain/Skills/ISkill.cs" />
     <Compile Include="Assets/Scripts/Tests/MultiWeaponClassTests.cs" />
+    <Compile Include="Assets/Scripts/Domain/Support/SupportBonus.cs" />
     <Compile Include="Assets/Scripts/Domain/Chapter/ShopService.cs" />
     <Compile Include="Assets/Scripts/Tests/WeaponTriangleTests.cs" />
     <Compile Include="Assets/Scripts/Tests/JsonFileGameRepositoryTests.cs" />
     <Compile Include="Assets/Scripts/Tests/BasePhaseTests.cs" />
     <Compile Include="Assets/Scripts/Tests/TurnManagerTests.cs" />
+    <Compile Include="Assets/Scripts/Domain/Support/SupportLevel.cs" />
     <Compile Include="Assets/Scripts/Domain/Combat/WeaponTriangle.cs" />
     <Compile Include="Assets/Scripts/Domain/Weapons/WeaponRank.cs" />
     <Compile Include="Assets/Scripts/Tests/PathFinderTests.cs" />

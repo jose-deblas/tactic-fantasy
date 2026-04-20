@@ -4,7 +4,7 @@
 >
 > **Architecture Rule**: All gameplay logic lives in `Domain/`. Adapters stay thin. Every feature gets TDD with EditMode NUnit tests.
 >
-> **Current State (v2.9)**: Map Improvements - Designed Maps, Reinforcements, Fog of War, New Terrain (2026-04-19)
+> **Current State (v3.0)**: Support / Affinity System + Biorhythm (2026-04-20)
 
 ---
 
@@ -347,6 +347,8 @@ Add to `TerrainType` enum and `TerrainProperties`:
 
 ## Phase 7: Support / Affinity System + Biorhythm
 
+> Implemented in v3.0 (2026-04-20)
+
 ### 7A. Support System
 
 | New File | Purpose |
@@ -556,7 +558,7 @@ Phase 10: Forging + Elevation + Polish (depends on Phase 2, 5, 6)
 
 ---
 
-**Last Updated**: 2026-04-19
+**Last Updated**: 2026-04-20
 **Target**: Fire Emblem: Radiant Dawn parity
 **Approach**: TDD, incremental phases, playable at each milestone
 
@@ -571,7 +573,7 @@ Phase 10: Forging + Elevation + Polish (depends on Phase 2, 5, 6)
 | 4b | Heron Cross-Pattern Refresh | ✅ Done (v2.7) |
 | 5 | Base / Shops + BEXP | ✅ Done (v2.8) |
 | 6 | Map Improvements | ✅ Done (v2.9) |
-| 7 | Support / Affinity + Biorhythm | ❌ Not started |
+| 7 | Support / Affinity + Biorhythm | ✅ Done (v3.0) |
 | 8 | Shove / Guard / Steal / Trade / NPC | ❌ Not started |
 | 9 | Magic Triangle + Weather + Narrative | ❌ Not started |
 | 10 | Weapon Forging + Elevation + Polish | ❌ Not started |

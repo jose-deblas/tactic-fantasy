@@ -1,8 +1,11 @@
 using NUnit.Framework;
 using System.Collections.Generic;
+using TacticFantasy.Domain.Items;
 using TacticFantasy.Domain.Save;
+using TacticFantasy.Domain.Skills;
 using TacticFantasy.Domain.Units;
 using TacticFantasy.Domain.Turn;
+using TacticFantasy.Domain.Weapons;
 using TacticFantasy.Domain;
 
 namespace DomainTests
@@ -14,12 +17,12 @@ namespace DomainTests
         public string Name { get; set; }
         public Team Team { get; set; }
         public IClassData Class => null;
-        public CharacterStats CurrentStats => null;
+        public CharacterStats CurrentStats => default;
         public int CurrentHP { get; set; }
         public int MaxHP => 10;
         public (int x, int y) Position { get; set; }
         public IWeapon EquippedWeapon => null;
-        public Inventory Inventory { get; set; } = new Inventory();
+        public Inventory Inventory => new Inventory();
         public bool CanEquip(IWeapon weapon) => false;
         public bool IsAlive => CurrentHP > 0;
         public StatusEffect ActiveStatus { get; set; }
@@ -28,6 +31,9 @@ namespace DomainTests
         public int Level { get; set; }
         public int Experience { get; set; }
         public IReadOnlyList<ISkill> EquippedSkills => new List<ISkill>().AsReadOnly();
+        public TransformGauge LaguzGauge => null;
+        public bool IsLaguz => false;
+        public bool IsTransformed => false;
 
         public void TakeDamage(int damage) { CurrentHP = System.Math.Max(0, CurrentHP - damage); }
         public void Heal(int amount) { CurrentHP = System.Math.Min(MaxHP, CurrentHP + amount); }
@@ -37,11 +43,15 @@ namespace DomainTests
         public void ClearStatus() { ActiveStatus = null; }
         public void TickStatus() { }
         public bool GainExperience(int amount, System.Random rng = null) => false;
+        public bool GainLevelBexp() => false;
         public void ChangeClass(IClassData newClass) { }
         public void LearnSkill(ISkill skill) { }
         public void EquipSkill(ISkill skill) { }
         public void UnequipSkill(ISkill skill) { }
         public void ApplyStatBoost(int hp, int str, int mag, int skl, int spd, int lck, int def, int res, int mov) { }
+        public void Transform() { }
+        public void Revert() { }
+        public bool TickTransformGauge() => false;
     }
 
     class FakeTurnManager : ITurnManager
@@ -68,6 +78,7 @@ namespace DomainTests
         public bool HaveAllPlayerUnitsActed() => false;
         public bool CanRefreshTarget(IUnit refresher, IUnit target) => false;
         public void RefreshUnit(int targetUnitId) { }
+        public int RefreshCross(IUnit refresher, TacticFantasy.Domain.Map.IGameMap map) => 0;
     }
 
     public class GameSaveServiceTests
@@ -112,8 +123,7 @@ namespace DomainTests
             var u = new FakeUnitForSave { Id = 7, Name = "StunGuy", Team = Team.EnemyTeam, CurrentHP = 6, Position = (1,1), Level = 1, Experience = 0 };
 
             // Use a domain status effect implementation to exercise capture logic
-            var stun = new TacticFantasy.Domain.StunEffect(duration: 2f);
-            u.ActiveStatus = stun;
+            u.ActiveStatus = new StatusEffect(StatusEffectType.Stun, 2);
 
             var tm = new FakeTurnManager(new List<IUnit> { u });
             svc.Save(tm);
@@ -124,7 +134,7 @@ namespace DomainTests
 
             var snap = loaded.Units[0];
             // Snapshot should record a non-none status and a positive remaining turns value
-            Assert.AreNotEqual(TacticFantasy.Domain.StatusEffectType.None, snap.StatusType);
+            Assert.AreNotEqual(StatusEffectType.None, snap.StatusType);
             Assert.Greater(snap.StatusRemainingTurns, 0);
         }
 
@@ -138,6 +148,29 @@ namespace DomainTests
             var loaded = svc.Load();
 
             Assert.IsNull(loaded, "Load should return null when repository has no save data");
+        }
+
+        [Test]
+        public void SaveOverwritesPreviousSave()
+        {
+            var repo = new InMemoryGameRepository();
+            var svc = new GameSaveService(repo);
+
+            var u1 = new FakeUnitForSave { Id = 1, Name = "First", Team = Team.PlayerTeam, CurrentHP = 10, Position = (0,0), Level = 1, Experience = 0 };
+            var tm1 = new FakeTurnManager(new System.Collections.Generic.List<IUnit> { u1 });
+            // First save
+            svc.Save(tm1);
+
+            var u2 = new FakeUnitForSave { Id = 2, Name = "Second", Team = Team.PlayerTeam, CurrentHP = 5, Position = (1,1), Level = 2, Experience = 10 };
+            var tm2 = new FakeTurnManager(new System.Collections.Generic.List<IUnit> { u2 });
+            // Second save should overwrite the first
+            svc.Save(tm2);
+
+            var loaded = svc.Load();
+            Assert.IsNotNull(loaded);
+            Assert.AreEqual(1, loaded.Units.Count);
+            Assert.AreEqual(2, loaded.Units[0].Id);
+            Assert.AreEqual("Second", loaded.Units[0].Name);
         }
     }
 }

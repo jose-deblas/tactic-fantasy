@@ -4,6 +4,21 @@
 
 ## Changelog
 
+### v3.0 - Support / Affinity System + Biorhythm (2026-04-20)
+
+**Support / Affinity (7A)**
+- `Domain/Support/Affinity.cs` — Affinity enum and affinity-based bonuses
+- `Domain/Support/SupportBonus.cs` — Support bonus table and lookup
+- `Domain/Support/SupportTracker.cs` — Tracks support points, ranks (C/B/A), adjacency accrual
+- `IUnit` / `Unit.cs` — Add `Affinity` property; `CombatResolver` applies support bonuses for adjacent allies
+- **SupportBonusTests.cs**, **SupportTrackerTests.cs**
+
+**Biorhythm (7B)**
+- `Domain/Units/Biorhythm.cs` — Per-unit sine-wave biorhythm (period 5-12 turns), impacts hit/avoid by ±10
+- `Unit.cs` — Adds `Biorhythm` property; ticks each turn
+- `CombatResolver` — Applies biorhythm modifier to hit/avoid
+- **BiorhythmTests.cs**, **BiorhythmCombatTests.cs**
+
 ### v2.9 - Map Improvements: Designed Maps, Reinforcements, Fog of War, New Terrain (2026-04-19)
 
 **New terrain types (6D)**
@@ -62,7 +77,6 @@
 ### v2.7 - Laguz / Shapeshifters (2026-04-19)
 - **TransformGauge.cs** (`Domain/Units/`) — MaxGauge=30. `Tick(isTransformed)` fills by fillRate when untransformed, drains by drainRate when transformed; auto-returns true when state-change threshold is crossed. `FillToMax()` (Laguz Stone) and `AddPoints(n)` (Olivi Grass) for consumable interactions
 - **LaguzClassData.cs** (`Domain/Units/`) — Extends `IClassData`. Stores separate `TransformedStats` / `UntransformedStats`, `GaugeFillRate`, `GaugeDrainRate`, `Race` (enum `LaguzRace`), and dual MoveType (untransformed vs transformed)
-- **LaguzClassDataFactory** — 8 Laguz races with RD-accurate stats: Cat (+8/turn, infantry), Tiger (+5/turn, infantry), Lion (+3/turn, infantry), Hawk (+5/turn, infantry→flying on transform), Raven (+7/turn, infantry→flying), Red Dragon (+2/turn, infantry), White Dragon (+1/turn, infantry), Heron (+4/turn, infantry→flying). All drain 2/turn while transformed
 - **LaguzWeaponFactory.cs** (`Domain/Weapons/`) — Race-specific natural weapons (Strike, Claw, Fang, Talon, Beak, Breath) all as `WeaponType.STRIKE`. Breath is Magical; the rest are Physical. `CreateForRace(race)` picks the correct weapon automatically
 - **LaguzItemFactory.cs** (`Domain/Items/`) — Laguz Stone (1 use, fills gauge to 30), Olivi Grass (3 uses, +15 gauge points)
 - **Unit.cs** — Added `InitLaguzGauge(fillRate, drainRate, initial)`, `LaguzGauge`, `IsLaguz`, `IsTransformed`, `Transform()` (swaps to transformed stats and MoveType), `Revert()` (swaps back), `TickTransformGauge()` (ticks gauge and auto-transforms/reverts when full/empty)
@@ -99,7 +113,7 @@
 - **ClassData.cs** — `WeaponType` replaced by `UsableWeaponTypes` (IReadOnlyList). `WeaponType` kept as computed property (primary weapon) for backward compat. Promoted classes updated: General (Lance+Sword), Warrior (Axe+Bow), Sage (Fire+Staff), Bishop (Staff+Fire)
 - **UnitSnapshot.cs** — Now captures full inventory (`InventoryItemNames`) instead of single weapon. Backward-compatible `Rebuild` overload for old save format
 - **JsonFileGameRepository.cs** — DTO updated with `InventoryItems` list, backward compat with old `WeaponName` field on load
-- **UIManager.cs** — Version label ("v2.5") displayed in bottom-right corner, semi-transparent
+- **UIManager.cs** — Version label (`"v2.5"`) displayed in bottom-right corner, semi-transparent
 - 4 new test files: `InventoryTests.cs`, `ConsumableItemTests.cs`, `UnitInventoryTests.cs`, `MultiWeaponClassTests.cs`
 
 ### v2.4 - AI Self-Preservation: Retreat to Fort (2026-04-18)
@@ -185,8 +199,8 @@ For questions about architecture, code structure, or how specific systems work, 
 ---
 
 **Project Status**: ✅ Feature Complete & Ready to Play
-**Version**: 2.0.0
-**Build Date**: 2026-04-12
+**Version**: 3.0.0
+**Build Date**: 2026-04-20
 **Architecture**: Domain-Driven Design + Hexagonal Architecture
 **Code Quality**: SOLID Principles, Clean Code standards
 - feat(IA): AI prefers higher-defense terrain when choosing attack position. Added test to verify AIController selects Fort tiles when scores tie.
@@ -194,3 +208,6 @@ For questions about architecture, code structure, or how specific systems work, 
 - test(technical): added GameSaveService load-null test to assert Load() returns null when repository has no save
 - dev(extras): added run-tests.sh convenience script to run DomainTests from the terminal
 - chore(extras): improved run-tests.sh to detect missing build artifacts, run dotnet build automatically, provide a helpful error message when the dotnet CLI is not present, and accept an optional filter argument to run a subset of tests
+
+- test(technical): added SaveOverwritesPreviousSave to assert subsequent saves replace prior snapshot
+- feat(support): Added Support/Affinity system and Biorhythm; tests.

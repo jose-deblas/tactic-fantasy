@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using TacticFantasy.Domain.Map;
+using TacticFantasy.Domain.Support;
 using TacticFantasy.Domain.Units;
 
 namespace TacticFantasy.Domain.Skills
@@ -40,7 +41,11 @@ namespace TacticFantasy.Domain.Skills
         public bool CoronaActive { get; set; }
         public List<string> ActivatedSkills { get; }
 
-        public CombatContext(IUnit attacker, IUnit defender, IGameMap map, Random rng)
+        public SupportBonus AttackerSupportBonus { get; set; }
+        public SupportBonus DefenderSupportBonus { get; set; }
+
+        public CombatContext(IUnit attacker, IUnit defender, IGameMap map, Random rng,
+            SupportBonus attackerSupportBonus = default, SupportBonus defenderSupportBonus = default)
         {
             Attacker = attacker;
             Defender = defender;
@@ -60,9 +65,22 @@ namespace TacticFantasy.Domain.Skills
             FlareActive = false;
             DeadeyeActive = false;
             CoronaActive = false;
-            AttackerEffectiveStats = attacker.CurrentStats;
-            DefenderEffectiveStats = defender.CurrentStats;
+            AttackerSupportBonus = attackerSupportBonus;
+            DefenderSupportBonus = defenderSupportBonus;
             ActivatedSkills = new List<string>();
+
+            // Apply support bonuses to effective stats
+            var atkStats = attacker.CurrentStats;
+            AttackerEffectiveStats = new CharacterStats(
+                atkStats.HP, atkStats.STR + attackerSupportBonus.Attack, atkStats.MAG + attackerSupportBonus.Attack,
+                atkStats.SKL, atkStats.SPD, atkStats.LCK, atkStats.DEF + attackerSupportBonus.Defense,
+                atkStats.RES + attackerSupportBonus.Defense, atkStats.MOV);
+
+            var defStats = defender.CurrentStats;
+            DefenderEffectiveStats = new CharacterStats(
+                defStats.HP, defStats.STR + defenderSupportBonus.Attack, defStats.MAG + defenderSupportBonus.Attack,
+                defStats.SKL, defStats.SPD, defStats.LCK, defStats.DEF + defenderSupportBonus.Defense,
+                defStats.RES + defenderSupportBonus.Defense, defStats.MOV);
         }
     }
 }

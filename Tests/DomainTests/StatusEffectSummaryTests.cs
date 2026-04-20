@@ -10,7 +10,7 @@ namespace DomainTests
             public string Name { get; } = "Dummy";
             public float Duration { get; private set; }
             public bool IsExpired => Duration <= 0f;
-            public void Tick(float deltaTime, IUnit target) { Duration -= deltaTime; }
+            public void Tick(float deltaTime, IStatusTarget target) { Duration -= deltaTime; }
 
             public DummyEffect(float duration) { Duration = duration; }
         }
@@ -22,7 +22,7 @@ namespace DomainTests
             var s = StatusEffectSummary.From(e);
             Assert.AreEqual("Dummy (5.00s)", s.ToString());
 
-            e.Tick(1.2345f);
+            e.Tick(1.2345f, null);
             s = StatusEffectSummary.From(e);
             Assert.AreEqual("Dummy (3.77s)", s.ToString());
         }
@@ -31,7 +31,7 @@ namespace DomainTests
         public void SummaryShowsExpiredWhenDurationZeroOrLess()
         {
             var e = new DummyEffect(1f);
-            e.Tick(1f);
+            e.Tick(1f, null);
             var s = StatusEffectSummary.From(e);
             Assert.AreEqual("Dummy (expired)", s.ToString());
 

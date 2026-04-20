@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using TacticFantasy.Domain.Map;
 using TacticFantasy.Domain.Skills;
+using TacticFantasy.Domain.Support;
 using TacticFantasy.Domain.Units;
 using TacticFantasy.Domain.Weapons;
 
@@ -25,7 +26,13 @@ namespace TacticFantasy.Domain.Combat
 
         public CombatResult ResolveCombat(IUnit attacker, IUnit defender, IGameMap map)
         {
-            var ctx = new CombatContext(attacker, defender, map, _rng);
+            return ResolveCombat(attacker, defender, map, SupportBonus.Zero, SupportBonus.Zero);
+        }
+
+        public CombatResult ResolveCombat(IUnit attacker, IUnit defender, IGameMap map,
+            SupportBonus attackerSupportBonus, SupportBonus defenderSupportBonus)
+        {
+            var ctx = new CombatContext(attacker, defender, map, _rng, attackerSupportBonus, defenderSupportBonus);
 
             // Phase 1: Apply passive skills (Resolve, Paragon)
             ApplyPassiveSkills(ctx, attacker, isAttacker: true);
@@ -249,7 +256,9 @@ namespace TacticFantasy.Domain.Combat
             CharacterStats strikerStats = striker == ctx.Attacker ? ctx.AttackerEffectiveStats : ctx.DefenderEffectiveStats;
             CharacterStats targetStats = target == ctx.Attacker ? ctx.AttackerEffectiveStats : ctx.DefenderEffectiveStats;
 
-            bool hit = CalculateHitWithStats(strikerStats, targetStats, striker, target, ctx.Map);
+            SupportBonus strikerSupport = striker == ctx.Attacker ? ctx.AttackerSupportBonus : ctx.DefenderSupportBonus;
+            SupportBonus targetSupport = target == ctx.Attacker ? ctx.AttackerSupportBonus : ctx.DefenderSupportBonus;
+            bool hit = CalculateHitWithStats(strikerStats, targetStats, striker, target, ctx.Map, strikerSupport.Hit, targetSupport.Avoid);
             bool crit = false;
             int damage = 0;
 
@@ -395,9 +404,10 @@ namespace TacticFantasy.Domain.Combat
             return Math.Max(0, attackPower - defensePower);
         }
 
-        private bool CalculateHitWithStats(CharacterStats attackerStats, CharacterStats defenderStats, IUnit attacker, IUnit defender, IGameMap map)
+        private bool CalculateHitWithStats(CharacterStats attackerStats, CharacterStats defenderStats, IUnit attacker, IUnit defender, IGameMap map,
+            int supportHitBonus = 0, int supportAvoidBonus = 0)
         {
-            int hitRate = CalculateHitRateWithStats(attackerStats, defenderStats, attacker, defender, map);
+            int hitRate = CalculateHitRateWithStats(attackerStats, defenderStats, attacker, defender, map, supportHitBonus, supportAvoidBonus);
             hitRate = Math.Max(0, Math.Min(100, hitRate));
 
             int roll1 = _rng.Next(100);
@@ -455,15 +465,18 @@ namespace TacticFantasy.Domain.Combat
             return defense;
         }
 
-        private int CalculateHitRateWithStats(CharacterStats attackerStats, CharacterStats defenderStats, IUnit attacker, IUnit defender, IGameMap map)
+        private int CalculateHitRateWithStats(CharacterStats attackerStats, CharacterStats defenderStats, IUnit attacker, IUnit defender, IGameMap map,
+            int supportHitBonus = 0, int supportAvoidBonus = 0)
         {
             int hit = (attackerStats.SKL * 2) + (attackerStats.LCK / 2) + attacker.EquippedWeapon.Hit;
             var (_, triangleHitBonus) = WeaponTriangle.GetTriangleModifiers(attacker.EquippedWeapon, defender.EquippedWeapon);
             hit += triangleHitBonus;
+            hit += supportHitBonus;
 
             int defenderAS = CalculateAttackSpeedWithStats(defenderStats, defender);
             int avoid = (defenderAS * 2) + defenderStats.LCK +
                         TerrainProperties.GetAvoidBonus(map.GetTile(defender.Position.x, defender.Position.y).Terrain);
+            avoid += supportAvoidBonus;
 
             return hit - avoid;
         }

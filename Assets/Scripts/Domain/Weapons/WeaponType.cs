@@ -6,6 +6,8 @@ namespace TacticFantasy.Domain.Weapons
         LANCE,
         AXE,
         FIRE,
+        WIND,
+        THUNDER,
         BOW,
         STAFF,
         REFRESH,

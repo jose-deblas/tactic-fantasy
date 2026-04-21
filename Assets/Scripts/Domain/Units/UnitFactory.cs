@@ -51,6 +51,16 @@ namespace TacticFantasy.Domain.Units
             return new Weapon("Fire", WeaponType.FIRE, DamageType.Magical, 5, 4, 85, 0, 1, 2);
         }
 
+        public static IWeapon CreateWindTome()
+        {
+            return new Weapon("Wind", WeaponType.WIND, DamageType.Magical, 4, 3, 90, 0, 1, 2);
+        }
+
+        public static IWeapon CreateThunderTome()
+        {
+            return new Weapon("Thunder", WeaponType.THUNDER, DamageType.Magical, 6, 6, 80, 0, 1, 2);
+        }
+
         public static IWeapon CreateIronBow()
         {
             return new Weapon("Iron Bow", WeaponType.BOW, DamageType.Physical, 6, 5, 85, 0, 2, 2);
@@ -128,6 +138,38 @@ namespace TacticFantasy.Domain.Units
             return new Weapon("Brave Axe", WeaponType.AXE, DamageType.Physical, 9, 14, 60, 0, 1, 1, uses: 20, isBrave: true, requiredRank: WeaponRank.B);
         }
 
+        // ── Wind / Thunder tiers ─────────────────────────────────────────────
+
+        public static IWeapon CreateSteelWindTome()
+        {
+            return new Weapon("Elwind", WeaponType.WIND, DamageType.Magical, 7, 5, 85, 0, 1, 2, uses: 25, requiredRank: WeaponRank.D);
+        }
+
+        public static IWeapon CreateSilverWindTome()
+        {
+            return new Weapon("Tornado", WeaponType.WIND, DamageType.Magical, 10, 7, 80, 0, 1, 2, uses: 20, requiredRank: WeaponRank.A);
+        }
+
+        public static IWeapon CreateSteelThunderTome()
+        {
+            return new Weapon("Elthunder", WeaponType.THUNDER, DamageType.Magical, 9, 8, 75, 0, 1, 2, uses: 25, requiredRank: WeaponRank.D);
+        }
+
+        public static IWeapon CreateSilverThunderTome()
+        {
+            return new Weapon("Thoron", WeaponType.THUNDER, DamageType.Magical, 12, 10, 70, 0, 1, 2, uses: 20, requiredRank: WeaponRank.A);
+        }
+
+        public static IWeapon CreateSteelFireTome()
+        {
+            return new Weapon("Elfire", WeaponType.FIRE, DamageType.Magical, 8, 6, 80, 0, 1, 2, uses: 25, requiredRank: WeaponRank.D);
+        }
+
+        public static IWeapon CreateSilverFireTome()
+        {
+            return new Weapon("Arcfire", WeaponType.FIRE, DamageType.Magical, 11, 8, 75, 0, 1, 2, uses: 20, requiredRank: WeaponRank.A);
+        }
+
         // ── Durability variants ───────────────────────────────────────────────
         // These factories create weapons with finite uses for richer gameplay.
 
@@ -169,6 +211,8 @@ namespace TacticFantasy.Domain.Units
                 WeaponType.LANCE => CreateIronLance(),
                 WeaponType.AXE => CreateIronAxe(),
                 WeaponType.FIRE => CreateFireTome(),
+                WeaponType.WIND => CreateWindTome(),
+                WeaponType.THUNDER => CreateThunderTome(),
                 WeaponType.BOW => CreateIronBow(),
                 WeaponType.STAFF => CreateHealStaff(),
                 WeaponType.REFRESH => CreateRefreshStaff(),

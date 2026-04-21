@@ -47,6 +47,7 @@ namespace TacticFantasy.Domain.Map
         public List<UnitPlacement> EnemyPlacements { get; }
         public List<ChestPlacement> Chests { get; }
         public IVictoryCondition VictoryCondition { get; }
+        public Weather Weather { get; }
 
         public MapDefinition(
             string name,
@@ -56,7 +57,8 @@ namespace TacticFantasy.Domain.Map
             List<UnitPlacement> playerPlacements,
             List<UnitPlacement> enemyPlacements,
             IVictoryCondition victoryCondition = null,
-            List<ChestPlacement> chests = null)
+            List<ChestPlacement> chests = null,
+            Weather weather = Weather.Clear)
         {
             Name = name;
             Width = width;
@@ -66,6 +68,7 @@ namespace TacticFantasy.Domain.Map
             EnemyPlacements = enemyPlacements;
             VictoryCondition = victoryCondition ?? VictoryConditionFactory.Rout();
             Chests = chests ?? new List<ChestPlacement>();
+            Weather = weather;
         }
     }
 }

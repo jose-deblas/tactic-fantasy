@@ -12,7 +12,12 @@ namespace DomainTests
         // Minimal fake implementations to exercise selection logic
         private class DummyMap : IGameMap
         {
-            public Tile GetTile(int x, int y) => new Tile { Terrain = TerrainType.Plain };
+            public int Width => 10;
+            public int Height => 10;
+            public Weather CurrentWeather => Weather.Clear;
+            public void SetWeather(Weather weather) { }
+            public ITile GetTile(int x, int y) => new Tile(x, y, TerrainType.Plain);
+            public bool IsValidPosition(int x, int y) => x >= 0 && x < Width && y >= 0 && y < Height;
             public int GetDistance(int x1, int y1, int x2, int y2) => System.Math.Abs(x1 - x2) + System.Math.Abs(y1 - y2);
         }
 
@@ -144,7 +149,7 @@ namespace DomainTests
         // Additional DummyMap that returns different terrain per coordinate
         private class DummyMapWithTerrain : IGameMap
         {
-            public Tile GetTile(int x, int y)
+            public ITile GetTile(int x, int y)
             {
                 if (x == 1 && y == 1)
                     return new Tile(1,1, TerrainType.Fort);
@@ -153,6 +158,8 @@ namespace DomainTests
             public int GetDistance(int x1, int y1, int x2, int y2) => System.Math.Abs(x1 - x2) + System.Math.Abs(y1 - y2);
             public int Width => 10;
             public int Height => 10;
+            public Weather CurrentWeather => Weather.Clear;
+            public void SetWeather(Weather weather) { }
             public bool IsValidPosition(int x, int y) => x >= 0 && x < Width && y >=0 && y < Height;
         }
     }

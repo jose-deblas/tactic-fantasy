@@ -47,7 +47,9 @@ namespace TacticFantasy.Domain.Map
                 }
             }
 
-            return new GameMap(definition.Width, definition.Height, tiles);
+            var map = new GameMap(definition.Width, definition.Height, tiles);
+            map.SetWeather(definition.Weather);
+            return map;
         }
 
         public List<IUnit> CreateUnits(MapDefinition definition)
@@ -128,6 +130,14 @@ namespace TacticFantasy.Domain.Map
                 "iron axe" => WeaponFactory.CreateIronAxe(),
                 "iron bow" => WeaponFactory.CreateIronBow(),
                 "fire" => WeaponFactory.CreateFireTome(),
+                "wind" => WeaponFactory.CreateWindTome(),
+                "thunder" => WeaponFactory.CreateThunderTome(),
+                "elfire" => WeaponFactory.CreateSteelFireTome(),
+                "elwind" => WeaponFactory.CreateSteelWindTome(),
+                "elthunder" => WeaponFactory.CreateSteelThunderTome(),
+                "arcfire" => WeaponFactory.CreateSilverFireTome(),
+                "tornado" => WeaponFactory.CreateSilverWindTome(),
+                "thoron" => WeaponFactory.CreateSilverThunderTome(),
                 "heal staff" => WeaponFactory.CreateHealStaff(),
                 "steel sword" => WeaponFactory.CreateSteelSword(),
                 "steel lance" => WeaponFactory.CreateSteelLance(),

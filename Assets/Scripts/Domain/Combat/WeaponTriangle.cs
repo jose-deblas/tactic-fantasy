@@ -24,16 +24,24 @@ namespace TacticFantasy.Domain.Combat
 
         private static bool HasAdvantage(WeaponType attacker, WeaponType defender)
         {
+            // Physical triangle: Sword > Axe > Lance > Sword
+            // Magic triangle: Fire > Wind > Thunder > Fire
             return (attacker == WeaponType.SWORD && defender == WeaponType.AXE) ||
                    (attacker == WeaponType.AXE && defender == WeaponType.LANCE) ||
-                   (attacker == WeaponType.LANCE && defender == WeaponType.SWORD);
+                   (attacker == WeaponType.LANCE && defender == WeaponType.SWORD) ||
+                   (attacker == WeaponType.FIRE && defender == WeaponType.WIND) ||
+                   (attacker == WeaponType.WIND && defender == WeaponType.THUNDER) ||
+                   (attacker == WeaponType.THUNDER && defender == WeaponType.FIRE);
         }
 
         private static bool HasDisadvantage(WeaponType attacker, WeaponType defender)
         {
             return (attacker == WeaponType.AXE && defender == WeaponType.SWORD) ||
                    (attacker == WeaponType.LANCE && defender == WeaponType.AXE) ||
-                   (attacker == WeaponType.SWORD && defender == WeaponType.LANCE);
+                   (attacker == WeaponType.SWORD && defender == WeaponType.LANCE) ||
+                   (attacker == WeaponType.WIND && defender == WeaponType.FIRE) ||
+                   (attacker == WeaponType.THUNDER && defender == WeaponType.WIND) ||
+                   (attacker == WeaponType.FIRE && defender == WeaponType.THUNDER);
         }
     }
 }

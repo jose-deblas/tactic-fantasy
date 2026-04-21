@@ -49,6 +49,7 @@
     <Analyzer Include="/Applications/Unity/Hub/Editor/6000.4.2f1/Unity.app/Contents/Resources/BuildPipeline/Unity.SourceGenerators/Unity.UIToolkit.SourceGenerator.dll" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Assets/Scripts/Tests/BossConversationTriggerTests.cs" />
     <Compile Include="Assets/Scripts/Tests/TradeServiceTests.cs" />
     <Compile Include="Assets/Scripts/Domain/Save/GameSnapshot.cs" />
     <Compile Include="Assets/Scripts/Domain/Units/ClassPromotionService.cs" />
@@ -71,8 +72,10 @@
     <Compile Include="Assets/Scripts/Tests/CombatForecastTests.cs" />
     <Compile Include="Assets/Scripts/Tests/TransformGaugeTests.cs" />
     <Compile Include="Assets/Scripts/Tests/CombatResolverTests.cs" />
+    <Compile Include="Assets/Scripts/Domain/Map/Weather.cs" />
     <Compile Include="Assets/Scripts/Tests/BexpDistributorTests.cs" />
     <Compile Include="Assets/Scripts/Domain/Turn/TurnManager.cs" />
+    <Compile Include="Assets/Scripts/Domain/Narrative/DialogueLine.cs" />
     <Compile Include="Assets/Scripts/Domain/Support/SupportTracker.cs" />
     <Compile Include="Assets/Scripts/Domain/Support/Biorhythm.cs" />
     <Compile Include="Assets/Scripts/Tests/InventoryTests.cs" />
@@ -89,15 +92,18 @@
     <Compile Include="Assets/Scripts/Tests/StealServiceTests.cs" />
     <Compile Include="Assets/Scripts/Domain/Save/UnitSnapshot.cs" />
     <Compile Include="Assets/Scripts/Tests/NPCUnitTests.cs" />
+    <Compile Include="Assets/Scripts/Tests/MagicTriangleTests.cs" />
     <Compile Include="Assets/Scripts/Adapters/MapRenderer.cs" />
     <Compile Include="Assets/Scripts/Domain/Map/ReinforcementService.cs" />
     <Compile Include="Assets/Scripts/Domain/Chapter/BasePhase.cs" />
+    <Compile Include="Assets/Scripts/Domain/Map/WeatherEffects.cs" />
     <Compile Include="Assets/Scripts/Domain/Units/LaguzClassData.cs" />
     <Compile Include="Assets/Scripts/Domain/Items/TradeService.cs" />
     <Compile Include="Assets/Scripts/Domain/Skills/SkillActivationPhase.cs" />
     <Compile Include="Assets/Scripts/Domain/Chapter/MapDefinitions.cs" />
     <Compile Include="Assets/Scripts/Domain/Combat/CombatForecast.cs" />
     <Compile Include="Assets/Scripts/Tests/LaguzStatSwapTests.cs" />
+    <Compile Include="Assets/Scripts/Domain/Narrative/BossConversation.cs" />
     <Compile Include="Assets/Scripts/Domain/Map/GameMap.cs" />
     <Compile Include="Assets/Scripts/Tests/LaguzCombatTests.cs" />
     <Compile Include="Assets/Scripts/Domain/Items/ConsumableFactory.cs" />
@@ -132,6 +138,7 @@
     <Compile Include="Assets/Scripts/Tests/PositionUtilsTests.cs" />
     <Compile Include="Assets/Scripts/Domain/Save/GameSaveService.cs" />
     <Compile Include="Assets/Scripts/Adapters/GamepadCursorController.cs" />
+    <Compile Include="Assets/Scripts/Tests/WeatherEffectsTests.cs" />
     <Compile Include="Assets/Scripts/Domain/Weapons/LaguzWeaponFactory.cs" />
     <Compile Include="Assets/Scripts/Domain/Units/MoveType.cs" />
     <Compile Include="Assets/Scripts/Adapters/GameController.cs" />
@@ -157,6 +164,7 @@
     <Compile Include="Assets/Scripts/Tests/MultiWeaponClassTests.cs" />
     <Compile Include="Assets/Scripts/Domain/Support/SupportBonus.cs" />
     <Compile Include="Assets/Scripts/Domain/Chapter/ShopService.cs" />
+    <Compile Include="Assets/Scripts/Domain/Narrative/DialogueScript.cs" />
     <Compile Include="Assets/Scripts/Tests/WeaponTriangleTests.cs" />
     <Compile Include="Assets/Scripts/Tests/JsonFileGameRepositoryTests.cs" />
     <Compile Include="Assets/Scripts/Tests/BasePhaseTests.cs" />

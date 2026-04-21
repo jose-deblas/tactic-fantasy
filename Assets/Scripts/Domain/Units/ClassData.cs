@@ -204,7 +204,7 @@ namespace TacticFantasy.Domain.Units
                 new CharacterStats(22, 0, 13, 10, 10, 7, 6, 12, 6),
                 new CharacterStats(36, 8, 30, 26, 26, 24, 18, 30, 9),
                 new CharacterStats(55, 5, 65, 40, 45, 35, 15, 40, 0),
-                new[] { WeaponType.FIRE, WeaponType.STAFF },
+                new[] { WeaponType.FIRE, WeaponType.WIND, WeaponType.THUNDER, WeaponType.STAFF },
                 MoveType.Infantry,
                 tier: 2
             );
@@ -284,7 +284,7 @@ namespace TacticFantasy.Domain.Units
                 new CharacterStats(28, 2, 18, 14, 14, 9, 8, 16, 7),
                 new CharacterStats(44, 12, 38, 32, 32, 28, 22, 36, 9),
                 new CharacterStats(60, 10, 75, 50, 50, 40, 20, 50, 0),
-                new[] { WeaponType.FIRE, WeaponType.STAFF },
+                new[] { WeaponType.FIRE, WeaponType.WIND, WeaponType.THUNDER, WeaponType.STAFF },
                 MoveType.Infantry,
                 tier: 3
             );

@@ -10,6 +10,8 @@ namespace TacticFantasy.Domain.Map
         ITile GetTile(int x, int y);
         bool IsValidPosition(int x, int y);
         int GetDistance(int x1, int y1, int x2, int y2);
+        Weather CurrentWeather { get; }
+        void SetWeather(Weather weather);
     }
 
     public class GameMap : IGameMap
@@ -19,6 +21,12 @@ namespace TacticFantasy.Domain.Map
 
         public int Width { get; }
         public int Height { get; }
+        public Weather CurrentWeather { get; private set; }
+
+        public void SetWeather(Weather weather)
+        {
+            CurrentWeather = weather;
+        }
 
         public GameMap(int width, int height, int seed = 0)
         {

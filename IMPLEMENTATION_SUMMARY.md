@@ -4,6 +4,29 @@
 
 ## Changelog
 
+### v3.2 - Magic Triangle + Weather + Narrative (2026-04-21)
+
+**Phase 9 features**
+- Magic Triangle: `WeaponType` extended with `WIND` and `THUNDER`; `WeaponTriangle.cs` implements the magic triangle Fire > Wind > Thunder > Fire (advantage = +1 damage, +10 hit; disadvantage = -1 damage, -10 hit). `WeaponFactory` adds Iron/Steel/Silver tomes for Wind and Thunder. `ClassDataFactory` updated so `Sage`/`Archsage` and related classes can use the new tomes. `CombatResolver` integrates the magic triangle into magical hit/damage calculations.
+- Weather Effects: `Domain/Map/Weather.cs` and `WeatherEffects.cs` introduce Clear, Rain, Snow and Sandstorm with gameplay modifiers (examples: Rain = -15 bow hit, fire magic -2 damage; Snow = -10 avoid; Sandstorm = -20 hit and -2 vision). `IGameMap.CurrentWeather` and `SetWeather()` expose map weather; `CombatResolver` and `FogOfWar` apply weather modifiers at resolution time.
+- Narrative / Dialogue System: new domain objects `DialogueLine`, `DialogueScript` and `BossConversation` under `Domain/Narrative/` enable pre- and mid-chapter dialogue and boss combat conversations. `ChapterData` now accepts `IntroDialogue`, `OutroDialogue`, and a `BossConversations` list. `GameController` checks boss conversations before combat resolution; adapter `DialogueRenderer.cs` provides the UI glue.
+- Files touched: Domain/Weapons/WeaponType.cs, Domain/Weapons/WeaponTriangle.cs, Domain/Weapons/WeaponFactory.cs, Domain/Map/Weather.cs, Domain/Map/WeatherEffects.cs, Domain/Narrative/DialogueLine.cs, Domain/Narrative/DialogueScript.cs, Domain/Narrative/BossConversation.cs, Domain/Chapter/ChapterData.cs, Domain/Combat/CombatResolver.cs, Adapters/GameController.cs, Adapters/DialogueRenderer.cs
+- Tests added: `MagicTriangleTests.cs`, `WeatherEffectsTests.cs`, `BossConversationTriggerTests.cs`
+- Branch: `phase-9-magic-triangle`
+
+### v3.1 - Shove/Guard/Stealing/Trading/NPC (2026-04-20)
+
+**Phase 8 features**
+- Shove/Smite (Domain/Actions/ShoveService.cs): push mechanics — Shove (1 tile, any unit), Smite (2 tiles, Fighter/Warrior/Reaver). Requires landing on a traversable, unoccupied tile; cannot push off-map or into impassable tiles.
+- Guard command (Unit.IsGuarding): +2 DEF / +2 RES until next turn; cleared at phase start. Replaces the attack action.
+- Stealing (Domain/Actions/StealService.cs): Thief/Rogue action to steal a non-weapon item from an adjacent enemy (requires SPD > target SPD). Stolen item added to thief inventory.
+- Trading (Domain/Actions/TradeService.cs): Swap inventory items between adjacent allied units (free action).
+- NPC / Ally units: Team.AllyNPC, Phase.AllyPhase, TurnManager three-phase cycle (Player → Ally → Enemy). NPCs can be recruited via Talk action; NPC AI protects objectives and prioritizes survival. UnitRenderer uses green color for NPCs.
+
+Files touched: Domain/Actions/ShoveService.cs, Domain/Actions/StealService.cs, Domain/Actions/TradeService.cs, Domain/Units/Unit.cs (IsGuarding), Domain/Turn/TurnManager.cs, Domain/AI/AIController.cs, Adapters/UnitRenderer.cs
+
+Tests added: ShoveTests.cs, GuardTests.cs, StealTests.cs, TradeTests.cs, NPCPhaseTests.cs, RecruitmentTests.cs
+
 ### v3.0 - Support / Affinity System + Biorhythm (2026-04-20)
 
 **Support / Affinity (7A)**
@@ -199,8 +222,8 @@ For questions about architecture, code structure, or how specific systems work, 
 ---
 
 **Project Status**: ✅ Feature Complete & Ready to Play
-**Version**: 3.0.0
-**Build Date**: 2026-04-20
+**Version**: 3.2.0
+**Build Date**: 2026-04-21
 **Architecture**: Domain-Driven Design + Hexagonal Architecture
 **Code Quality**: SOLID Principles, Clean Code standards
 - feat(IA): AI prefers higher-defense terrain when choosing attack position. Added test to verify AIController selects Fort tiles when scores tie.

@@ -4,7 +4,7 @@
 >
 > **Architecture Rule**: All gameplay logic lives in `Domain/`. Adapters stay thin. Every feature gets TDD with EditMode NUnit tests.
 >
-> **Current State (v3.1)**: Shove / Guard / Steal / Trade / NPC Units (2026-04-20)
+> **Current State (v3.2)**: Magic Triangle + Weather + Narrative (2026-04-21)
 
 ---
 
@@ -445,7 +445,9 @@ Smaller mechanics that can be batched together.
 
 ---
 
-## Phase 9: Magic Triangle + Weather + Narrative / Dialogue
+## ~~Phase 9: Magic Triangle + Weather + Narrative / Dialogue~~ ✅ DONE (v3.2)
+
+> Implemented in v3.2 (2026-04-21). WIND and THUNDER weapon types added. Magic triangle (Fire > Wind > Thunder > Fire) in `WeaponTriangle.cs` with same +1 dmg/+10 hit modifiers. Iron/Steel/Silver tomes for all three elements in `WeaponFactory`. Sage and Archsage updated to use Fire+Wind+Thunder+Staff. `Weather` enum (Clear/Rain/Snow/Sandstorm) with `WeatherEffects` static class. `IGameMap.CurrentWeather` property with `SetWeather()`. Rain: -15 bow hit, -2 fire dmg. Snow: -10 avoid. Sandstorm: -20 all hit, -2 vision. Weather integrated into `CombatResolver` hit/damage/avoid calculations. `DialogueLine`, `DialogueScript`, `BossConversation` domain classes in `Domain/Narrative/`. `ChapterData` extended with intro/outro dialogue and boss conversation lookup.
 
 ### 9A. Magic Triangle
 
@@ -560,10 +562,10 @@ Phase 10: Forging + Elevation + Polish (depends on Phase 2, 5, 6)
 
 ---
 
-**Last Updated**: 2026-04-20
+**Last Updated**: 2026-04-21
 **Target**: Fire Emblem: Radiant Dawn parity
 **Approach**: TDD, incremental phases, playable at each milestone
-**Latest**: Phase 8 complete — Shove/Smite, Guard, Stealing, Trading, NPC Units
+**Latest**: Phase 9 complete — Magic Triangle, Weather Effects, Narrative/Dialogue System
 
 ## Phase Completion Status
 
@@ -578,5 +580,5 @@ Phase 10: Forging + Elevation + Polish (depends on Phase 2, 5, 6)
 | 6 | Map Improvements | ✅ Done (v2.9) |
 | 7 | Support / Affinity + Biorhythm | ✅ Done (v3.0) |
 | 8 | Shove / Guard / Steal / Trade / NPC | ✅ Done (v3.1) |
-| 9 | Magic Triangle + Weather + Narrative | ❌ Not started |
+| 9 | Magic Triangle + Weather + Narrative | ✅ Done (v3.2) |
 | 10 | Weapon Forging + Elevation + Polish | ❌ Not started |

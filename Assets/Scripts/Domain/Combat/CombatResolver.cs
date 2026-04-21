@@ -451,6 +451,8 @@ namespace TacticFantasy.Domain.Combat
             var (damageBonus, _) = WeaponTriangle.GetTriangleModifiers(attacker.EquippedWeapon, defender.EquippedWeapon);
             power += damageBonus;
 
+            power += WeatherEffects.GetDamageModifier(map.CurrentWeather, attacker.EquippedWeapon.Type);
+
             return power;
         }
 
@@ -472,11 +474,13 @@ namespace TacticFantasy.Domain.Combat
             var (_, triangleHitBonus) = WeaponTriangle.GetTriangleModifiers(attacker.EquippedWeapon, defender.EquippedWeapon);
             hit += triangleHitBonus;
             hit += supportHitBonus;
+            hit += WeatherEffects.GetHitModifier(map.CurrentWeather, attacker.EquippedWeapon.Type);
 
             int defenderAS = CalculateAttackSpeedWithStats(defenderStats, defender);
             int avoid = (defenderAS * 2) + defenderStats.LCK +
                         TerrainProperties.GetAvoidBonus(map.GetTile(defender.Position.x, defender.Position.y).Terrain);
             avoid += supportAvoidBonus;
+            avoid += WeatherEffects.GetAvoidModifier(map.CurrentWeather);
 
             return hit - avoid;
         }

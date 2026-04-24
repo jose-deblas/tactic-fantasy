@@ -8,6 +8,7 @@ using TacticFantasy.Domain.Map;
 using TacticFantasy.Domain.Turn;
 using TacticFantasy.Domain.Units;
 using TacticFantasy.Domain.Weapons;
+using TacticFantasy.Domain.Items;
 
 namespace TacticFantasy.Adapters
 {
@@ -25,6 +26,7 @@ namespace TacticFantasy.Adapters
         private GamepadCursorController _gamepadCursorController;
         private KeyboardCursorController _keyboardCursorController;
         private CursorRenderer _cursorRenderer;
+        private bool _unitHasMoved = false;
 
         private List<IUnit> _allUnits;
         private IUnit _selectedUnit;
@@ -34,11 +36,12 @@ namespace TacticFantasy.Adapters
         private bool _isExecutingAllyTurn = false;
         private bool _isExecutingEnemyTurn = false;
         private bool _isShowingAttackRange = false;
-        private bool _unitHasMoved = false;
 
         private IFogOfWar _fogOfWar;
         private IReinforcementService _reinforcementService;
         private ChapterData _chapterData;
+        private IStealService _stealService;
+        private ITradeService _tradeService;
 
         public void Awake()
         {
@@ -84,6 +87,8 @@ namespace TacticFantasy.Adapters
             _allUnits = new List<IUnit>();
             _currentMovementRange = new HashSet<(int, int)>();
             _currentAttackRange = new HashSet<(int, int)>();
+            _stealService = new StealService();
+            _tradeService = new TradeService();
         }
 
         private void InitializeAdapters()
@@ -104,6 +109,7 @@ namespace TacticFantasy.Adapters
             // Suscribirse a eventos del ratón
             _inputHandler.OnTileClicked += HandleTileClick;
             _inputHandler.OnUnitClicked += HandleUnitClick;
+            _inputHandler.OnUnitRightClicked += HandleUnitRightClick;
             _inputHandler.OnEndTurnPressed += HandleEndTurnPressed;  // NEW: Keyboard shortcut
             _inputHandler.OnMenuTogglePressed += HandleMenuTogglePressed;  // NEW: ESC key for menu
 
@@ -121,6 +127,8 @@ namespace TacticFantasy.Adapters
             _keyboardCursorController.OnCancel += HandleGamepadCancel;
             _keyboardCursorController.OnToggleAttackRange += HandleGamepadToggleAttackRange;
             // Note: menu toggle and end-turn are handled by InputHandler to avoid duplicate events
+            // Subscribe to UI action menu events
+            _uiManager.OnActionMenuSelected += HandleActionMenuSelected;
         }
 
         private void CreateTeams()
@@ -242,15 +250,124 @@ namespace TacticFantasy.Adapters
             }
         }
 
+        private void HandleUnitRightClick(int x, int y)
+        {
+            if (_uiManager.IsModalMenuOpen() || _uiManager.IsTurnInterstitialOpen())
+                return;
+
+            if (_turnManager.CurrentPhase != Phase.PlayerPhase)
+                return;
+
+            var unit = _allUnits.FirstOrDefault(u => u.Position.x == x && u.Position.y == y && u.IsAlive);
+            if (unit == null) return;
+            if (unit.Team != Team.PlayerTeam) return;
+
+            // Select the unit and show context menu with available actions
+            SelectUnit(unit);
+
+            bool canAttack = HasAttackableEnemyAtPosition(unit, unit.Position.x, unit.Position.y);
+
+            bool canSteal = _allUnits.Any(u => u.IsAlive && u.Team != unit.Team && _stealService.CanSteal(unit, u));
+
+            bool canTrade = _allUnits.Any(u => u.IsAlive && TeamRelations.AreAllied(u.Team, unit.Team) && _tradeService.CanTrade(unit, u));
+
+            _uiManager.ShowActionMenu(unit, (x, y), canAttack, canSteal, canTrade);
+        }
+
+        private bool HasAttackableEnemyAtPosition(IUnit unit, int posX, int posY)
+        {
+            var maxRange = unit.EquippedWeapon.MaxRange;
+            var minRange = unit.EquippedWeapon.MinRange;
+
+            for (int dx = -maxRange; dx <= maxRange; dx++)
+            {
+                for (int dy = -maxRange; dy <= maxRange; dy++)
+                {
+                    int tx = posX + dx;
+                    int ty = posY + dy;
+                    if (!_gameMap.IsValidPosition(tx, ty)) continue;
+                    int distance = _gameMap.GetDistance(posX, posY, tx, ty);
+                    if (distance < minRange || distance > maxRange) continue;
+
+                    var targetUnit = _allUnits.FirstOrDefault(u => u.Position.x == tx && u.Position.y == ty && u.IsAlive && u.Team == Team.EnemyTeam);
+                    if (targetUnit != null) return true;
+                }
+            }
+
+            return false;
+        }
+
+        private void HandleActionMenuSelected(ActionMenuChoice choice, IUnit unit)
+        {
+            if (unit == null) return;
+
+            switch (choice)
+            {
+                case ActionMenuChoice.Attack:
+                    // Show attack range from current position
+                    _currentMovementRange.Clear();
+                    _currentAttackRange.Clear();
+                    CalculateAttackRangeFromPosition(unit);
+                    _mapRenderer.SetAttackRange(_currentAttackRange);
+                    SelectUnit(unit);
+                    break;
+
+                case ActionMenuChoice.Bag:
+                    // Open inventory UI
+                    _uiManager.ShowInventory(unit, result =>
+                    {
+                        if (result != null && result.Action == InventoryActionResult.ActionType.Use && result.Item != null)
+                        {
+                            // Use consumable and consume action
+                            result.Item.Use(unit);
+                            _turnManager.ConsumeAction(unit.Id);
+                            _unitRenderer.UpdateAllUnits(_allUnits, _turnManager);
+                            _uiManager.ShowInfoMessage($"{unit.Name} used {result.Item.Name}");
+                        }
+                        else if (result != null && result.Action == InventoryActionResult.ActionType.Equip && result.Item != null)
+                        {
+                            if (result.Item is TacticFantasy.Domain.Weapons.IWeapon w && unit.CanEquip(w))
+                            {
+                                unit.EquipWeapon(w);
+                                _unitRenderer.UpdateAllUnits(_allUnits, _turnManager);
+                                _uiManager.ShowInfoMessage($"{unit.Name} equipped {w.Name}");
+                            }
+                        }
+                    });
+                    break;
+
+                case ActionMenuChoice.Steal:
+                    {
+                        var target = _allUnits.FirstOrDefault(u => u.IsAlive && u.Team != unit.Team && _stealService.CanSteal(unit, u));
+                        if (target != null)
+                        {
+                            var item = _stealService.Steal(unit, target);
+                            _turnManager.ConsumeAction(unit.Id);
+                            _unitRenderer.UpdateAllUnits(_allUnits, _turnManager);
+                            _uiManager.ShowInfoMessage($"{unit.Name} stole {item.Name} from {target.Name}");
+                        }
+                        else
+                        {
+                            _uiManager.ShowInfoMessage("No valid steal targets adjacent.");
+                        }
+                    }
+                    break;
+
+                case ActionMenuChoice.Trade:
+                    _uiManager.ShowInfoMessage("Trade not yet implemented");
+                    break;
+
+                case ActionMenuChoice.Wait:
+                case ActionMenuChoice.Cancel:
+                default:
+                    // Do nothing
+                    break;
+            }
+        }
+
         private void SelectUnit(IUnit unit)
         {
-            // If switching away from a moved unit, mark it as acted ("wait")
-            if (_unitHasMoved && _selectedUnit != null && (unit == null || unit.Id != _selectedUnit.Id))
-            {
-                _turnManager.MarkUnitAsActed(_selectedUnit.Id);
-                _unitHasMoved = false;
-                CheckAllPlayerUnitsActed();
-            }
+            // No implicit "wait" on deselect - actions are tracked by TurnManager (AP)
 
             _selectedUnit = unit;
 
@@ -265,16 +382,15 @@ namespace TacticFantasy.Adapters
                     {
                         // Already acted: show info only, no ranges
                     }
-                    else if (_unitHasMoved)
-                    {
-                        // Moved but not attacked: show only attack range from current position
-                        CalculateAttackRangeFromPosition(unit);
-                    }
                     else
                     {
-                        // Hasn't moved: show full movement + attack range
-                        _currentMovementRange = _pathFinder.GetMovementRange(unit.Position.x, unit.Position.y, unit.CurrentStats.MOV, unit, _gameMap, _allUnits);
-                        CalculateAttackRangeFromMovement(unit);
+                        // Has remaining actions: show movement + attack options calculated from movement
+                        var remaining = _turnManager.GetRemainingActions(unit.Id);
+                        if (remaining > 0)
+                        {
+                            _currentMovementRange = _pathFinder.GetMovementRange(unit.Position.x, unit.Position.y, unit.CurrentStats.MOV, unit, _gameMap, _allUnits);
+                            CalculateAttackRangeFromMovement(unit);
+                        }
                     }
                 }
                 else if (unit.Team == Team.EnemyTeam)
@@ -341,6 +457,8 @@ namespace TacticFantasy.Adapters
             if (path.Count > 0)
             {
                 unit.SetPosition(path[path.Count - 1].Item1, path[path.Count - 1].Item2);
+                // Consume one action for movement
+                _turnManager.ConsumeAction(unit.Id);
                 _unitHasMoved = true;
                 SelectUnit(unit);
             }
@@ -358,8 +476,8 @@ namespace TacticFantasy.Adapters
             _unitRenderer.UpdateAllUnits(_allUnits, _turnManager);
             _uiManager.ShowCombatResult(result);
 
-            _turnManager.MarkUnitAsActed(attacker.Id);
-            _unitHasMoved = false;
+            // Consume one action for attacking
+            _turnManager.ConsumeAction(attacker.Id);
 
             if (_turnManager.GetGameState() != GameState.InProgress)
             {
@@ -373,8 +491,8 @@ namespace TacticFantasy.Adapters
         private void RefreshUnit(IUnit refresher, IUnit target)
         {
             _turnManager.RefreshUnit(target.Id);
-            _turnManager.MarkUnitAsActed(refresher.Id);
-            _unitHasMoved = false;
+            // Consumes an action from the refresher
+            _turnManager.ConsumeAction(refresher.Id);
 
             _uiManager.ShowInfoMessage($"{refresher.Name} refreshed {target.Name}!");
             _unitRenderer.UpdateAllUnits(_allUnits, _turnManager);
@@ -547,7 +665,7 @@ namespace TacticFantasy.Adapters
             foreach (var allyUnit in allyUnits)
             {
                 _aiController.DecideAction(allyUnit, _allUnits, _gameMap, _pathFinder,
-                    out var moveTarget, out var attackTarget, out var isHealAction);
+                    out var moveTarget, out var attackTarget, out var isHealAction, null, _turnManager);
 
                 if (moveTarget.HasValue)
                 {
@@ -557,10 +675,13 @@ namespace TacticFantasy.Adapters
                     if (path.Count > 0)
                     {
                         allyUnit.SetPosition(path[path.Count - 1].Item1, path[path.Count - 1].Item2);
+                        // Consume one action for movement (AI should respect AP)
+                        _turnManager.ConsumeAction(allyUnit.Id);
                     }
                 }
 
-                if (attackTarget != null)
+                // Only attempt attack/heal if AI still has actions remaining
+                if (_turnManager.GetRemainingActions(allyUnit.Id) > 0 && attackTarget != null)
                 {
                     if (isHealAction && allyUnit.EquippedWeapon.Type == WeaponType.STAFF)
                     {
@@ -574,7 +695,11 @@ namespace TacticFantasy.Adapters
                         {
                             attackTarget.TakeDamage(result.Damage);
                         }
+                        _uiManager.ShowCombatResult(result);
                     }
+
+                    // Consume one action for attacking/healing
+                    _turnManager.ConsumeAction(allyUnit.Id);
                 }
 
                 _unitRenderer.UpdateAllUnits(_allUnits, _turnManager);
@@ -595,7 +720,7 @@ namespace TacticFantasy.Adapters
             foreach (var enemyUnit in enemyUnits)
             {
                 _aiController.DecideAction(enemyUnit, _allUnits, _gameMap, _pathFinder,
-                    out var moveTarget, out var attackTarget, out var isHealAction);
+                    out var moveTarget, out var attackTarget, out var isHealAction, null, _turnManager);
 
                 if (moveTarget.HasValue)
                 {
@@ -605,10 +730,13 @@ namespace TacticFantasy.Adapters
                     if (path.Count > 0)
                     {
                         enemyUnit.SetPosition(path[path.Count - 1].Item1, path[path.Count - 1].Item2);
+                        // Consume one action for movement (AI should respect AP)
+                        _turnManager.ConsumeAction(enemyUnit.Id);
                     }
                 }
 
-                if (attackTarget != null)
+                // Only attempt attack/heal if enemy still has actions remaining
+                if (_turnManager.GetRemainingActions(enemyUnit.Id) > 0 && attackTarget != null)
                 {
                     if (isHealAction && enemyUnit.EquippedWeapon.Type == WeaponType.STAFF)
                     {
@@ -622,7 +750,11 @@ namespace TacticFantasy.Adapters
                         {
                             attackTarget.TakeDamage(result.Damage);
                         }
+                        _uiManager.ShowCombatResult(result);
                     }
+
+                    // Consume one action for attacking/healing
+                    _turnManager.ConsumeAction(enemyUnit.Id);
                 }
 
                 _unitRenderer.UpdateAllUnits(_allUnits, _turnManager);

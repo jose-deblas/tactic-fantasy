@@ -23,6 +23,7 @@ namespace TacticFantasy.Adapters
         private UIManager _uiManager;
         private InputHandler _inputHandler;
         private GamepadCursorController _gamepadCursorController;
+        private KeyboardCursorController _keyboardCursorController;
         private CursorRenderer _cursorRenderer;
 
         private List<IUnit> _allUnits;
@@ -92,10 +93,12 @@ namespace TacticFantasy.Adapters
             _uiManager = GetComponent<UIManager>() ?? gameObject.AddComponent<UIManager>();
             _inputHandler = GetComponent<InputHandler>() ?? gameObject.AddComponent<InputHandler>();
             _gamepadCursorController = GetComponent<GamepadCursorController>() ?? gameObject.AddComponent<GamepadCursorController>();
+            _keyboardCursorController = GetComponent<KeyboardCursorController>() ?? gameObject.AddComponent<KeyboardCursorController>();
             _cursorRenderer = GetComponent<CursorRenderer>() ?? gameObject.AddComponent<CursorRenderer>();
 
             _mapRenderer.Initialize(_gameMap);
             _gamepadCursorController.Initialize(_gameMap);
+            _keyboardCursorController.Initialize(_gameMap);
             _cursorRenderer.Initialize();
 
             // Suscribirse a eventos del ratón
@@ -111,6 +114,13 @@ namespace TacticFantasy.Adapters
             _gamepadCursorController.OnEndTurn += HandleGamepadEndTurn;
             _gamepadCursorController.OnToggleAttackRange += HandleGamepadToggleAttackRange;
             _gamepadCursorController.OnMenuToggle += HandleMenuTogglePressed;  // NEW: Start button for menu
+
+            // Suscribirse a eventos del teclado (KeyboardCursorController)
+            _keyboardCursorController.OnCursorMoved += HandleGamepadCursorMoved;
+            _keyboardCursorController.OnConfirm += () => PerformConfirmAt(_keyboardCursorController.CursorPosition.x, _keyboardCursorController.CursorPosition.y);
+            _keyboardCursorController.OnCancel += HandleGamepadCancel;
+            _keyboardCursorController.OnToggleAttackRange += HandleGamepadToggleAttackRange;
+            // Note: menu toggle and end-turn are handled by InputHandler to avoid duplicate events
         }
 
         private void CreateTeams()
@@ -187,6 +197,11 @@ namespace TacticFantasy.Adapters
         {
             if (_uiManager.IsModalMenuOpen() || _uiManager.IsTurnInterstitialOpen())
                 return;
+
+            // Sync mouse click with keyboard/gamepad cursor and renderer
+            _keyboardCursorController?.SetCursorPosition(x, y);
+            _gamepadCursorController?.SetCursorPosition(x, y);
+            _cursorRenderer?.UpdateCursorPosition(x, y);
 
             // NEW: Always show terrain info on tile click (even without unit selected)
             var tile = _gameMap.GetTile(x, y);
@@ -412,12 +427,25 @@ namespace TacticFantasy.Adapters
         /// Maneja la confirmación del mando (botón A).
         /// Simula un clic en la posición actual del cursor del mando.
         /// </summary>
-        private void HandleGamepadConfirm()
+        private void PerformConfirmAt(int x, int y)
         {
             if (_uiManager.IsModalMenuOpen() || _uiManager.IsTurnInterstitialOpen())
                 return;
 
-            _inputHandler.SimulateGamepadClick(_gamepadCursorController.CursorPosition.x, _gamepadCursorController.CursorPosition.y);
+            _inputHandler.SimulateGamepadClick(x, y);
+        }
+
+        private void HandleGamepadConfirm()
+        {
+            // If an interstitial is open, prefer activating its Start button
+            if (_uiManager.IsTurnInterstitialOpen())
+            {
+                _uiManager.PressTurnStartButton();
+                return;
+            }
+
+            // Otherwise perform normal confirm at cursor position
+            PerformConfirmAt(_gamepadCursorController.CursorPosition.x, _gamepadCursorController.CursorPosition.y);
         }
 
         /// <summary>

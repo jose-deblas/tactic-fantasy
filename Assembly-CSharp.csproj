@@ -78,6 +78,7 @@
     <Compile Include="Assets/Scripts/Domain/Narrative/DialogueLine.cs" />
     <Compile Include="Assets/Scripts/Domain/Support/SupportTracker.cs" />
     <Compile Include="Assets/Scripts/Domain/Support/Biorhythm.cs" />
+    <Compile Include="Assets/Scripts/Adapters/KeyboardCursorController.cs" />
     <Compile Include="Assets/Scripts/Tests/InventoryTests.cs" />
     <Compile Include="Assets/Scripts/Tests/ClassPromotionTests.cs" />
     <Compile Include="Assets/Scripts/Domain/Combat/CombatResolver.cs" />
@@ -117,6 +118,7 @@
     <Compile Include="Assets/Scripts/Domain/Weapons/WeaponType.cs" />
     <Compile Include="Assets/Scripts/Domain/Units/StatusEffect.cs" />
     <Compile Include="Assets/Scripts/Domain/StatusEffect.cs" />
+    <Compile Include="Assets/Scripts/Tests/UIManagerInterstitialTests.cs" />
     <Compile Include="Assets/Scripts/Domain/Combat/CombatXp.cs" />
     <Compile Include="Assets/Scripts/Tests/ExperienceSystemTests.cs" />
     <Compile Include="Assets/Scripts/Tests/RefreshMechanicTests.cs" />

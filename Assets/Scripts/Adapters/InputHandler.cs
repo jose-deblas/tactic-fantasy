@@ -36,9 +36,8 @@ namespace TacticFantasy.Adapters
                     OnMenuTogglePressed?.Invoke();
                 }
 
-                // Space or Enter to end turn
-                if (Keyboard.current.spaceKey.wasPressedThisFrame ||
-                    Keyboard.current.enterKey.wasPressedThisFrame)
+                // Space to end turn (Enter is reserved for keyboard confirm via KeyboardCursorController)
+                if (Keyboard.current.spaceKey.wasPressedThisFrame)
                 {
                     OnEndTurnPressed?.Invoke();
                 }

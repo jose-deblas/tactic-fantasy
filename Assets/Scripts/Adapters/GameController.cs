@@ -36,6 +36,9 @@ namespace TacticFantasy.Adapters
         private bool _isExecutingAllyTurn = false;
         private bool _isExecutingEnemyTurn = false;
         private bool _isShowingAttackRange = false;
+        // Awaiting player to pick an enemy target after choosing Attack from the action menu
+        private bool _awaitingAttackTarget = false;
+        private int _awaitingAttackerId = -1;
 
         private IFogOfWar _fogOfWar;
         private IReinforcementService _reinforcementService;
@@ -186,8 +189,33 @@ namespace TacticFantasy.Adapters
 
             if (unit == null)
             {
-                SelectUnit(null);
+                // If awaiting an attack target and clicked empty tile, cancel awaiting
+                if (_awaitingAttackTarget)
+                {
+                    _awaitingAttackTarget = false;
+                    _awaitingAttackerId = -1;
+                    _currentAttackRange.Clear();
+                    _mapRenderer.SetAttackRange(_currentAttackRange);
+                    _uiManager.ShowInfoMessage("Attack cancelled");
+                }
+                else
+                {
+                    SelectUnit(null);
+                }
                 return;
+            }
+
+            // If awaiting an attack target and clicked an enemy in range, attack
+            if (_awaitingAttackTarget && unit.Team == Team.EnemyTeam && _currentAttackRange.Contains((unit.Position.x, unit.Position.y)))
+            {
+                var attacker = _allUnits.FirstOrDefault(u => u.Id == _awaitingAttackerId);
+                if (attacker != null)
+                {
+                    _awaitingAttackTarget = false;
+                    _awaitingAttackerId = -1;
+                    AttackUnit(attacker, unit);
+                    return;
+                }
             }
 
             // NEW: Toggle behavior - clicking same unit deselects
@@ -220,6 +248,28 @@ namespace TacticFantasy.Adapters
 
             if (_selectedUnit.Team != Team.PlayerTeam)
                 return;
+
+            // If awaiting an attack target (player clicked Attack), handle tile clicks as potential attack targets
+            if (_awaitingAttackTarget)
+            {
+                var targetUnit = _allUnits.FirstOrDefault(u => u.Position.x == x && u.Position.y == y && u.IsAlive && u.Team == Team.EnemyTeam);
+                if (targetUnit != null && _currentAttackRange.Contains((x, y)))
+                {
+                    var attacker = _allUnits.FirstOrDefault(u => u.Id == _awaitingAttackerId);
+                    _awaitingAttackTarget = false;
+                    _awaitingAttackerId = -1;
+                    if (attacker != null) AttackUnit(attacker, targetUnit);
+                    return;
+                }
+
+                // Clicked not a valid target -> cancel awaiting state
+                _awaitingAttackTarget = false;
+                _awaitingAttackerId = -1;
+                _uiManager.ShowInfoMessage("Attack cancelled");
+                _currentAttackRange.Clear();
+                _mapRenderer.SetAttackRange(_currentAttackRange);
+                return;
+            }
 
             if (_currentMovementRange.Contains((x, y)))
             {
@@ -265,7 +315,20 @@ namespace TacticFantasy.Adapters
             // Select the unit and show context menu with available actions
             SelectUnit(unit);
 
-            bool canAttack = HasAttackableEnemyAtPosition(unit, unit.Position.x, unit.Position.y);
+            // Determine if Attack should be enabled: check from current position and all reachable movement tiles
+            bool canAttack = false;
+            var remaining = _turnManager.GetRemainingActions(unit.Id);
+            // include current pos even if no movement
+            var potentialPositions = new HashSet<(int, int)> { (unit.Position.x, unit.Position.y) };
+            if (remaining > 0)
+            {
+                var movement = _pathFinder.GetMovementRange(unit.Position.x, unit.Position.y, unit.CurrentStats.MOV, unit, _gameMap, _allUnits);
+                foreach (var p in movement) potentialPositions.Add(p);
+            }
+            foreach (var pos in potentialPositions)
+            {
+                if (HasAttackableEnemyAtPosition(unit, pos.Item1, pos.Item2)) { canAttack = true; break; }
+            }
 
             bool canSteal = _allUnits.Any(u => u.IsAlive && u.Team != unit.Team && _stealService.CanSteal(unit, u));
 
@@ -304,12 +367,37 @@ namespace TacticFantasy.Adapters
             switch (choice)
             {
                 case ActionMenuChoice.Attack:
-                    // Show attack range from current position
+                    // Prepare attack targets: if unit has remaining actions, consider movement+attack; otherwise only current position
                     _currentMovementRange.Clear();
                     _currentAttackRange.Clear();
-                    CalculateAttackRangeFromPosition(unit);
+                    var rem = _turnManager.GetRemainingActions(unit.Id);
+                    if (rem > 0)
+                    {
+                        _currentMovementRange = _pathFinder.GetMovementRange(unit.Position.x, unit.Position.y, unit.CurrentStats.MOV, unit, _gameMap, _allUnits);
+                        CalculateAttackRangeFromMovement(unit);
+                    }
+                    else
+                    {
+                        CalculateAttackRangeFromPosition(unit);
+                    }
+
+                    // Highlight attackable tiles and instruct the player
                     _mapRenderer.SetAttackRange(_currentAttackRange);
                     SelectUnit(unit);
+
+                    // If there's exactly one enemy in range, auto-attack; otherwise enter awaiting state
+                    var enemiesInRange = _allUnits.Where(u => u.IsAlive && u.Team == Team.EnemyTeam && _currentAttackRange.Contains((u.Position.x, u.Position.y))).ToList();
+                    if (enemiesInRange.Count == 1)
+                    {
+                        // Close menu (already destroyed by UI) and perform attack
+                        AttackUnit(unit, enemiesInRange[0]);
+                    }
+                    else
+                    {
+                        _awaitingAttackTarget = true;
+                        _awaitingAttackerId = unit.Id;
+                        _uiManager.ShowInfoMessage("Select an enemy to attack (B to cancel)");
+                    }
                     break;
 
                 case ActionMenuChoice.Bag:

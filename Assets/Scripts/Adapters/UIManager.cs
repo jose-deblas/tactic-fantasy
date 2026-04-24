@@ -33,12 +33,15 @@ namespace TacticFantasy.Adapters
         private Text _turnInterstitialText;
         private Button _turnInterstitialButton;
         private Text _versionText;
+        private GameObject _actionMenuPanel;
 
         public void Awake()
         {
             _gameController = GetComponent<GameController>();
             CreateUICanvas();
         }
+
+        public event System.Action<ActionMenuChoice, TacticFantasy.Domain.Units.IUnit> OnActionMenuSelected;
 
         private void CreateUICanvas()
         {
@@ -761,11 +764,17 @@ private void ClearTerrainInfo()
 
             // Button styling
             var colors = button.colors;
-            colors.normalColor = new Color(0.2f, 0.4f, 0.7f, 0.9f);
-            colors.highlightedColor = new Color(0.3f, 0.55f, 0.9f, 1f);
-            colors.pressedColor = new Color(0.15f, 0.3f, 0.55f, 1f);
-            colors.selectedColor = new Color(0.25f, 0.45f, 0.75f, 0.95f);
+            colors.normalColor = new Color(0.18f, 0.45f, 0.85f, 0.95f);    // vibrant blue
+            colors.highlightedColor = new Color(0.3f, 0.65f, 0.98f, 1f);
+            colors.pressedColor = new Color(0.12f, 0.3f, 0.6f, 1f);
+            colors.selectedColor = new Color(0.95f, 0.9f, 0.5f, 0.98f);
+            colors.disabledColor = new Color(0.35f, 0.35f, 0.35f, 0.6f);
             button.colors = colors;
+
+            // Make navigation explicit (vertical) for controller
+            var nav = button.navigation;
+            nav.mode = Navigation.Mode.Vertical;
+            button.navigation = nav;
 
             var outline = buttonGO.AddComponent<Outline>();
             outline.effectColor = new Color(1f, 1f, 1f, 0.7f);
@@ -824,6 +833,92 @@ private void ClearTerrainInfo()
         public bool IsModalMenuOpen()
         {
             return _modalMenuPanel != null && _modalMenuPanel.activeSelf;
+        }
+
+        /// <summary>
+        /// Shows a small action menu for a selected unit.
+        /// </summary>
+        public void ShowActionMenu(TacticFantasy.Domain.Units.IUnit unit, (int x, int y) tilePos, bool canAttack, bool canSteal, bool canTrade)
+        {
+            if (_actionMenuPanel != null)
+            {
+                Destroy(_actionMenuPanel);
+                _actionMenuPanel = null;
+            }
+
+            _actionMenuPanel = new GameObject("ActionMenuPanel");
+            _actionMenuPanel.transform.SetParent(_uiCanvas.transform);
+
+            Image panelImage = _actionMenuPanel.AddComponent<Image>();
+            panelImage.color = new Color(0.05f, 0.05f, 0.15f, 0.95f);
+
+            RectTransform panelRT = _actionMenuPanel.GetComponent<RectTransform>();
+            panelRT.anchorMin = new Vector2(0.5f, 0.5f);
+            panelRT.anchorMax = new Vector2(0.5f, 0.5f);
+            panelRT.offsetMin = new Vector2(-140, -110);
+            panelRT.offsetMax = new Vector2(140, 110);
+
+            // Title
+            GameObject titleGO = new GameObject("ActionMenuTitle");
+            titleGO.transform.SetParent(_actionMenuPanel.transform);
+            Text titleText = titleGO.AddComponent<Text>();
+            titleText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            titleText.text = unit.Name + " Actions";
+            titleText.alignment = TextAnchor.MiddleCenter;
+            titleText.fontSize = 18;
+            titleText.color = Color.white;
+
+            RectTransform titleRT = titleGO.GetComponent<RectTransform>();
+            titleRT.anchorMin = new Vector2(0, 1);
+            titleRT.anchorMax = new Vector2(1, 1);
+            titleRT.offsetMin = new Vector2(0, -36);
+            titleRT.offsetMax = new Vector2(0, -6);
+
+            // Buttons container
+            GameObject container = new GameObject("ActionButtonContainer");
+            container.transform.SetParent(_actionMenuPanel.transform);
+            RectTransform contRT = container.AddComponent<RectTransform>();
+            contRT.anchorMin = new Vector2(0, 0);
+            contRT.anchorMax = new Vector2(1, 1);
+            contRT.offsetMin = new Vector2(10, 10);
+            contRT.offsetMax = new Vector2(-10, -50);
+
+            // Create buttons
+            var btnAttack = CreateMenuButton("Atacar", container.transform, 0);
+            btnAttack.interactable = canAttack;
+            btnAttack.onClick.AddListener(() => { OnActionMenuSelected?.Invoke(ActionMenuChoice.Attack, unit); Destroy(_actionMenuPanel); });
+
+            var btnBag = CreateMenuButton("Bolsa", container.transform, 1);
+            btnBag.onClick.AddListener(() => { OnActionMenuSelected?.Invoke(ActionMenuChoice.Bag, unit); Destroy(_actionMenuPanel); });
+
+            var btnSteal = CreateMenuButton("Robar", container.transform, 2);
+            btnSteal.interactable = canSteal;
+            btnSteal.onClick.AddListener(() => { OnActionMenuSelected?.Invoke(ActionMenuChoice.Steal, unit); Destroy(_actionMenuPanel); });
+
+            var btnTrade = CreateMenuButton("Intercambiar", container.transform, 3);
+            btnTrade.interactable = canTrade;
+            btnTrade.onClick.AddListener(() => { OnActionMenuSelected?.Invoke(ActionMenuChoice.Trade, unit); Destroy(_actionMenuPanel); });
+
+            // Cancel button
+            var btnCancel = CreateMenuButton("Cancelar", container.transform, 4);
+            btnCancel.onClick.AddListener(() => { OnActionMenuSelected?.Invoke(ActionMenuChoice.Cancel, unit); Destroy(_actionMenuPanel); });
+
+            // Select first interactable for gamepad/navigation (prefer Attack if enabled)
+            if (EventSystem.current != null)
+            {
+                if (btnAttack.interactable)
+                    EventSystem.current.SetSelectedGameObject(btnAttack.gameObject);
+                else if (btnBag != null)
+                    EventSystem.current.SetSelectedGameObject(btnBag.gameObject);
+            }
+        }
+
+        /// <summary>
+        /// Shows the inventory window for a unit. Callback returns the chosen action/result.
+        /// </summary>
+        public void ShowInventory(TacticFantasy.Domain.Units.IUnit unit, System.Action<InventoryActionResult> onClose)
+        {
+            InventoryWindow.Show(_uiCanvas, unit, onClose);
         }
     }
 }

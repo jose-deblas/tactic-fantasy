@@ -402,26 +402,38 @@ namespace TacticFantasy.Adapters
 
                 case ActionMenuChoice.Bag:
                     // Open inventory UI
-                    _uiManager.ShowInventory(unit, result =>
-                    {
-                        if (result != null && result.Action == InventoryActionResult.ActionType.Use && result.Item != null)
+                    _uiManager.ShowInventory(unit,
+                        // onAction: called without closing the inventory (equip/give)
+                        actionResult =>
                         {
-                            // Use consumable and consume action
-                            result.Item.Use(unit);
-                            _turnManager.ConsumeAction(unit.Id);
-                            _unitRenderer.UpdateAllUnits(_allUnits, _turnManager);
-                            _uiManager.ShowInfoMessage($"{unit.Name} used {result.Item.Name}");
-                        }
-                        else if (result != null && result.Action == InventoryActionResult.ActionType.Equip && result.Item != null)
-                        {
-                            if (result.Item is TacticFantasy.Domain.Weapons.IWeapon w && unit.CanEquip(w))
+                            if (actionResult != null && actionResult.Action == InventoryActionResult.ActionType.Equip && actionResult.Item != null)
                             {
-                                unit.EquipWeapon(w);
-                                _unitRenderer.UpdateAllUnits(_allUnits, _turnManager);
-                                _uiManager.ShowInfoMessage($"{unit.Name} equipped {w.Name}");
+                                if (actionResult.Item is TacticFantasy.Domain.Weapons.IWeapon w && unit.CanEquip(w))
+                                {
+                                    unit.EquipWeapon(w);
+                                    _unitRenderer.UpdateAllUnits(_allUnits, _turnManager);
+                                    _uiManager.ShowInfoMessage($"{unit.Name} equipped {w.Name}");
+                                }
                             }
-                        }
-                    });
+
+                            if (actionResult != null && actionResult.Action == InventoryActionResult.ActionType.Give && actionResult.Item != null)
+                            {
+                                // Give flow not implemented: inform user
+                                _uiManager.ShowInfoMessage("Dar objeto no implementado. Seleccione un aliado cercano en el mapa para dar.");
+                            }
+                        },
+                        // onClose: called when inventory closes (use or explicit close)
+                        closeResult =>
+                        {
+                            if (closeResult != null && closeResult.Action == InventoryActionResult.ActionType.Use && closeResult.Item != null)
+                            {
+                                // Use consumable and consume action
+                                closeResult.Item.Use(unit);
+                                _turnManager.ConsumeAction(unit.Id);
+                                _unitRenderer.UpdateAllUnits(_allUnits, _turnManager);
+                                _uiManager.ShowInfoMessage($"{unit.Name} used {closeResult.Item.Name}");
+                            }
+                        });
                     break;
 
                 case ActionMenuChoice.Steal:

@@ -914,11 +914,13 @@ private void ClearTerrainInfo()
         }
 
         /// <summary>
-        /// Shows the inventory window for a unit. Callback returns the chosen action/result.
+        /// Shows the inventory window for a unit.
+        /// onAction is called for immediate actions that should not close the window (e.g., Equip)
+        /// onClose is called when the window closes (e.g., Use or Close button).
         /// </summary>
-        public void ShowInventory(TacticFantasy.Domain.Units.IUnit unit, System.Action<InventoryActionResult> onClose)
+        public void ShowInventory(TacticFantasy.Domain.Units.IUnit unit, System.Action<InventoryActionResult> onAction, System.Action<InventoryActionResult> onClose)
         {
-            InventoryWindow.Show(_uiCanvas, unit, onClose);
+            InventoryWindow.Show(_uiCanvas, unit, onAction, onClose);
         }
     }
 }

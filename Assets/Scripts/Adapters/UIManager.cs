@@ -1,5 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
+using System;
 using TacticFantasy.Domain.Combat;
 using TacticFantasy.Domain.Map;
 using TacticFantasy.Domain.Turn;
@@ -45,6 +47,39 @@ namespace TacticFantasy.Adapters
 
             _uiCanvas = canvasGO.AddComponent<Canvas>();
             _uiCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
+
+            // Ensure UI elements can receive clicks
+            if (canvasGO.GetComponent<GraphicRaycaster>() == null)
+            {
+                canvasGO.AddComponent<GraphicRaycaster>();
+            }
+
+            // Ensure there is an EventSystem in the scene for UI navigation
+            if (EventSystem.current == null)
+            {
+                var esGO = new GameObject("EventSystem");
+                esGO.transform.SetParent(null);
+                esGO.AddComponent<EventSystem>();
+
+                // Prefer the Input System UI module when the new Input System package is installed.
+                // Use reflection so this compiles whether or not the package is present.
+                Type inputModuleType = null;
+                foreach (var asm in AppDomain.CurrentDomain.GetAssemblies())
+                {
+                    inputModuleType = asm.GetType("UnityEngine.InputSystem.UI.InputSystemUIInputModule")
+                                   ?? asm.GetType("UnityEngine.InputSystem.InputSystemUIInputModule");
+                    if (inputModuleType != null) break;
+                }
+
+                if (inputModuleType != null)
+                {
+                    esGO.AddComponent(inputModuleType);
+                }
+                else
+                {
+                    esGO.AddComponent<StandaloneInputModule>();
+                }
+            }
 
             CanvasScaler scaler = canvasGO.AddComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
@@ -534,6 +569,12 @@ private void ClearTerrainInfo()
                 onStart?.Invoke();
             });
             _turnInterstitialPanel.SetActive(true);
+
+            // Select the start button so gamepad/keyboard confirm works immediately
+            if (EventSystem.current != null && _turnInterstitialButton != null)
+            {
+                EventSystem.current.SetSelectedGameObject(_turnInterstitialButton.gameObject);
+            }
         }
 
         public void HideTurnInterstitial()
@@ -545,6 +586,15 @@ private void ClearTerrainInfo()
         public bool IsTurnInterstitialOpen()
         {
             return _turnInterstitialPanel != null && _turnInterstitialPanel.activeSelf;
+        }
+
+        /// <summary>
+        /// Programmatically press the Start button on the interstitial (used by gamepad confirm handlers).
+        /// </summary>
+        public void PressTurnStartButton()
+        {
+            if (_turnInterstitialButton == null) return;
+            _turnInterstitialButton.onClick.Invoke();
         }
 
         private void CreateForecastPanel()

@@ -4,13 +4,14 @@ using System.Linq;
 using TacticFantasy.Domain.Combat;
 using TacticFantasy.Domain.Map;
 using TacticFantasy.Domain.Units;
+using TacticFantasy.Domain.Turn;
 using TacticFantasy.Domain.Weapons;
 
 namespace TacticFantasy.Domain.AI
 {
     public interface IAIController
     {
-        void DecideAction(IUnit unit, List<IUnit> allUnits, IGameMap map, IPathFinder pathFinder, out (int x, int y)? moveTarget, out IUnit attackTarget, out bool isHealAction, IFogOfWar fogOfWar = null);
+        void DecideAction(IUnit unit, List<IUnit> allUnits, IGameMap map, IPathFinder pathFinder, out (int x, int y)? moveTarget, out IUnit attackTarget, out bool isHealAction, IFogOfWar fogOfWar = null, ITurnManager turnManager = null);
     }
 
     public class AIController : IAIController
@@ -31,11 +32,21 @@ namespace TacticFantasy.Domain.AI
         public static bool AreAllied(Team a, Team b) => TeamRelations.AreAllied(a, b);
 
         public void DecideAction(IUnit unit, List<IUnit> allUnits, IGameMap map, IPathFinder pathFinder,
-            out (int x, int y)? moveTarget, out IUnit attackTarget, out bool isHealAction, IFogOfWar fogOfWar = null)
+            out (int x, int y)? moveTarget, out IUnit attackTarget, out bool isHealAction, IFogOfWar fogOfWar = null, ITurnManager turnManager = null)
         {
             moveTarget = null;
             attackTarget = null;
             isHealAction = false;
+            int remainingActions = turnManager?.GetRemainingActions(unit.Id) ?? int.MaxValue;
+
+            // If AI has no actions left, do nothing
+            if (remainingActions <= 0)
+            {
+                moveTarget = null;
+                attackTarget = null;
+                isHealAction = false;
+                return;
+            }
 
             // Update last-known positions for visible opponents
             if (fogOfWar != null)
@@ -63,11 +74,11 @@ namespace TacticFantasy.Domain.AI
 
             if (unit.EquippedWeapon.Type == WeaponType.STAFF)
             {
-                DecideHealAction(unit, allUnits, map, pathFinder, out moveTarget, out attackTarget, out isHealAction);
+                DecideHealAction(unit, allUnits, map, pathFinder, out moveTarget, out attackTarget, out isHealAction, turnManager);
             }
             else
             {
-                DecideAttackAction(unit, allUnits, map, pathFinder, out moveTarget, out attackTarget, fogOfWar);
+                DecideAttackAction(unit, allUnits, map, pathFinder, out moveTarget, out attackTarget, fogOfWar, turnManager);
             }
         }
 
@@ -127,12 +138,32 @@ namespace TacticFantasy.Domain.AI
         }
 
         private void DecideAttackAction(IUnit unit, List<IUnit> allUnits, IGameMap map, IPathFinder pathFinder,
-            out (int x, int y)? moveTarget, out IUnit attackTarget, IFogOfWar fogOfWar = null)
+            out (int x, int y)? moveTarget, out IUnit attackTarget, IFogOfWar fogOfWar = null, ITurnManager turnManager = null)
         {
             moveTarget = null;
             attackTarget = null;
+            int remainingActions = turnManager?.GetRemainingActions(unit.Id) ?? int.MaxValue;
 
             var hostileUnits = allUnits.Where(u => AreHostile(unit.Team, u.Team) && u.IsAlive).ToList();
+
+            if (remainingActions == 1)
+            {
+                // Prefer immediate attacks from current tile if possible (no movement)
+                var immediateTargets = hostileUnits
+                    .Where(e =>
+                    {
+                        int d = map.GetDistance(unit.Position.x, unit.Position.y, e.Position.x, e.Position.y);
+                        return d >= unit.EquippedWeapon.MinRange && d <= unit.EquippedWeapon.MaxRange
+                            && (fogOfWar == null || fogOfWar.IsTileVisible(e.Position.x, e.Position.y, unit.Team));
+                    })
+                    .ToList();
+                if (immediateTargets.Count > 0)
+                {
+                    attackTarget = immediateTargets.OrderBy(e => ScoreAttackOption(unit, e)).First();
+                    moveTarget = (unit.Position.x, unit.Position.y);
+                    return;
+                }
+            }
 
             if (hostileUnits.Count == 0)
                 return;
@@ -192,7 +223,7 @@ namespace TacticFantasy.Domain.AI
         }
 
         private void DecideHealAction(IUnit unit, List<IUnit> allUnits, IGameMap map, IPathFinder pathFinder,
-            out (int x, int y)? moveTarget, out IUnit attackTarget, out bool isHealAction)
+            out (int x, int y)? moveTarget, out IUnit attackTarget, out bool isHealAction, ITurnManager turnManager = null)
         {
             moveTarget = null;
             attackTarget = null;

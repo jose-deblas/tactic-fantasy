@@ -43,7 +43,7 @@
     <UnityVersion>6000.4.2f1</UnityVersion>
   </PropertyGroup>
   <ItemGroup>
-    <Analyzer Include="/Users/r2d2/.vscode/extensions/visualstudiotoolsforunity.vstuc-1.2.1/Analyzers/Microsoft.Unity.Analyzers.dll" />
+    <Analyzer Include="/Users/r2d2/.vscode/extensions/visualstudiotoolsforunity.vstuc-1.2.2/Analyzers/Microsoft.Unity.Analyzers.dll" />
     <Analyzer Include="/Applications/Unity/Hub/Editor/6000.4.2f1/Unity.app/Contents/Resources/BuildPipeline/Unity.SourceGenerators/Unity.SourceGenerators.dll" />
     <Analyzer Include="/Applications/Unity/Hub/Editor/6000.4.2f1/Unity.app/Contents/Resources/BuildPipeline/Unity.SourceGenerators/Unity.Properties.SourceGenerator.dll" />
     <Analyzer Include="/Applications/Unity/Hub/Editor/6000.4.2f1/Unity.app/Contents/Resources/BuildPipeline/Unity.SourceGenerators/Unity.UIToolkit.SourceGenerator.dll" />
@@ -94,6 +94,7 @@
     <Compile Include="Assets/Scripts/Domain/Save/UnitSnapshot.cs" />
     <Compile Include="Assets/Scripts/Tests/NPCUnitTests.cs" />
     <Compile Include="Assets/Scripts/Tests/MagicTriangleTests.cs" />
+    <Compile Include="Assets/Scripts/Tests/ActionPointAndAttackLimitTests.cs" />
     <Compile Include="Assets/Scripts/Adapters/MapRenderer.cs" />
     <Compile Include="Assets/Scripts/Domain/Map/ReinforcementService.cs" />
     <Compile Include="Assets/Scripts/Domain/Chapter/BasePhase.cs" />
@@ -117,8 +118,9 @@
     <Compile Include="Assets/Scripts/Adapters/UnitRenderer.cs" />
     <Compile Include="Assets/Scripts/Domain/Weapons/WeaponType.cs" />
     <Compile Include="Assets/Scripts/Domain/Units/StatusEffect.cs" />
-    <Compile Include="Assets/Scripts/Domain/StatusEffect.cs" />
+    <Compile Include="Assets/Scripts/Adapters/InventoryWindow.cs" />
     <Compile Include="Assets/Scripts/Tests/UIManagerInterstitialTests.cs" />
+    <Compile Include="Assets/Scripts/Domain/StatusEffect.cs" />
     <Compile Include="Assets/Scripts/Domain/Combat/CombatXp.cs" />
     <Compile Include="Assets/Scripts/Tests/ExperienceSystemTests.cs" />
     <Compile Include="Assets/Scripts/Tests/RefreshMechanicTests.cs" />
@@ -135,6 +137,7 @@
     <Compile Include="Assets/Scripts/Tests/ShoveServiceTests.cs" />
     <Compile Include="Assets/Scripts/Tests/MapLoaderTests.cs" />
     <Compile Include="Assets/Scripts/Domain/Save/InMemoryGameRepository.cs" />
+    <Compile Include="Assets/Scripts/Tests/TurnManagerActionsTests.cs" />
     <Compile Include="Assets/Scripts/Domain/Save/IGameRepository.cs" />
     <Compile Include="Assets/Scripts/Domain/Utils/PositionUtils.cs" />
     <Compile Include="Assets/Scripts/Tests/PositionUtilsTests.cs" />
@@ -168,8 +171,9 @@
     <Compile Include="Assets/Scripts/Domain/Chapter/ShopService.cs" />
     <Compile Include="Assets/Scripts/Domain/Narrative/DialogueScript.cs" />
     <Compile Include="Assets/Scripts/Tests/WeaponTriangleTests.cs" />
-    <Compile Include="Assets/Scripts/Tests/JsonFileGameRepositoryTests.cs" />
+    <Compile Include="Assets/Scripts/Adapters/ActionMenuChoice.cs" />
     <Compile Include="Assets/Scripts/Tests/BasePhaseTests.cs" />
+    <Compile Include="Assets/Scripts/Tests/JsonFileGameRepositoryTests.cs" />
     <Compile Include="Assets/Scripts/Tests/TurnManagerTests.cs" />
     <Compile Include="Assets/Scripts/Domain/Support/SupportLevel.cs" />
     <Compile Include="Assets/Scripts/Domain/Combat/WeaponTriangle.cs" />

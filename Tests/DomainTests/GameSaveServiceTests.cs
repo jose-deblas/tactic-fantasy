@@ -30,6 +30,7 @@ namespace DomainTests
         public bool HasBrokenWeapon => false;
         public int Level { get; set; }
         public int Experience { get; set; }
+        public bool IsGuarding { get; set; }
         public IReadOnlyList<ISkill> EquippedSkills => new List<ISkill>().AsReadOnly();
         public TransformGauge LaguzGauge => null;
         public bool IsLaguz => false;
@@ -52,6 +53,8 @@ namespace DomainTests
         public void Transform() { }
         public void Revert() { }
         public bool TickTransformGauge() => false;
+        public void SetGuarding(bool guarding) { IsGuarding = guarding; }
+        public void Recruit() { Team = Team.PlayerTeam; }
     }
 
     class FakeTurnManager : ITurnManager
@@ -61,6 +64,7 @@ namespace DomainTests
         public IReadOnlyList<IUnit> AllUnits { get; private set; }
         public IUnit CurrentUnit => AllUnits.Count > 0 ? AllUnits[0] : null;
         public bool HasCurrentUnitActed => false;
+        public int DefaultActionsPerUnit => 2;
         public IVictoryCondition VictoryCondition => null;
         public FakeTurnManager(List<IUnit> units)
         {
@@ -72,6 +76,9 @@ namespace DomainTests
         public void MarkCurrentUnitAsActed() { }
         public void MarkUnitAsActed(int unitId) { }
         public void AdvancePhase() { }
+        public int GetRemainingActions(int unitId) => DefaultActionsPerUnit;
+        public bool ConsumeAction(int unitId) => true;
+        public void GrantActions(int unitId, int amount) { }
         public TacticFantasy.Domain.Turn.GameState GetGameState() => GameState.InProgress;
         public void HealFortTiles(TacticFantasy.Domain.Map.IGameMap map) { }
         public bool HasUnitActed(int unitId) => false;
@@ -79,6 +86,15 @@ namespace DomainTests
         public bool CanRefreshTarget(IUnit refresher, IUnit target) => false;
         public void RefreshUnit(int targetUnitId) { }
         public int RefreshCross(IUnit refresher, TacticFantasy.Domain.Map.IGameMap map) => 0;
+
+        // New API for attack-tracking
+        public bool HasUnitAttacked(int unitId) => false;
+        public void MarkUnitAsAttacked(int unitId) { }
+
+        // Movement API stubs
+        public int GetMovementPointsRemaining(int unitId) => DefaultActionsPerUnit;
+        public bool TryUseMovement(int unitId, int movementCost) => true;
+        public bool HasUnitMoved(int unitId) => false;
     }
 
     public class GameSaveServiceTests

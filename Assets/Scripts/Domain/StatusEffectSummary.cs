@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 
 namespace TacticFantasy.Domain
 {
@@ -32,7 +33,8 @@ namespace TacticFantasy.Domain
                 if (ms <= 0) ms = 1;
                 return $"{Name} ({ms}ms)";
             }
-            return $"{Name} ({Remaining:0.00}s)";
+            // Use invariant culture to ensure dot decimal separator in tests across locales
+            return string.Format(CultureInfo.InvariantCulture, "{0} ({1:0.00}s)", Name, Remaining);
         }
     }
 }

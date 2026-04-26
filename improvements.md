@@ -99,11 +99,12 @@ TL;DR: Añadir soporte de 2 acciones por unidad (AP=2), menú contextual de acci
 2. Tests: la migración afectará muchos tests; priorizar Fase 1 y actualizarlos antes de grandes cambios en adaptadores/UI.
 3. UI/UX: diseñar cómo mostrar "AP restante" (icono sobre la unidad / HUD). Añadir indicador visual en `UnitRenderer`.
 
-**Siguiente paso**
-- He guardado este plan en `/memories/session/plan.md`. ¿Quieres que copie este plan al archivo `improvements.md` del repositorio ahora, o prefieres que primero haga la Fase 1 (cambios en `TurnManager`) y te muestre el diff antes de modificar el repo?
+**Siguientes pasos**
+- He guardado este plan en `/memories/session/plan.md`.
 
-- Opciones recomendadas:
-  - "Copiar ahora en `improvements.md` y preparar commit" — yo aplico el cambio en el repo (requiere permiso para editar archivos). 
-  - "Solo guardar en memoria y proceder a Fase 1" — inicio la implementación de dominio y actualizaré tests (requiere permiso para editar archivos). 
-  - "Solo guardar el plan (por ahora)" — no modifico el repo hasta instrucciones.
+Tareas restantes / recomendaciones
+
+* Confirmar si la IA debe consumir AP explícitamente (llamar ConsumeAction tras mover/atacar). Ahora la fase avanza desde GameController aunque no se consuman AP; si se quiere AP-consistente, implementar consumo para IA.
+* Actualizar documentación (README / CLAUDE.md) y añadir/ajustar tests de AI para cubrir comportamiento dependiente de AP (recomendado).
+* Pulir UI: indicador visual de AP restante en UnitRenderer (sugerido en el plan).
 

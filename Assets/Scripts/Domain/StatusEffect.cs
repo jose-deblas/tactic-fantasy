@@ -128,6 +128,7 @@ namespace TacticFantasy.Domain
         // Tracks how much shield remains; applied to target.Health when activated
         private float remainingShield = 0f;
         private bool applied = false;
+        private float baseHealth = 0f;
 
         public ShieldEffect(float duration, float amount)
         {
@@ -147,24 +148,28 @@ namespace TacticFantasy.Domain
                 // Apply shield as temporary extra health
                 target.TakeDamage(-Amount);
                 remainingShield = Amount;
+                // Record base health prior to shield application so we can compute how much
+                // of the shield remains after incoming damage (supports simple IStatusTarget fakes)
+                baseHealth = target.Health - Amount;
                 applied = true;
             }
 
+            var effective = Math.Min(deltaTime, Duration);
+            Duration -= effective;
+
+            // If the effect expired during this tick, remove any remaining shield immediately
             if (IsExpired)
             {
-                // Remove any remaining shield from the target's health
-                if (remainingShield > 0f)
+                // Remaining shield is whatever extra health is still above the base health
+                var remaining = Math.Max(0f, target.Health - baseHealth);
+                if (remaining > 0f)
                 {
-                    // When removing the shield, don't reduce health below 0
-                    var reduction = Math.Min(remainingShield, target.Health);
+                    var reduction = Math.Min(remaining, target.Health);
                     target.TakeDamage(reduction);
                     remainingShield = 0f;
                 }
                 return;
             }
-
-            var effective = Math.Min(deltaTime, Duration);
-            Duration -= effective;
         }
 
         public bool IsExpired => Duration <= 0f;

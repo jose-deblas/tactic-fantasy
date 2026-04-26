@@ -72,6 +72,14 @@ A Fire Emblem-style tactical RPG built with Unity 6 (C#). Turn-based combat on a
 3. **Victory**: Defeat all enemy units
 4. **Defeat**: Lose all your units
 
+### Action Points (AP)
+
+- Each unit has a default of 2 Action Points (AP) per turn.
+- Movement consumes 1 AP. Attacking consumes 1 AP. Using consumables consumes 1 AP.
+- Equipping/changing weapons does NOT consume AP (you can equip and still act if AP remains).
+- The UI greys-out units with 0 AP; the Action menu only enables "Atacar" when there is an enemy reachable from the unit's current or reachable movement tiles.
+- AI decisions respect remaining AP (won't act when AP == 0 and will prefer attacks when only 1 AP remains).
+
 ### Unit Classes & Stats
 
 #### Myrmidon (Sword)

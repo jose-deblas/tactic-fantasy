@@ -12,6 +12,17 @@ namespace TacticFantasy.Domain.Turn
         IReadOnlyList<IUnit> AllUnits { get; }
         IUnit CurrentUnit { get; }
         bool HasCurrentUnitActed { get; }
+        int DefaultActionsPerUnit { get; }
+        int GetRemainingActions(int unitId);
+        bool ConsumeAction(int unitId);
+        void GrantActions(int unitId, int amount);
+        bool HasUnitAttacked(int unitId);
+        void MarkUnitAsAttacked(int unitId);
+
+        // Movement/move-action tracking
+        int GetMovementPointsRemaining(int unitId);
+        bool TryUseMovement(int unitId, int movementCost);
+        bool HasUnitMoved(int unitId);
 
         /// <summary>Active victory condition for the current chapter (defaults to Rout).</summary>
         IVictoryCondition VictoryCondition { get; }
@@ -52,15 +63,21 @@ namespace TacticFantasy.Domain.Turn
         private List<IUnit> _allUnits = new List<IUnit>();
         private int _currentUnitIndex = 0;
         private HashSet<int> _unitsWhoActed = new HashSet<int>();
+        private HashSet<int> _unitsWhoAttacked = new HashSet<int>();
+        private Dictionary<int,int> _actionsRemaining = new Dictionary<int,int>();
+        // Movement points remaining for the unit's single movement action this turn.
+        private Dictionary<int,int> _movementRemaining = new Dictionary<int,int>();
         private IGameMap _map;
         private IReinforcementService _reinforcementService;
         private List<ReinforcementTrigger> _reinforcementTriggers = new List<ReinforcementTrigger>();
+
+        public int DefaultActionsPerUnit { get; } = 2;
 
         public Phase CurrentPhase { get; private set; } = Phase.PlayerPhase;
         public int TurnCount { get; private set; } = 0;
         public IReadOnlyList<IUnit> AllUnits => _allUnits.AsReadOnly();
         public IUnit CurrentUnit => _currentUnitIndex < GetPhaseUnits().Count ? GetPhaseUnits()[_currentUnitIndex] : null;
-        public bool HasCurrentUnitActed => CurrentUnit != null && _unitsWhoActed.Contains(CurrentUnit.Id);
+        public bool HasCurrentUnitActed => CurrentUnit != null && HasUnitActed(CurrentUnit.Id);
 
         /// <inheritdoc/>
         public IVictoryCondition VictoryCondition { get; private set; } = VictoryConditionFactory.Rout();
@@ -81,6 +98,14 @@ namespace TacticFantasy.Domain.Turn
             _allUnits = new List<IUnit>(units);
             _currentUnitIndex = 0;
             _unitsWhoActed.Clear();
+            _unitsWhoAttacked.Clear();
+            _actionsRemaining = new Dictionary<int,int>();
+            _movementRemaining = new Dictionary<int,int>();
+            foreach (var u in _allUnits)
+            {
+                _actionsRemaining[u.Id] = DefaultActionsPerUnit;
+                _movementRemaining[u.Id] = u.CurrentStats.MOV;
+            }
             CurrentPhase = Phase.PlayerPhase;
             TurnCount = 1;
             VictoryCondition = victoryCondition ?? VictoryConditionFactory.Rout();
@@ -94,12 +119,18 @@ namespace TacticFantasy.Domain.Turn
             if (CurrentUnit != null)
             {
                 _unitsWhoActed.Add(CurrentUnit.Id);
+                _actionsRemaining[CurrentUnit.Id] = 0;
+                if (_movementRemaining.ContainsKey(CurrentUnit.Id))
+                    _movementRemaining[CurrentUnit.Id] = 0;
             }
         }
 
         public void MarkUnitAsActed(int unitId)
         {
             _unitsWhoActed.Add(unitId);
+            _actionsRemaining[unitId] = 0;
+            if (_movementRemaining.ContainsKey(unitId))
+                _movementRemaining[unitId] = 0;
         }
 
         public void AdvancePhase()
@@ -115,6 +146,13 @@ namespace TacticFantasy.Domain.Turn
                 CurrentPhase = Phase.AllyPhase;
                 _unitsWhoActed.Clear();
                 _currentUnitIndex = 0;
+                // Reset actions for ally NPC units
+                foreach (var unit in _allUnits.Where(u => u.Team == Team.AllyNPC && u.IsAlive && u.CanAct))
+                {
+                    _actionsRemaining[unit.Id] = DefaultActionsPerUnit;
+                    _movementRemaining[unit.Id] = unit.CurrentStats.MOV;
+                    _unitsWhoAttacked.Remove(unit.Id);
+                }
             }
             else if (CurrentPhase == Phase.AllyPhase)
             {
@@ -127,6 +165,13 @@ namespace TacticFantasy.Domain.Turn
                 CurrentPhase = Phase.EnemyPhase;
                 _unitsWhoActed.Clear();
                 _currentUnitIndex = 0;
+                // Reset actions for enemy units
+                foreach (var unit in _allUnits.Where(u => u.Team == Team.EnemyTeam && u.IsAlive && u.CanAct))
+                {
+                    _actionsRemaining[unit.Id] = DefaultActionsPerUnit;
+                    _movementRemaining[unit.Id] = unit.CurrentStats.MOV;
+                    _unitsWhoAttacked.Remove(unit.Id);
+                }
             }
             else if (CurrentPhase == Phase.EnemyPhase)
             {
@@ -143,6 +188,13 @@ namespace TacticFantasy.Domain.Turn
                 CurrentPhase = Phase.PlayerPhase;
                 _unitsWhoActed.Clear();
                 _currentUnitIndex = 0;
+                // Reset actions for player units
+                foreach (var unit in _allUnits.Where(u => u.Team == Team.PlayerTeam && u.IsAlive && u.CanAct))
+                {
+                    _actionsRemaining[unit.Id] = DefaultActionsPerUnit;
+                    _movementRemaining[unit.Id] = unit.CurrentStats.MOV;
+                    _unitsWhoAttacked.Remove(unit.Id);
+                }
                 TurnCount++;
 
                 // Check reinforcements at the start of each new turn
@@ -186,19 +238,106 @@ namespace TacticFantasy.Domain.Turn
 
         public bool HasUnitActed(int unitId)
         {
-            return _unitsWhoActed.Contains(unitId);
+            if (_unitsWhoActed.Contains(unitId)) return true;
+            if (_actionsRemaining.TryGetValue(unitId, out var rem)) return rem <= 0;
+            return false;
         }
 
         public bool HaveAllPlayerUnitsActed()
         {
             var alivePlayerUnits = _allUnits.Where(u => u.Team == Team.PlayerTeam && u.IsAlive && u.CanAct);
-            return alivePlayerUnits.All(u => _unitsWhoActed.Contains(u.Id));
+            return alivePlayerUnits.All(u => HasUnitActed(u.Id));
         }
 
         public bool HaveAllAllyUnitsActed()
         {
             var aliveAllyUnits = _allUnits.Where(u => u.Team == Team.AllyNPC && u.IsAlive && u.CanAct);
-            return aliveAllyUnits.All(u => _unitsWhoActed.Contains(u.Id));
+            return aliveAllyUnits.All(u => HasUnitActed(u.Id));
+        }
+
+        public int GetRemainingActions(int unitId)
+        {
+            return _actionsRemaining.TryGetValue(unitId, out var rem) ? rem : 0;
+        }
+
+        public bool ConsumeAction(int unitId)
+        {
+            if (!_actionsRemaining.TryGetValue(unitId, out var rem))
+                return false;
+            if (rem <= 0)
+                return false;
+            _actionsRemaining[unitId] = rem - 1;
+            if (_actionsRemaining[unitId] <= 0)
+                _unitsWhoActed.Add(unitId);
+            return true;
+        }
+
+        public int GetMovementPointsRemaining(int unitId)
+        {
+            if (!_movementRemaining.TryGetValue(unitId, out var rem))
+            {
+                var unit = _allUnits.FirstOrDefault(u => u.Id == unitId);
+                return unit?.CurrentStats.MOV ?? 0;
+            }
+            return rem;
+        }
+
+        /// <summary>
+        /// Attempts to use <paramref name="movementCost"/> movement points from the unit's single movement action.
+        /// On the first movement usage the unit will also consume 1 action (ConsumeAction).
+        /// Returns true on success; false if not enough movement points or not enough actions.
+        /// </summary>
+        public bool TryUseMovement(int unitId, int movementCost)
+        {
+            var unit = _allUnits.FirstOrDefault(u => u.Id == unitId);
+            int maxMovement = unit?.CurrentStats.MOV ?? 0;
+            if (!_movementRemaining.ContainsKey(unitId))
+                _movementRemaining[unitId] = maxMovement;
+            int rem = _movementRemaining[unitId];
+            if (movementCost > rem)
+                return false;
+            // First movement consumes an action
+            if (rem == maxMovement)
+            {
+                if (!ConsumeAction(unitId))
+                    return false;
+            }
+            _movementRemaining[unitId] = rem - movementCost;
+            return true;
+        }
+
+        public bool HasUnitMoved(int unitId)
+        {
+            var unit = _allUnits.FirstOrDefault(u => u.Id == unitId);
+            int maxMovement = unit?.CurrentStats.MOV ?? 0;
+            if (!_movementRemaining.TryGetValue(unitId, out var rem))
+                return false;
+            return rem < maxMovement;
+        }
+
+        public void GrantActions(int unitId, int amount)
+        {
+            if (!_actionsRemaining.ContainsKey(unitId))
+                _actionsRemaining[unitId] = 0;
+            _actionsRemaining[unitId] += amount;
+            if (_actionsRemaining[unitId] > 0)
+            {
+                _unitsWhoActed.Remove(unitId);
+                _unitsWhoAttacked.Remove(unitId);
+                var u = _allUnits.FirstOrDefault(x => x.Id == unitId);
+                if (u != null)
+                    _movementRemaining[unitId] = u.CurrentStats.MOV;
+            }
+        }
+
+        public bool HasUnitAttacked(int unitId)
+        {
+            return _unitsWhoAttacked.Contains(unitId);
+        }
+
+        public void MarkUnitAsAttacked(int unitId)
+        {
+            _unitsWhoAttacked.Add(unitId);
         }
 
         public bool CanRefreshTarget(IUnit refresher, IUnit target)
@@ -213,7 +352,7 @@ namespace TacticFantasy.Domain.Turn
                 return false;
 
             // 3. Target must have already acted
-            if (!_unitsWhoActed.Contains(target.Id))
+            if (!HasUnitActed(target.Id))
                 return false;
 
             // 4. Target must be alive and able to act
@@ -230,6 +369,11 @@ namespace TacticFantasy.Domain.Turn
         public void RefreshUnit(int targetUnitId)
         {
             _unitsWhoActed.Remove(targetUnitId);
+            _unitsWhoAttacked.Remove(targetUnitId);
+            _actionsRemaining[targetUnitId] = DefaultActionsPerUnit;
+            var target = _allUnits.FirstOrDefault(u => u.Id == targetUnitId);
+            if (target != null)
+                _movementRemaining[targetUnitId] = target.CurrentStats.MOV;
         }
 
         public int RefreshCross(IUnit heron, IGameMap map)
@@ -250,7 +394,7 @@ namespace TacticFantasy.Domain.Turn
 
                 var adjacent = _allUnits.FirstOrDefault(u =>
                     u.IsAlive && u.Position == (nx, ny) && u.Team == heron.Team
-                    && u.Id != heron.Id && _unitsWhoActed.Contains(u.Id));
+                    && u.Id != heron.Id && HasUnitActed(u.Id));
 
                 if (adjacent != null)
                 {

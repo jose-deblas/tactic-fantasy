@@ -4,13 +4,14 @@ using System.Linq;
 using TacticFantasy.Domain.Combat;
 using TacticFantasy.Domain.Map;
 using TacticFantasy.Domain.Units;
+using TacticFantasy.Domain.Turn;
 using TacticFantasy.Domain.Weapons;
 
 namespace TacticFantasy.Domain.AI
 {
     public interface IAIController
     {
-        void DecideAction(IUnit unit, List<IUnit> allUnits, IGameMap map, IPathFinder pathFinder, out (int x, int y)? moveTarget, out IUnit attackTarget, out bool isHealAction, IFogOfWar fogOfWar = null);
+        void DecideAction(IUnit unit, List<IUnit> allUnits, IGameMap map, IPathFinder pathFinder, out (int x, int y)? moveTarget, out IUnit attackTarget, out bool isHealAction, IFogOfWar fogOfWar = null, ITurnManager turnManager = null);
     }
 
     public class AIController : IAIController
@@ -31,11 +32,21 @@ namespace TacticFantasy.Domain.AI
         public static bool AreAllied(Team a, Team b) => TeamRelations.AreAllied(a, b);
 
         public void DecideAction(IUnit unit, List<IUnit> allUnits, IGameMap map, IPathFinder pathFinder,
-            out (int x, int y)? moveTarget, out IUnit attackTarget, out bool isHealAction, IFogOfWar fogOfWar = null)
+            out (int x, int y)? moveTarget, out IUnit attackTarget, out bool isHealAction, IFogOfWar fogOfWar = null, ITurnManager turnManager = null)
         {
             moveTarget = null;
             attackTarget = null;
             isHealAction = false;
+            int remainingActions = turnManager?.GetRemainingActions(unit.Id) ?? int.MaxValue;
+
+            // If AI has no actions left, do nothing
+            if (remainingActions <= 0)
+            {
+                moveTarget = null;
+                attackTarget = null;
+                isHealAction = false;
+                return;
+            }
 
             // Update last-known positions for visible opponents
             if (fogOfWar != null)
@@ -46,28 +57,28 @@ namespace TacticFantasy.Domain.AI
             // A unit with a broken weapon cannot attack or heal — just advance.
             if (unit.HasBrokenWeapon)
             {
-                AdvanceTowardNearestEnemy(unit, allUnits, map, pathFinder, out moveTarget, fogOfWar);
+                AdvanceTowardNearestEnemy(unit, allUnits, map, pathFinder, out moveTarget, fogOfWar, turnManager);
                 return;
             }
 
             // Untransformed Laguz retreat toward safety — they have halved stats and are vulnerable.
             if (unit.IsLaguz && !unit.IsTransformed)
             {
-                RetreatFromEnemies(unit, allUnits, map, pathFinder, out moveTarget);
+                RetreatFromEnemies(unit, allUnits, map, pathFinder, out moveTarget, turnManager);
                 return;
             }
 
             // Self-preservation: if HP is critically low and a healing Fort is reachable, retreat.
-            if (TryRetreatToFort(unit, allUnits, map, pathFinder, out moveTarget))
+            if (TryRetreatToFort(unit, allUnits, map, pathFinder, out moveTarget, turnManager))
                 return;
 
             if (unit.EquippedWeapon.Type == WeaponType.STAFF)
             {
-                DecideHealAction(unit, allUnits, map, pathFinder, out moveTarget, out attackTarget, out isHealAction);
+                DecideHealAction(unit, allUnits, map, pathFinder, out moveTarget, out attackTarget, out isHealAction, turnManager);
             }
             else
             {
-                DecideAttackAction(unit, allUnits, map, pathFinder, out moveTarget, out attackTarget, fogOfWar);
+                DecideAttackAction(unit, allUnits, map, pathFinder, out moveTarget, out attackTarget, fogOfWar, turnManager);
             }
         }
 
@@ -76,7 +87,7 @@ namespace TacticFantasy.Domain.AI
         /// when the unit cannot attack (e.g., broken weapon).
         /// </summary>
         private void AdvanceTowardNearestEnemy(IUnit unit, List<IUnit> allUnits, IGameMap map, IPathFinder pathFinder,
-            out (int x, int y)? moveTarget, IFogOfWar fogOfWar = null)
+            out (int x, int y)? moveTarget, IFogOfWar fogOfWar = null, ITurnManager turnManager = null)
         {
             moveTarget = null;
 
@@ -116,7 +127,9 @@ namespace TacticFantasy.Domain.AI
             if (!targetPos.HasValue)
                 return;
 
-            var reachable = pathFinder.GetMovementRange(unit.Position.x, unit.Position.y, unit.CurrentStats.MOV, unit, map, allUnits);
+            int movementPoints = turnManager?.GetMovementPointsRemaining(unit.Id) ?? unit.CurrentStats.MOV;
+            int movementLimit = System.Math.Min(unit.CurrentStats.MOV, movementPoints);
+            var reachable = pathFinder.GetMovementRange(unit.Position.x, unit.Position.y, movementLimit, unit, map, allUnits);
 
             var bestTile = reachable
                 .OrderBy(t => map.GetDistance(t.Item1, t.Item2, targetPos.Value.x, targetPos.Value.y))
@@ -127,12 +140,32 @@ namespace TacticFantasy.Domain.AI
         }
 
         private void DecideAttackAction(IUnit unit, List<IUnit> allUnits, IGameMap map, IPathFinder pathFinder,
-            out (int x, int y)? moveTarget, out IUnit attackTarget, IFogOfWar fogOfWar = null)
+            out (int x, int y)? moveTarget, out IUnit attackTarget, IFogOfWar fogOfWar = null, ITurnManager turnManager = null)
         {
             moveTarget = null;
             attackTarget = null;
+            int remainingActions = turnManager?.GetRemainingActions(unit.Id) ?? int.MaxValue;
 
             var hostileUnits = allUnits.Where(u => AreHostile(unit.Team, u.Team) && u.IsAlive).ToList();
+
+            if (remainingActions == 1)
+            {
+                // Prefer immediate attacks from current tile if possible (no movement)
+                var immediateTargets = hostileUnits
+                    .Where(e =>
+                    {
+                        int d = map.GetDistance(unit.Position.x, unit.Position.y, e.Position.x, e.Position.y);
+                        return d >= unit.EquippedWeapon.MinRange && d <= unit.EquippedWeapon.MaxRange
+                            && (fogOfWar == null || fogOfWar.IsTileVisible(e.Position.x, e.Position.y, unit.Team));
+                    })
+                    .ToList();
+                if (immediateTargets.Count > 0)
+                {
+                    attackTarget = immediateTargets.OrderBy(e => ScoreAttackOption(unit, e)).First();
+                    moveTarget = (unit.Position.x, unit.Position.y);
+                    return;
+                }
+            }
 
             if (hostileUnits.Count == 0)
                 return;
@@ -142,7 +175,9 @@ namespace TacticFantasy.Domain.AI
                 ? hostileUnits.Where(u => fogOfWar.IsTileVisible(u.Position.x, u.Position.y, unit.Team)).ToList()
                 : hostileUnits;
 
-            var reachable = pathFinder.GetMovementRange(unit.Position.x, unit.Position.y, unit.CurrentStats.MOV, unit, map, allUnits);
+            int movementPoints = turnManager?.GetMovementPointsRemaining(unit.Id) ?? unit.CurrentStats.MOV;
+            int movementLimit = System.Math.Min(unit.CurrentStats.MOV, movementPoints);
+            var reachable = pathFinder.GetMovementRange(unit.Position.x, unit.Position.y, movementLimit, unit, map, allUnits);
 
             if (targetableUnits.Count > 0)
             {
@@ -192,7 +227,7 @@ namespace TacticFantasy.Domain.AI
         }
 
         private void DecideHealAction(IUnit unit, List<IUnit> allUnits, IGameMap map, IPathFinder pathFinder,
-            out (int x, int y)? moveTarget, out IUnit attackTarget, out bool isHealAction)
+            out (int x, int y)? moveTarget, out IUnit attackTarget, out bool isHealAction, ITurnManager turnManager = null)
         {
             moveTarget = null;
             attackTarget = null;
@@ -214,7 +249,9 @@ namespace TacticFantasy.Domain.AI
             }
             else
             {
-                var reachable = pathFinder.GetMovementRange(unit.Position.x, unit.Position.y, unit.CurrentStats.MOV, unit, map, allUnits);
+                int movementPoints = turnManager?.GetMovementPointsRemaining(unit.Id) ?? unit.CurrentStats.MOV;
+                int movementLimit = System.Math.Min(unit.CurrentStats.MOV, movementPoints);
+                var reachable = pathFinder.GetMovementRange(unit.Position.x, unit.Position.y, movementLimit, unit, map, allUnits);
 
                 var bestTile = reachable
                     .OrderBy(t => map.GetDistance(t.Item1, t.Item2, targetAlly.Position.x, targetAlly.Position.y))
@@ -355,7 +392,7 @@ namespace TacticFantasy.Domain.AI
         /// The unit retreats to the nearest reachable Fort to benefit from its healing.
         /// </summary>
         private bool TryRetreatToFort(IUnit unit, List<IUnit> allUnits, IGameMap map,
-            IPathFinder pathFinder, out (int x, int y)? moveTarget)
+            IPathFinder pathFinder, out (int x, int y)? moveTarget, ITurnManager turnManager = null)
         {
             moveTarget = null;
 
@@ -363,9 +400,11 @@ namespace TacticFantasy.Domain.AI
             if (unit.CurrentHP > unit.MaxHP * LowHpThresholdPercent / 100)
                 return false;
 
+            int movementPoints = turnManager?.GetMovementPointsRemaining(unit.Id) ?? unit.CurrentStats.MOV;
+            int movementLimit = System.Math.Min(unit.CurrentStats.MOV, movementPoints);
             var reachable = pathFinder.GetMovementRange(
                 unit.Position.x, unit.Position.y,
-                unit.CurrentStats.MOV, unit, map, allUnits);
+                movementLimit, unit, map, allUnits);
 
             // Find the closest reachable Fort tile (excluding current tile)
             (int x, int y)? bestFort = null;
@@ -403,7 +442,7 @@ namespace TacticFantasy.Domain.AI
         /// maximise distance from the nearest opponent while favouring defensive terrain.
         /// </summary>
         private void RetreatFromEnemies(IUnit unit, List<IUnit> allUnits, IGameMap map,
-            IPathFinder pathFinder, out (int x, int y)? moveTarget)
+            IPathFinder pathFinder, out (int x, int y)? moveTarget, ITurnManager turnManager = null)
         {
             moveTarget = null;
             var opponents = allUnits
@@ -413,9 +452,11 @@ namespace TacticFantasy.Domain.AI
             if (opponents.Count == 0)
                 return;
 
+            int movementPoints = turnManager?.GetMovementPointsRemaining(unit.Id) ?? unit.CurrentStats.MOV;
+            int movementLimit = System.Math.Min(unit.CurrentStats.MOV, movementPoints);
             var reachable = pathFinder.GetMovementRange(
                 unit.Position.x, unit.Position.y,
-                unit.CurrentStats.MOV, unit, map, allUnits);
+                movementLimit, unit, map, allUnits);
 
             // Pick the tile that is farthest from the nearest enemy, with terrain defense as tiebreaker
             (int x, int y)? best = null;

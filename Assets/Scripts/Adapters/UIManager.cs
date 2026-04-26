@@ -106,6 +106,24 @@ namespace TacticFantasy.Adapters
 
         private void CreateTurnPhaseHeader()
         {
+            // Avoid creating duplicate headers if one already exists in the scene
+            var existing = GameObject.Find("TurnPhaseHeader");
+            if (existing != null)
+            {
+                // Reuse existing Text component if present
+                var existingText = existing.GetComponent<Text>();
+                if (existingText != null)
+                {
+                    _turnPhaseText = existingText;
+                    return;
+                }
+                else
+                {
+                    // If the GameObject exists but has no Text, remove it and recreate
+                    Destroy(existing);
+                }
+            }
+
             GameObject textGO = new GameObject("TurnPhaseHeader");
             textGO.transform.SetParent(_uiCanvas.transform);
 
@@ -136,8 +154,9 @@ namespace TacticFantasy.Adapters
             // NEW: Top-left anchor with compact size
             panelRT.anchorMin = new Vector2(0, 1);
             panelRT.anchorMax = new Vector2(0, 1);
-            panelRT.offsetMin = new Vector2(10, -160);    // (left, bottom)
-            panelRT.offsetMax = new Vector2(230, -10);    // (right, top) = 220x150 size
+            // Move panel downward to avoid overlapping the TurnPhase header
+            panelRT.offsetMin = new Vector2(10, -220);    // (left, bottom)
+            panelRT.offsetMax = new Vector2(230, -70);    // (right, top) = 220x150 size (moved down 60px)
 
             GameObject textGO = new GameObject("UnitInfoText");
             textGO.transform.SetParent(panelGO.transform);
@@ -838,7 +857,7 @@ private void ClearTerrainInfo()
         /// <summary>
         /// Shows a small action menu for a selected unit.
         /// </summary>
-        public void ShowActionMenu(TacticFantasy.Domain.Units.IUnit unit, (int x, int y) tilePos, bool canAttack, bool canSteal, bool canTrade)
+        public void ShowActionMenu(TacticFantasy.Domain.Units.IUnit unit, (int x, int y) tilePos, bool canAttack, bool canSteal, bool canTrade, bool canSing)
         {
             if (_actionMenuPanel != null)
             {
@@ -891,16 +910,24 @@ private void ClearTerrainInfo()
             var btnBag = CreateMenuButton("Bolsa", container.transform, 1);
             btnBag.onClick.AddListener(() => { OnActionMenuSelected?.Invoke(ActionMenuChoice.Bag, unit); Destroy(_actionMenuPanel); });
 
-            var btnSteal = CreateMenuButton("Robar", container.transform, 2);
+            Button btnSing = null;
+            if (canSing)
+            {
+                btnSing = CreateMenuButton("Cantar", container.transform, 2);
+                btnSing.interactable = true;
+                btnSing.onClick.AddListener(() => { OnActionMenuSelected?.Invoke(ActionMenuChoice.Sing, unit); Destroy(_actionMenuPanel); });
+            }
+
+            var btnSteal = CreateMenuButton("Robar", container.transform, canSing ? 3 : 2);
             btnSteal.interactable = canSteal;
             btnSteal.onClick.AddListener(() => { OnActionMenuSelected?.Invoke(ActionMenuChoice.Steal, unit); Destroy(_actionMenuPanel); });
 
-            var btnTrade = CreateMenuButton("Intercambiar", container.transform, 3);
+            var btnTrade = CreateMenuButton("Intercambiar", container.transform, canSing ? 4 : 3);
             btnTrade.interactable = canTrade;
             btnTrade.onClick.AddListener(() => { OnActionMenuSelected?.Invoke(ActionMenuChoice.Trade, unit); Destroy(_actionMenuPanel); });
 
             // Cancel button
-            var btnCancel = CreateMenuButton("Cancelar", container.transform, 4);
+            var btnCancel = CreateMenuButton("Cancelar", container.transform, canSing ? 5 : 4);
             btnCancel.onClick.AddListener(() => { OnActionMenuSelected?.Invoke(ActionMenuChoice.Cancel, unit); Destroy(_actionMenuPanel); });
 
             // Select first interactable for gamepad/navigation (prefer Attack if enabled)
@@ -910,6 +937,8 @@ private void ClearTerrainInfo()
                     EventSystem.current.SetSelectedGameObject(btnAttack.gameObject);
                 else if (btnBag != null)
                     EventSystem.current.SetSelectedGameObject(btnBag.gameObject);
+                else if (btnSing != null && btnSing.interactable)
+                    EventSystem.current.SetSelectedGameObject(btnSing.gameObject);
             }
         }
 

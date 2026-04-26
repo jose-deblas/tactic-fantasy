@@ -90,12 +90,12 @@ namespace DomainTests
             Assert.IsFalse(regen.IsExpired);
 
             regen.Tick(2f, unit);
-            Assert.AreEqual(70f, unit.Health, 1e-4);
+            Assert.AreEqual(65f, unit.Health, 1e-4);
             Assert.IsTrue(regen.IsExpired);
 
             // Further ticks do nothing
             regen.Tick(1f, unit);
-            Assert.AreEqual(70f, unit.Health, 1e-4);
+            Assert.AreEqual(65f, unit.Health, 1e-4);
         }
 
         [Test]

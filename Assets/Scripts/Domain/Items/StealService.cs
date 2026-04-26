@@ -27,8 +27,9 @@ namespace TacticFantasy.Domain.Items
             if (thief.CurrentStats.SPD <= target.CurrentStats.SPD) return false;
             if (thief.Inventory.IsFull) return false;
 
-            int distance = Math.Abs(thief.Position.x - target.Position.x)
-                         + Math.Abs(thief.Position.y - target.Position.y);
+            int dx = Math.Abs(thief.Position.x - target.Position.x);
+            int dy = Math.Abs(thief.Position.y - target.Position.y);
+            int distance = Math.Max(dx, dy);
             if (distance != 1) return false;
 
             return target.Inventory.Items.Any(item => item.ItemType != ItemType.Weapon);

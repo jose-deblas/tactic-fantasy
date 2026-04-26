@@ -111,7 +111,10 @@ namespace TacticFantasy.Adapters
                     if (item is IWeapon w && unit.EquippedWeapon != null && ReferenceEquals(unit.EquippedWeapon, w))
                         equippedMarker = " (Equipped)";
 
-                    itemText.text = $"{item.Name}{equippedMarker}  —  {item.CurrentUses}/{item.MaxUses}";
+                    // Display uses as remaining/total. Use infinity symbol for unlimited (-1).
+                    string remainingStr = item.CurrentUses == -1 ? "∞" : item.CurrentUses.ToString();
+                    string totalStr = item.MaxUses == -1 ? "∞" : item.MaxUses.ToString();
+                    itemText.text = $"{item.Name}{equippedMarker}  —  {remainingStr}/{totalStr}";
                     itemText.alignment = TextAnchor.MiddleLeft;
                     itemText.fontSize = 16;
                     itemText.color = Color.white;
@@ -178,7 +181,10 @@ namespace TacticFantasy.Adapters
                             // Update visual marker to show equipped
                             if (item is IWeapon iw)
                             {
-                                itemText.text = $"{item.Name} (Equipped)  —  {item.CurrentUses}/{item.MaxUses}";
+                                // Display uses as remaining/total. Use infinity symbol for unlimited (-1).
+                                string remainingStrEq = item.CurrentUses == -1 ? "∞" : item.CurrentUses.ToString();
+                                string totalStrEq = item.MaxUses == -1 ? "∞" : item.MaxUses.ToString();
+                                itemText.text = $"{item.Name} (Equipped)  —  {remainingStrEq}/{totalStrEq}";
                             }
                         });
                     }

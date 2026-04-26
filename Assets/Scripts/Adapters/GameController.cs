@@ -39,6 +39,9 @@ namespace TacticFantasy.Adapters
         // Awaiting player to pick an enemy target after choosing Attack from the action menu
         private bool _awaitingAttackTarget = false;
         private int _awaitingAttackerId = -1;
+        // Awaiting player to pick ally target for "Cantar" (Heron refresh)
+        private bool _awaitingRefreshTarget = false;
+        private int _awaitingRefresherId = -1;
 
         private IFogOfWar _fogOfWar;
         private IReinforcementService _reinforcementService;
@@ -218,6 +221,22 @@ namespace TacticFantasy.Adapters
                 }
             }
 
+            // If awaiting a refresh target and clicked an ally in range, refresh
+            if (_awaitingRefreshTarget && unit.Team == Team.PlayerTeam && _currentAttackRange.Contains((unit.Position.x, unit.Position.y)))
+            {
+                var refresher = _allUnits.FirstOrDefault(u => u.Id == _awaitingRefresherId);
+                if (refresher != null)
+                {
+                    _awaitingRefreshTarget = false;
+                    _awaitingRefresherId = -1;
+                    if (_turnManager.CanRefreshTarget(refresher, unit))
+                        RefreshUnit(refresher, unit);
+                    else
+                        _uiManager.ShowInfoMessage("Cannot refresh this unit!");
+                    return;
+                }
+            }
+
             // NEW: Toggle behavior - clicking same unit deselects
             if (_selectedUnit != null && _selectedUnit.Id == unit.Id)
             {
@@ -271,6 +290,31 @@ namespace TacticFantasy.Adapters
                 return;
             }
 
+            // If awaiting a refresh target (player clicked Cantar), handle tile clicks as potential refresh targets
+            if (_awaitingRefreshTarget)
+            {
+                var refresher = _allUnits.FirstOrDefault(u => u.Id == _awaitingRefresherId);
+                var targetUnit = refresher == null ? null : _allUnits.FirstOrDefault(u => u.Position.x == x && u.Position.y == y && u.IsAlive && u.Team == refresher.Team);
+                if (targetUnit != null && _currentAttackRange.Contains((x, y)))
+                {
+                    _awaitingRefreshTarget = false;
+                    _awaitingRefresherId = -1;
+                    if (refresher != null && _turnManager.CanRefreshTarget(refresher, targetUnit))
+                        RefreshUnit(refresher, targetUnit);
+                    else
+                        _uiManager.ShowInfoMessage("Cantar cancelado");
+                    return;
+                }
+
+                // Clicked not a valid target -> cancel awaiting state
+                _awaitingRefreshTarget = false;
+                _awaitingRefresherId = -1;
+                _uiManager.ShowInfoMessage("Cantar cancelado");
+                _currentAttackRange.Clear();
+                _mapRenderer.SetAttackRange(_currentAttackRange);
+                return;
+            }
+
             if (_currentMovementRange.Contains((x, y)))
             {
                 MoveUnit(_selectedUnit, x, y);
@@ -316,25 +360,33 @@ namespace TacticFantasy.Adapters
             SelectUnit(unit);
 
             // Determine if Attack should be enabled: check from current position and all reachable movement tiles
-            bool canAttack = false;
-            var remaining = _turnManager.GetRemainingActions(unit.Id);
-            // include current pos even if no movement
+            // Only allow Attack if the unit hasn't already attacked this turn
+            bool canAttack = !_turnManager.HasUnitAttacked(unit.Id);
             var potentialPositions = new HashSet<(int, int)> { (unit.Position.x, unit.Position.y) };
-            if (remaining > 0)
+            if (canAttack)
             {
-                var movement = _pathFinder.GetMovementRange(unit.Position.x, unit.Position.y, unit.CurrentStats.MOV, unit, _gameMap, _allUnits);
-                foreach (var p in movement) potentialPositions.Add(p);
-            }
-            foreach (var pos in potentialPositions)
-            {
-                if (HasAttackableEnemyAtPosition(unit, pos.Item1, pos.Item2)) { canAttack = true; break; }
+                var movementPoints = _turnManager.GetMovementPointsRemaining(unit.Id);
+                // include current pos even if no movement
+                if (movementPoints > 0)
+                {
+                    var movementLimit = System.Math.Min(unit.CurrentStats.MOV, movementPoints);
+                    var movement = _pathFinder.GetMovementRange(unit.Position.x, unit.Position.y, movementLimit, unit, _gameMap, _allUnits);
+                    foreach (var p in movement) potentialPositions.Add(p);
+                }
+
+                foreach (var pos in potentialPositions)
+                {
+                    if (HasAttackableEnemyAtPosition(unit, pos.Item1, pos.Item2)) { canAttack = true; break; }
+                }
             }
 
             bool canSteal = _allUnits.Any(u => u.IsAlive && u.Team != unit.Team && _stealService.CanSteal(unit, u));
 
             bool canTrade = _allUnits.Any(u => u.IsAlive && TeamRelations.AreAllied(u.Team, unit.Team) && _tradeService.CanTrade(unit, u));
 
-            _uiManager.ShowActionMenu(unit, (x, y), canAttack, canSteal, canTrade);
+            bool canSing = unit?.Class != null && unit.Class.Name == "Heron" && unit.EquippedWeapon != null && unit.EquippedWeapon.Type == WeaponType.REFRESH && _turnManager.GetRemainingActions(unit.Id) > 0;
+
+            _uiManager.ShowActionMenu(unit, (x, y), canAttack, canSteal, canTrade, canSing);
         }
 
         private bool HasAttackableEnemyAtPosition(IUnit unit, int posX, int posY)
@@ -373,7 +425,9 @@ namespace TacticFantasy.Adapters
                     var rem = _turnManager.GetRemainingActions(unit.Id);
                     if (rem > 0)
                     {
-                        _currentMovementRange = _pathFinder.GetMovementRange(unit.Position.x, unit.Position.y, unit.CurrentStats.MOV, unit, _gameMap, _allUnits);
+                        var movementPoints = _turnManager.GetMovementPointsRemaining(unit.Id);
+                        var movementLimit = System.Math.Min(unit.CurrentStats.MOV, movementPoints);
+                        _currentMovementRange = _pathFinder.GetMovementRange(unit.Position.x, unit.Position.y, movementLimit, unit, _gameMap, _allUnits);
                         CalculateAttackRangeFromMovement(unit);
                     }
                     else
@@ -436,6 +490,43 @@ namespace TacticFantasy.Adapters
                         });
                     break;
 
+                case ActionMenuChoice.Sing:
+                    // Prepare refresh targets: similar to attack but we target allies
+                    _currentMovementRange.Clear();
+                    _currentAttackRange.Clear();
+                    var remSing = _turnManager.GetRemainingActions(unit.Id);
+                    if (remSing > 0)
+                    {
+                        var movementPoints = _turnManager.GetMovementPointsRemaining(unit.Id);
+                        var movementLimit = System.Math.Min(unit.CurrentStats.MOV, movementPoints);
+                        _currentMovementRange = _pathFinder.GetMovementRange(unit.Position.x, unit.Position.y, movementLimit, unit, _gameMap, _allUnits);
+                        CalculateAttackRangeFromMovement(unit);
+                    }
+                    else
+                    {
+                        CalculateAttackRangeFromPosition(unit);
+                    }
+
+                    _mapRenderer.SetAttackRange(_currentAttackRange);
+                    SelectUnit(unit);
+
+                    var alliesInRange = _allUnits.Where(u => u.IsAlive && u.Team == unit.Team && _currentAttackRange.Contains((u.Position.x, u.Position.y))).ToList();
+                    if (alliesInRange.Count == 1)
+                    {
+                        var target = alliesInRange[0];
+                        if (_turnManager.CanRefreshTarget(unit, target))
+                            RefreshUnit(unit, target);
+                        else
+                            _uiManager.ShowInfoMessage("Cannot refresh this unit!");
+                    }
+                    else
+                    {
+                        _awaitingRefreshTarget = true;
+                        _awaitingRefresherId = unit.Id;
+                        _uiManager.ShowInfoMessage("Seleccione un aliado para Cantar (B para cancelar)");
+                    }
+                    break;
+
                 case ActionMenuChoice.Steal:
                     {
                         var target = _allUnits.FirstOrDefault(u => u.IsAlive && u.Team != unit.Team && _stealService.CanSteal(unit, u));
@@ -488,7 +579,9 @@ namespace TacticFantasy.Adapters
                         var remaining = _turnManager.GetRemainingActions(unit.Id);
                         if (remaining > 0)
                         {
-                            _currentMovementRange = _pathFinder.GetMovementRange(unit.Position.x, unit.Position.y, unit.CurrentStats.MOV, unit, _gameMap, _allUnits);
+                            var movementPoints = _turnManager.GetMovementPointsRemaining(unit.Id);
+                            var movementLimit = System.Math.Min(unit.CurrentStats.MOV, movementPoints);
+                            _currentMovementRange = _pathFinder.GetMovementRange(unit.Position.x, unit.Position.y, movementLimit, unit, _gameMap, _allUnits);
                             CalculateAttackRangeFromMovement(unit);
                         }
                     }
@@ -496,7 +589,9 @@ namespace TacticFantasy.Adapters
                 else if (unit.Team == Team.EnemyTeam)
                 {
                     // Enemy units: Show movement range (blue) + attack range from all reachable positions (red)
-                    _currentMovementRange = _pathFinder.GetMovementRange(unit.Position.x, unit.Position.y, unit.CurrentStats.MOV, unit, _gameMap, _allUnits);
+                    var movementPoints = _turnManager.GetMovementPointsRemaining(unit.Id);
+                    var movementLimit = System.Math.Min(unit.CurrentStats.MOV, movementPoints);
+                    _currentMovementRange = _pathFinder.GetMovementRange(unit.Position.x, unit.Position.y, movementLimit, unit, _gameMap, _allUnits);
                     CalculateAttackRangeFromMovement(unit);
                 }
             }
@@ -552,13 +647,29 @@ namespace TacticFantasy.Adapters
 
         private void MoveUnit(IUnit unit, int targetX, int targetY)
         {
-            var path = _pathFinder.FindPath(unit.Position.x, unit.Position.y, targetX, targetY, unit.CurrentStats.MOV, unit, _gameMap, _allUnits);
+            int movementPoints = _turnManager.GetMovementPointsRemaining(unit.Id);
+            int movementLimit = System.Math.Min(unit.CurrentStats.MOV, movementPoints);
+            var path = _pathFinder.FindPath(unit.Position.x, unit.Position.y, targetX, targetY, movementLimit, unit, _gameMap, _allUnits);
 
             if (path.Count > 0)
             {
+                // Compute precise movement cost along the path
+                bool isMage = unit.Class.UsableWeaponTypes.Contains(WeaponType.FIRE);
+                int movementCost = 0;
+                for (int i = 1; i < path.Count; i++)
+                {
+                    var step = path[i];
+                    var tile = _gameMap.GetTile(step.Item1, step.Item2);
+                    movementCost += TerrainProperties.GetMovementCost(tile.Terrain, unit.Class.MoveType, isMage);
+                }
+
+                if (!_turnManager.TryUseMovement(unit.Id, movementCost))
+                {
+                    _uiManager.ShowInfoMessage("No movement points or actions remaining.");
+                    return;
+                }
+
                 unit.SetPosition(path[path.Count - 1].Item1, path[path.Count - 1].Item2);
-                // Consume one action for movement
-                _turnManager.ConsumeAction(unit.Id);
                 _unitHasMoved = true;
                 SelectUnit(unit);
             }
@@ -566,6 +677,19 @@ namespace TacticFantasy.Adapters
 
         private void AttackUnit(IUnit attacker, IUnit defender)
         {
+            // Prevent attacking more than once per turn
+            if (_turnManager.HasUnitAttacked(attacker.Id))
+            {
+                _uiManager.ShowInfoMessage("This unit has already attacked this turn!");
+                return;
+            }
+
+            if (_turnManager.GetRemainingActions(attacker.Id) <= 0)
+            {
+                _uiManager.ShowInfoMessage("No actions remaining to attack.");
+                return;
+            }
+
             var result = _combatResolver.ResolveCombat(attacker, defender, _gameMap);
 
             if (result.Hit)
@@ -578,13 +702,24 @@ namespace TacticFantasy.Adapters
 
             // Consume one action for attacking
             _turnManager.ConsumeAction(attacker.Id);
+            // Mark that this unit has attacked so it cannot attack again this turn
+            _turnManager.MarkUnitAsAttacked(attacker.Id);
 
             if (_turnManager.GetGameState() != GameState.InProgress)
             {
                 _turnManager.AdvancePhase();
             }
 
-            SelectUnit(null);
+            // If attacker still has actions remaining and is a player unit, keep it selected so player may finish movement
+            if (_turnManager.CurrentPhase == Phase.PlayerPhase && attacker.IsAlive && attacker.Team == Team.PlayerTeam && _turnManager.GetRemainingActions(attacker.Id) > 0)
+            {
+                SelectUnit(attacker);
+            }
+            else
+            {
+                SelectUnit(null);
+            }
+
             CheckAllPlayerUnitsActed();
         }
 
@@ -769,14 +904,27 @@ namespace TacticFantasy.Adapters
 
                 if (moveTarget.HasValue)
                 {
+                    var movementPoints = _turnManager.GetMovementPointsRemaining(allyUnit.Id);
+                    var movementLimit = System.Math.Min(allyUnit.CurrentStats.MOV, movementPoints);
                     var path = _pathFinder.FindPath(allyUnit.Position.x, allyUnit.Position.y,
-                        moveTarget.Value.Item1, moveTarget.Value.Item2, allyUnit.CurrentStats.MOV, allyUnit, _gameMap, _allUnits);
+                        moveTarget.Value.Item1, moveTarget.Value.Item2, movementLimit, allyUnit, _gameMap, _allUnits);
 
                     if (path.Count > 0)
                     {
-                        allyUnit.SetPosition(path[path.Count - 1].Item1, path[path.Count - 1].Item2);
-                        // Consume one action for movement (AI should respect AP)
-                        _turnManager.ConsumeAction(allyUnit.Id);
+                        // compute movement cost
+                        bool isMage = allyUnit.Class.UsableWeaponTypes.Contains(WeaponType.FIRE);
+                        int movementCost = 0;
+                        for (int i = 1; i < path.Count; i++)
+                        {
+                            var step = path[i];
+                            var tile = _gameMap.GetTile(step.Item1, step.Item2);
+                            movementCost += TerrainProperties.GetMovementCost(tile.Terrain, allyUnit.Class.MoveType, isMage);
+                        }
+
+                        if (_turnManager.TryUseMovement(allyUnit.Id, movementCost))
+                        {
+                            allyUnit.SetPosition(path[path.Count - 1].Item1, path[path.Count - 1].Item2);
+                        }
                     }
                 }
 
@@ -800,6 +948,7 @@ namespace TacticFantasy.Adapters
 
                     // Consume one action for attacking/healing
                     _turnManager.ConsumeAction(allyUnit.Id);
+                    _turnManager.MarkUnitAsAttacked(allyUnit.Id);
                 }
 
                 _unitRenderer.UpdateAllUnits(_allUnits, _turnManager);
@@ -824,14 +973,27 @@ namespace TacticFantasy.Adapters
 
                 if (moveTarget.HasValue)
                 {
+                    var movementPoints = _turnManager.GetMovementPointsRemaining(enemyUnit.Id);
+                    var movementLimit = System.Math.Min(enemyUnit.CurrentStats.MOV, movementPoints);
                     var path = _pathFinder.FindPath(enemyUnit.Position.x, enemyUnit.Position.y,
-                        moveTarget.Value.Item1, moveTarget.Value.Item2, enemyUnit.CurrentStats.MOV, enemyUnit, _gameMap, _allUnits);
+                        moveTarget.Value.Item1, moveTarget.Value.Item2, movementLimit, enemyUnit, _gameMap, _allUnits);
 
                     if (path.Count > 0)
                     {
-                        enemyUnit.SetPosition(path[path.Count - 1].Item1, path[path.Count - 1].Item2);
-                        // Consume one action for movement (AI should respect AP)
-                        _turnManager.ConsumeAction(enemyUnit.Id);
+                        // compute movement cost
+                        bool isMage = enemyUnit.Class.UsableWeaponTypes.Contains(WeaponType.FIRE);
+                        int movementCost = 0;
+                        for (int i = 1; i < path.Count; i++)
+                        {
+                            var step = path[i];
+                            var tile = _gameMap.GetTile(step.Item1, step.Item2);
+                            movementCost += TerrainProperties.GetMovementCost(tile.Terrain, enemyUnit.Class.MoveType, isMage);
+                        }
+
+                        if (_turnManager.TryUseMovement(enemyUnit.Id, movementCost))
+                        {
+                            enemyUnit.SetPosition(path[path.Count - 1].Item1, path[path.Count - 1].Item2);
+                        }
                     }
                 }
 
@@ -855,6 +1017,7 @@ namespace TacticFantasy.Adapters
 
                     // Consume one action for attacking/healing
                     _turnManager.ConsumeAction(enemyUnit.Id);
+                    _turnManager.MarkUnitAsAttacked(enemyUnit.Id);
                 }
 
                 _unitRenderer.UpdateAllUnits(_allUnits, _turnManager);

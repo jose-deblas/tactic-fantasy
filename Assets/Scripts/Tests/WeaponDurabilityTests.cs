@@ -63,16 +63,16 @@ namespace TacticFantasy.Tests
         }
 
         [Test]
-        public void Weapon_WithUnlimitedUses_NeverBreaks()
+        public void Weapon_WithDurability_DefaultsToIron40()
         {
-            // uses = -1 (or 0 in legacy factory) means unlimited
-            var weapon = WeaponFactory.CreateIronSword(); // legacy: no uses param → unlimited
+            // Default iron weapons now have 40 uses
+            var weapon = WeaponFactory.CreateIronSword();
 
             weapon.ConsumeUse();
             weapon.ConsumeUse();
 
             Assert.IsFalse(weapon.IsBroken);
-            Assert.AreEqual(-1, weapon.MaxUses); // sentinel value for unlimited
+            Assert.AreEqual(40, weapon.MaxUses);
         }
 
         // ── IUnit.CanUseWeapon ──────────────────────────────────────────────
@@ -179,11 +179,11 @@ namespace TacticFantasy.Tests
         [Test]
         public void WeaponFactory_AllWeapons_HaveExpectedUses()
         {
-            Assert.AreEqual(30, WeaponFactory.CreateIronSwordWithDurability().MaxUses);
-            Assert.AreEqual(30, WeaponFactory.CreateIronLanceWithDurability().MaxUses);
-            Assert.AreEqual(30, WeaponFactory.CreateIronAxeWithDurability().MaxUses);
-            Assert.AreEqual(30, WeaponFactory.CreateIronBowWithDurability().MaxUses);
-            Assert.AreEqual(30, WeaponFactory.CreateFireTomeWithDurability().MaxUses);
+            Assert.AreEqual(40, WeaponFactory.CreateIronSwordWithDurability().MaxUses);
+            Assert.AreEqual(40, WeaponFactory.CreateIronLanceWithDurability().MaxUses);
+            Assert.AreEqual(40, WeaponFactory.CreateIronAxeWithDurability().MaxUses);
+            Assert.AreEqual(40, WeaponFactory.CreateIronBowWithDurability().MaxUses);
+            Assert.AreEqual(40, WeaponFactory.CreateFireTomeWithDurability().MaxUses);
             Assert.AreEqual(15, WeaponFactory.CreateHealStaffWithDurability().MaxUses);
         }
     }

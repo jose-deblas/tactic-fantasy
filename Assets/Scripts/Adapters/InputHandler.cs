@@ -12,6 +12,7 @@ namespace TacticFantasy.Adapters
     {
         public event Action<int, int> OnTileClicked;
         public event Action<int, int> OnUnitClicked;
+        public event Action<int, int> OnUnitRightClicked;
         public event Action OnEndTurnPressed;  // NEW: Keyboard shortcut for end turn
         public event Action OnMenuTogglePressed;  // NEW: ESC key to toggle menu
 
@@ -25,8 +26,13 @@ namespace TacticFantasy.Adapters
 
         public void Update()
         {
-            if (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame)
-                HandleMouseClick();
+            if (Mouse.current != null)
+            {
+                if (Mouse.current.leftButton.wasPressedThisFrame)
+                    HandleMouseClick();
+                if (Mouse.current.rightButton != null && Mouse.current.rightButton.wasPressedThisFrame)
+                    HandleMouseRightClick();
+            }
 
             if (Keyboard.current != null)
             {
@@ -58,6 +64,20 @@ namespace TacticFantasy.Adapters
 
             OnTileClicked?.Invoke(x, y);
             OnUnitClicked?.Invoke(x, y);
+        }
+
+        private void HandleMouseRightClick()
+        {
+            if (_mainCamera == null) return;
+
+            Vector2 mouseScreen = Mouse.current.position.ReadValue();
+            Vector3 worldPos    = _mainCamera.ScreenToWorldPoint(
+                new Vector3(mouseScreen.x, mouseScreen.y, 0f));
+
+            int x = Mathf.RoundToInt(worldPos.x / TILE_SIZE);
+            int y = Mathf.RoundToInt(worldPos.y / TILE_SIZE);
+
+            OnUnitRightClicked?.Invoke(x, y);
         }
 
         public void SimulateGamepadClick(int x, int y)

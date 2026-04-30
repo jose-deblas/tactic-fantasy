@@ -57,14 +57,86 @@ namespace TacticFantasy.Domain.Map
             var units = new List<IUnit>();
             int nextId = 1;
 
+            // Track occupied positions to avoid placing two units on the same tile
+            var occupied = new HashSet<(int, int)>();
+
+            // Helper: find nearest passable, unoccupied tile to a desired position
+            (int, int) FindNearestFree((int x, int y) desired, IClassData cls)
+            {
+                int width = definition.Width;
+                int height = definition.Height;
+                var candidates = new List<((int x, int y) pos, int dist)>();
+                for (int x = 0; x < width; x++)
+                {
+                    for (int y = 0; y < height; y++)
+                    {
+                        int d = System.Math.Abs(x - desired.x) + System.Math.Abs(y - desired.y);
+                        candidates.Add(((x, y), d));
+                    }
+                }
+
+                candidates.Sort((a, b) =>
+                {
+                    int cmp = a.dist.CompareTo(b.dist);
+                    if (cmp != 0) return cmp;
+                    if (a.pos.x != b.pos.x) return a.pos.x.CompareTo(b.pos.x);
+                    return a.pos.y.CompareTo(b.pos.y);
+                });
+
+                bool isMage = cls.UsableWeaponTypes.Contains(Weapons.WeaponType.FIRE);
+
+                foreach (var c in candidates)
+                {
+                    var (cx, cy) = c.pos;
+                    if (occupied.Contains((cx, cy))) continue;
+                    var terrain = definition.Terrain[cx, cy];
+                    if (TerrainProperties.IsPassable(terrain, cls.MoveType, isMage))
+                        return (cx, cy);
+                }
+
+                // Fallback: return desired if nothing else found
+                return desired;
+            }
+
             foreach (var placement in definition.PlayerPlacements)
             {
-                units.Add(CreateUnitFromPlacement(nextId++, placement));
+                var classData = ResolveClass(placement.ClassName);
+                var weapon = ResolveWeapon(placement.WeaponName, classData);
+                var pos = FindNearestFree(placement.Position, classData);
+                var unit = new Unit(nextId++, placement.Name, placement.Team, classData, classData.BaseStats, pos, weapon);
+
+                // Apply levels above 1
+                if (placement.Level > 1)
+                {
+                    var rng = new System.Random(unit.Id * 31 + placement.Level);
+                    for (int i = 1; i < placement.Level; i++)
+                    {
+                        unit.GainExperience(100, rng);
+                    }
+                }
+
+                units.Add(unit);
+                occupied.Add(pos);
             }
 
             foreach (var placement in definition.EnemyPlacements)
             {
-                units.Add(CreateUnitFromPlacement(nextId++, placement));
+                var classData = ResolveClass(placement.ClassName);
+                var weapon = ResolveWeapon(placement.WeaponName, classData);
+                var pos = FindNearestFree(placement.Position, classData);
+                var unit = new Unit(nextId++, placement.Name, placement.Team, classData, classData.BaseStats, pos, weapon);
+
+                if (placement.Level > 1)
+                {
+                    var rng = new System.Random(unit.Id * 31 + placement.Level);
+                    for (int i = 1; i < placement.Level; i++)
+                    {
+                        unit.GainExperience(100, rng);
+                    }
+                }
+
+                units.Add(unit);
+                occupied.Add(pos);
             }
 
             return units;

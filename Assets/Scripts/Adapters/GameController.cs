@@ -54,7 +54,7 @@ namespace TacticFantasy.Adapters
             InitializeDomainLayer();
             InitializeAdapters();
             CreateTeams();
-            _turnManager.Initialize(_allUnits);
+            _turnManager.Initialize(_allUnits, null, _gameMap);
             // CRITICAL: Render all units immediately after initialization so they're visible on load
             _unitRenderer.UpdateAllUnits(_allUnits, _turnManager);
             _uiManager.UpdatePhaseDisplay(_turnManager.CurrentPhase, _turnManager.TurnCount);
@@ -143,11 +143,39 @@ namespace TacticFantasy.Adapters
 
             var allClasses = ClassDataFactory.GetAllClasses();
 
+            // Player team: pick random positions in the top-left quadrant but avoid occupied tiles
             for (int i = 0; i < 4; i++)
             {
                 var classData = allClasses[Random.Range(0, allClasses.Length)];
                 var weapon = WeaponFactory.GetWeaponForClass(classData.WeaponType);
-                var pos = (Random.Range(0, 3), Random.Range(0, 3));
+
+                (int x, int y) pos;
+                int attempts = 0;
+                do
+                {
+                    pos = (Random.Range(0, 3), Random.Range(0, 3));
+                    attempts++;
+                }
+                while (_allUnits.Any(u => u.IsAlive && u.Position == pos) && attempts < 1000);
+
+                // If still occupied after many attempts, fall back to scanning the map for any free passable tile
+                if (_allUnits.Any(u => u.Position == pos))
+                {
+                    bool found = false;
+                    for (int xx = 0; xx < _gameMap.Width && !found; xx++)
+                    {
+                        for (int yy = 0; yy < _gameMap.Height && !found; yy++)
+                        {
+                            var tile = _gameMap.GetTile(xx, yy);
+                            bool isMage = classData.UsableWeaponTypes.Contains(WeaponType.FIRE);
+                            if (!_allUnits.Any(u => u.Position.x == xx && u.Position.y == yy) && TerrainProperties.IsPassable(tile.Terrain, classData.MoveType, isMage))
+                            {
+                                pos = (xx, yy);
+                                found = true;
+                            }
+                        }
+                    }
+                }
 
                 var unit = new Unit(
                     UnitFactory.GetNextId(),
@@ -161,11 +189,38 @@ namespace TacticFantasy.Adapters
                 _allUnits.Add(unit);
             }
 
+            // Enemy team: pick random positions in the bottom-right quadrant but avoid occupied tiles
             for (int i = 0; i < 4; i++)
             {
                 var classData = allClasses[Random.Range(0, allClasses.Length)];
                 var weapon = WeaponFactory.GetWeaponForClass(classData.WeaponType);
-                var pos = (Random.Range(13, 16), Random.Range(13, 16));
+
+                (int x, int y) pos;
+                int attempts = 0;
+                do
+                {
+                    pos = (Random.Range(13, 16), Random.Range(13, 16));
+                    attempts++;
+                }
+                while (_allUnits.Any(u => u.IsAlive && u.Position == pos) && attempts < 1000);
+
+                if (_allUnits.Any(u => u.Position == pos))
+                {
+                    bool found = false;
+                    for (int xx = 0; xx < _gameMap.Width && !found; xx++)
+                    {
+                        for (int yy = 0; yy < _gameMap.Height && !found; yy++)
+                        {
+                            var tile = _gameMap.GetTile(xx, yy);
+                            bool isMage = classData.UsableWeaponTypes.Contains(WeaponType.FIRE);
+                            if (!_allUnits.Any(u => u.Position.x == xx && u.Position.y == yy) && TerrainProperties.IsPassable(tile.Terrain, classData.MoveType, isMage))
+                            {
+                                pos = (xx, yy);
+                                found = true;
+                            }
+                        }
+                    }
+                }
 
                 var unit = new Unit(
                     UnitFactory.GetNextId(),

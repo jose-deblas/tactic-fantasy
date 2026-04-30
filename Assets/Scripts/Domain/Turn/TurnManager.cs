@@ -429,7 +429,7 @@ namespace TacticFantasy.Domain.Turn
             if (_reinforcementService == null || _reinforcementTriggers.Count == 0)
                 return;
 
-            var spawned = _reinforcementService.EvaluateTriggers(_reinforcementTriggers, TurnCount, _allUnits);
+            var spawned = _reinforcementService.EvaluateTriggers(_reinforcementTriggers, TurnCount, _allUnits, _map);
             _allUnits.AddRange(spawned);
         }
 

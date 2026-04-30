@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using TacticFantasy.Domain.Units;
+using TacticFantasy.Domain.Weapons;
 
 namespace TacticFantasy.Domain.Map
 {
@@ -9,7 +10,8 @@ namespace TacticFantasy.Domain.Map
         List<IUnit> EvaluateTriggers(
             IReadOnlyList<ReinforcementTrigger> triggers,
             int currentTurn,
-            IReadOnlyList<IUnit> allUnits);
+            IReadOnlyList<IUnit> allUnits,
+            IGameMap map = null);
     }
 
     public class ReinforcementService : IReinforcementService
@@ -26,9 +28,11 @@ namespace TacticFantasy.Domain.Map
         public List<IUnit> EvaluateTriggers(
             IReadOnlyList<ReinforcementTrigger> triggers,
             int currentTurn,
-            IReadOnlyList<IUnit> allUnits)
+            IReadOnlyList<IUnit> allUnits,
+            IGameMap map = null)
         {
             var spawned = new List<IUnit>();
+            var occupied = new HashSet<(int, int)>(allUnits.Where(u => u.IsAlive).Select(u => u.Position));
 
             foreach (var trigger in triggers)
             {
@@ -40,13 +44,63 @@ namespace TacticFantasy.Domain.Map
                     trigger.HasFired = true;
                     foreach (var placement in trigger.UnitsToSpawn)
                     {
-                        var unit = CreateUnitFromPlacement(_nextId++, placement);
+                        var classData = ResolveClass(placement.ClassName);
+                        var weapon = WeaponFactory.GetWeaponForClass(classData.WeaponType);
+                        var spawnPos = FindNearestFreePosition(placement.Position, occupied, classData, map);
+                        var unit = new Unit(_nextId++, placement.Name, placement.Team, classData, classData.BaseStats, spawnPos, weapon);
                         spawned.Add(unit);
+                        occupied.Add(spawnPos);
                     }
                 }
             }
 
             return spawned;
+        }
+
+        private (int, int) FindNearestFreePosition((int x, int y) desired, HashSet<(int, int)> occupied, IClassData classData, IGameMap map)
+        {
+            int width = map != null ? map.Width : 16;
+            int height = map != null ? map.Height : 16;
+
+            var candidates = new List<((int x, int y) pos, int dist)>();
+            for (int x = 0; x < width; x++)
+            {
+                for (int y = 0; y < height; y++)
+                {
+                    int d = System.Math.Abs(x - desired.x) + System.Math.Abs(y - desired.y);
+                    candidates.Add(((x, y), d));
+                }
+            }
+
+            candidates.Sort((a, b) =>
+            {
+                int cmp = a.dist.CompareTo(b.dist);
+                if (cmp != 0) return cmp;
+                if (a.pos.x != b.pos.x) return a.pos.x.CompareTo(b.pos.x);
+                return a.pos.y.CompareTo(b.pos.y);
+            });
+
+            bool isMage = classData.UsableWeaponTypes.Contains(WeaponType.FIRE);
+
+            foreach (var c in candidates)
+            {
+                var (cx, cy) = c.pos;
+                if (occupied.Contains((cx, cy))) continue;
+                if (map != null)
+                {
+                    if (!map.IsValidPosition(cx, cy)) continue;
+                    var tile = map.GetTile(cx, cy);
+                    if (!TerrainProperties.IsPassable(tile.Terrain, classData.MoveType, isMage)) continue;
+                }
+                else
+                {
+                    // no map available - assume tile is valid/passable
+                }
+                return (cx, cy);
+            }
+
+            // fallback: return desired
+            return desired;
         }
 
         private bool ShouldFire(ReinforcementTrigger trigger, int currentTurn, IReadOnlyList<IUnit> allUnits)
@@ -71,13 +125,6 @@ namespace TacticFantasy.Domain.Map
                 default:
                     return false;
             }
-        }
-
-        private IUnit CreateUnitFromPlacement(int id, UnitPlacement placement)
-        {
-            var classData = ResolveClass(placement.ClassName);
-            var weapon = WeaponFactory.GetWeaponForClass(classData.WeaponType);
-            return new Unit(id, placement.Name, placement.Team, classData, classData.BaseStats, placement.Position, weapon);
         }
 
         private static IClassData ResolveClass(string className)
